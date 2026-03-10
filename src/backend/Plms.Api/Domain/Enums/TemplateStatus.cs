@@ -5,6 +5,7 @@ namespace Plms.Api.Domain.Enums
         Draft,
         InReview,
         Approved,
+        Rejected,
         Published,
         Deprecated,
         Archived

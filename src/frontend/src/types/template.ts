@@ -1,4 +1,4 @@
-export type TemplateStatus = 'Draft' | 'InReview' | 'Approved' | 'Published' | 'Deprecated' | 'Archived';
+export type TemplateStatus = 'Draft' | 'InReview' | 'Approved' | 'Rejected' | 'Published' | 'Deprecated' | 'Archived';
 
 export interface TemplateVersion {
     id: string;

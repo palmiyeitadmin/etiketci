@@ -128,9 +128,74 @@ namespace Plms.Api.Controllers
             return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, new { success = true, data = new { id = template.Id } });
         }
 
-        [HttpPost("{id}/publish")]
+        [HttpPost("{id}/versions/{versionId}/request-approval")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> RequestApproval(Guid id, Guid versionId)
+        {
+            var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
+            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+
+            if (version.Status != TemplateStatus.Draft && version.Status != TemplateStatus.Rejected)
+            {
+                return BadRequest(new { success = false, error = "Only Draft or Rejected versions can be submitted for approval." });
+            }
+
+            var oldStatus = version.Status;
+            version.Status = TemplateStatus.InReview;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateApprovalRequested",
+                EntityId = versionId.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Status changed from {oldStatus} to {version.Status}",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/versions/{versionId}/review")]
         [Authorize(Policy = "RequireReviewer")]
-        public async Task<IActionResult> PublishTemplate(Guid id, [FromQuery] Guid versionId)
+        public async Task<IActionResult> ReviewVersion(Guid id, Guid versionId, ReviewTemplateVersionDto dto)
+        {
+            var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
+            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+
+            if (version.Status != TemplateStatus.InReview)
+            {
+                return BadRequest(new { success = false, error = "Version is not in review." });
+            }
+
+            var oldStatus = version.Status;
+            version.Status = dto.Approve ? TemplateStatus.Approved : TemplateStatus.Rejected;
+            version.ChangeNotes = string.IsNullOrWhiteSpace(dto.Comments) 
+                ? version.ChangeNotes 
+                : $"{version.ChangeNotes} | Review: {dto.Comments}";
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = dto.Approve ? "TemplateApproved" : "TemplateRejected",
+                EntityId = versionId.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Status changed from {oldStatus} to {version.Status}. Comments: {dto.Comments}",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/versions/{versionId}/publish")]
+        [Authorize(Policy = "RequireReviewer")]
+        public async Task<IActionResult> PublishTemplate(Guid id, Guid versionId)
         {
             var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
             if (template == null) return NotFound(new { success = false, error = "Template not found." });
@@ -138,16 +203,36 @@ namespace Plms.Api.Controllers
             var version = template.Versions.FirstOrDefault(v => v.Id == versionId);
             if (version == null) return NotFound(new { success = false, error = "Version not found." });
 
+            if (version.Status != TemplateStatus.Approved)
+            {
+                return BadRequest(new { success = false, error = "Only Approved versions can be published." });
+            }
+
             // Deprecate old version if exists
             if (template.CurrentActiveVersionId.HasValue)
             {
                 var oldActive = template.Versions.FirstOrDefault(v => v.Id == template.CurrentActiveVersionId);
-                if (oldActive != null) oldActive.Status = TemplateStatus.Deprecated;
+                if (oldActive != null && oldActive.Id != versionId)
+                {
+                    oldActive.Status = TemplateStatus.Deprecated;
+                }
             }
 
             version.Status = TemplateStatus.Published;
             template.CurrentActiveVersionId = version.Id;
             template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplatePublished",
+                EntityId = versionId.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Version {version.VersionNumber} published.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
 
             await _context.SaveChangesAsync();
 
@@ -204,6 +289,52 @@ namespace Plms.Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = new { id = newVersion.Id, versionNumber = newVersion.VersionNumber } });
+        }
+
+        [HttpGet("{id}/versions/{versionId}/preview-metadata")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> GetPreviewMetadata(Guid id, Guid versionId)
+        {
+            var template = await _context.Templates
+                .Include(t => t.Versions.Where(v => v.Id == versionId))
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            
+            var version = template.Versions.FirstOrDefault();
+            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+
+            var warnings = new List<string>();
+            try
+            {
+                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(version.LayoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (model != null)
+                {
+                    foreach (var el in model.Elements)
+                    {
+                        if (el.Type.ToLower() == "barcode" && el.BarcodeType != "CODE_128")
+                        {
+                            warnings.Add($"Barcode type '{el.BarcodeType}' may not render correctly in PDF (only CODE_128 is fully supported).");
+                        }
+                    }
+                }
+            }
+            catch { /* ignore parse errors here */ }
+
+            var dto = new TemplatePreviewDto
+            {
+                TemplateId = template.Id,
+                TemplateName = template.Name,
+                TemplateCode = template.Code,
+                VersionId = version.Id,
+                VersionNumber = version.VersionNumber,
+                Status = version.Status,
+                CreatedAt = version.CreatedAt,
+                CreatedBy = version.CreatedBy,
+                Warnings = warnings
+            };
+
+            return Ok(new { success = true, data = dto });
         }
 
         [HttpGet("{id}/versions/{versionId}/preview")]

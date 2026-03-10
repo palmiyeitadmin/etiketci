@@ -2,6 +2,10 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using Plms.Api.Models.Canonical;
+using ZXing;
+using ZXing.SkiaSharp;
+using SkiaSharp;
+using ZXing.Common;
 
 namespace Plms.Api.Services
 {
@@ -75,15 +79,31 @@ namespace Plms.Api.Services
 
                 case "barcode":
                 case "qr":
-                    // Placeholder for now in PDF until we choose a backend barcode lib
-                    container.Background(Colors.Grey.Lighten4)
-                        .Border(0.2f, Unit.Millimetre)
-                        .BorderColor(Colors.Grey.Medium)
-                        .AlignCenter()
-                        .AlignMiddle()
-                        .Text($"[{el.Type.ToUpper()}: {el.Content}]")
-                        .FontSize(6)
-                        .FontColor(Colors.Grey.Medium);
+                    byte[]? imageBytes = null;
+                    if (el.Type.ToLower() == "qr")
+                    {
+                        imageBytes = GenerateQrCode(el.Content, (int)(el.WidthMm * 3.78), (int)(el.HeightMm * 3.78));
+                    }
+                    else
+                    {
+                        imageBytes = GenerateBarcode(el.Content, el.BarcodeType ?? "CODE_128", (int)(el.WidthMm * 3.78), (int)(el.HeightMm * 3.78));
+                    }
+
+                    if (imageBytes != null)
+                    {
+                        container.Image(imageBytes);
+                    }
+                    else
+                    {
+                        container.Background(Colors.Grey.Lighten4)
+                            .Border(0.2f, Unit.Millimetre)
+                            .BorderColor(Colors.Grey.Medium)
+                            .AlignCenter()
+                            .AlignMiddle()
+                            .Text($"[FAILED: {el.Type.ToUpper()}]")
+                            .FontSize(6)
+                            .FontColor(Colors.Red.Medium);
+                    }
                     break;
 
                 case "image":
@@ -94,6 +114,64 @@ namespace Plms.Api.Services
                         .FontSize(8)
                         .FontColor(Colors.Blue.Medium);
                     break;
+            }
+        }
+
+        private byte[]? GenerateQrCode(string content, int width, int height)
+        {
+            try
+            {
+                var writer = new BarcodeWriter
+                {
+                    Format = BarcodeFormat.QR_CODE,
+                    Options = new EncodingOptions
+                    {
+                        Width = width,
+                        Height = height,
+                        Margin = 0
+                    }
+                };
+                using var bitmap = writer.Write(content);
+                using var image = SKImage.FromBitmap(bitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                return data.ToArray();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private byte[]? GenerateBarcode(string content, string type, int width, int height)
+        {
+            try
+            {
+                var format = type.ToUpper() switch
+                {
+                    "CODE_128" => BarcodeFormat.CODE_128,
+                    "EAN_13" => BarcodeFormat.EAN_13,
+                    _ => BarcodeFormat.CODE_128 // Default to 128
+                };
+
+                var writer = new BarcodeWriter
+                {
+                    Format = format,
+                    Options = new EncodingOptions
+                    {
+                        Width = width,
+                        Height = height,
+                        Margin = 10,
+                        PureBarcode = false
+                    }
+                };
+                using var bitmap = writer.Write(content);
+                using var image = SKImage.FromBitmap(bitmap);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                return data.ToArray();
+            }
+            catch
+            {
+                return null;
             }
         }
     }

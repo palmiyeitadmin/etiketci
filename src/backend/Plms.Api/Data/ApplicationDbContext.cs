@@ -16,6 +16,8 @@ namespace Plms.Api.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<LabelTemplate> Templates { get; set; }
         public DbSet<LabelTemplateVersion> TemplateVersions { get; set; }
+        public DbSet<ProductTemplate> ProductTemplates { get; set; }
+        public DbSet<PrintIntent> PrintIntents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +54,21 @@ namespace Plms.Api.Data
                 .HasOne(t => t.CurrentActiveVersion)
                 .WithMany()
                 .HasForeignKey(t => t.CurrentActiveVersionId);
+
+            modelBuilder.Entity<ProductTemplate>(entity =>
+            {
+                entity.HasKey(pt => pt.Id);
+                entity.HasOne(pt => pt.Product).WithMany().HasForeignKey(pt => pt.ProductId);
+                entity.HasOne(pt => pt.Template).WithMany().HasForeignKey(pt => pt.TemplateId);
+            });
+
+            modelBuilder.Entity<PrintIntent>(entity =>
+            {
+                entity.HasKey(pi => pi.Id);
+                entity.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId);
+                entity.HasOne(pi => pi.Template).WithMany().HasForeignKey(pi => pi.TemplateId);
+                entity.HasOne(pi => pi.Version).WithMany().HasForeignKey(pi => pi.VersionId);
+            });
         }
     }
 }

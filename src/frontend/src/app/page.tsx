@@ -6,7 +6,7 @@ export default function Home() {
     const { data: session, status } = useSession();
 
     return (
-        <div className="absolute inset-0 flex items-center justify-center p-8">
+        <div className="flex items-center justify-center p-8 min-h-[calc(100vh-64px)]">
             <div className="bg-white p-12 rounded-2xl shadow-xl max-w-2xl text-center space-y-6">
                 <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
                     Palmiye Label Management System <span className="text-blue-600">(PLMS)</span>

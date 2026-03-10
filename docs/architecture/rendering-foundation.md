@@ -24,7 +24,7 @@ Parity is maintained by strictly deriving all layouts from the **Canonical Label
 
 ## Barcode & QR Fidelity
 - **Editor:** Shows real scan-ready previews using `bwip-js`.
-- **PDF:** Currently uses labeled placeholders in the QuestPDF output. *Note: Backend barcode rendering integration is planned for a subsequent sprint.*
+- **PDF:** Uses real high-fidelity rendering for Barcodes (Code128) and QR codes via `ZXing.Net.SkiaSharp`. Bounding boxes and aspect ratios are preserved from the canonical model.
 
 ## Validation Strategy
 - **Golden Samples:** A set of canonical JSON files used to verify that the backend can generate valid PDFs without layout drift.

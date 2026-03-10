@@ -45,4 +45,23 @@ namespace Plms.Api.DTOs.Template
         public string LayoutJson { get; set; } = "{}";
         public string? ChangeNotes { get; set; }
     }
+
+    public class TemplatePreviewDto
+    {
+        public Guid TemplateId { get; set; }
+        public string TemplateName { get; set; } = string.Empty;
+        public string TemplateCode { get; set; } = string.Empty;
+        public Guid VersionId { get; set; }
+        public int VersionNumber { get; set; }
+        public TemplateStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
+        public List<string> Warnings { get; set; } = new();
+    }
+
+    public class ReviewTemplateVersionDto
+    {
+        public bool Approve { get; set; }
+        public string? Comments { get; set; }
+    }
 }

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "@/components/Providers";
+import { GlobalNavigation } from "@/components/GlobalNavigation";
 
 export default function RootLayout({
     children,
@@ -20,7 +21,8 @@ export default function RootLayout({
         <html lang="en">
             <body className={inter.className}>
                 <Providers>
-                    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                    <GlobalNavigation />
+                    <main className="min-h-screen bg-gray-50">
                         {children}
                     </main>
                 </Providers>

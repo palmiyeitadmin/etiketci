@@ -68,8 +68,10 @@ export default function ProductsPage() {
                                     </tr>
                                 ) : (
                                     products.map((p) => (
-                                        <tr key={p.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm">{p.sku}</td>
+                                        <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => window.location.href = `/products/${p.id}`}>
+                                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm">
+                                                <Link href={`/products/${p.id}`} className="text-blue-600 hover:underline">{p.sku}</Link>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">{p.name}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.categoryName || "-"}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.vendorName || "-"}</td>
