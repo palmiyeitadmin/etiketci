@@ -220,5 +220,28 @@ namespace Plms.Api.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
         }
+        [HttpGet("{id}/audit")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> GetIntentAudit(Guid id)
+        {
+            var piExists = await _context.PrintIntents.AnyAsync(p => p.Id == id);
+            if (!piExists) return NotFound(new { success = false, error = "Print intent not found." });
+
+            var logs = await _context.AuditLogs
+                .Where(a => a.EntityId == id.ToString() && a.EntityType == "PrintIntent")
+                .OrderByDescending(a => a.Timestamp)
+                .Select(a => new AuditLogDto
+                {
+                    Id = a.Id,
+                    Timestamp = a.Timestamp,
+                    Action = a.Action,
+                    UserId = a.UserId,
+                    Details = a.Details,
+                    CorrelationId = a.CorrelationId
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, data = logs });
+        }
     }
 }

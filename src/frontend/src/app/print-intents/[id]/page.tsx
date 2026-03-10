@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { PrintIntentDetailDto } from "@/types/operational";
+import { AuditLogDto } from "@/types/audit";
 import Link from "next/link";
 
 export default function PrintIntentHandoffPage() {
@@ -12,6 +13,7 @@ export default function PrintIntentHandoffPage() {
     const router = useRouter();
 
     const [intent, setIntent] = useState<PrintIntentDetailDto | null>(null);
+    const [auditLogs, setAuditLogs] = useState<AuditLogDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +22,12 @@ export default function PrintIntentHandoffPage() {
             const res = await apiFetch<PrintIntentDetailDto>(`/api/PrintIntents/${id}`);
             if (res.success && res.data) {
                 setIntent(res.data);
+
+                // Fetch audit logs conditionally when intent loads
+                const auditRes = await apiFetch<AuditLogDto[]>(`/api/PrintIntents/${id}/audit`);
+                if (auditRes.success && auditRes.data) {
+                    setAuditLogs(auditRes.data);
+                }
             } else {
                 setError((res as any).error?.message || "Failed to load intent.");
             }
@@ -192,6 +200,37 @@ export default function PrintIntentHandoffPage() {
                             </div>
                         </div>
 
+                        {/* Execution Audit Timeline */}
+                        <div className="bg-white border rounded shadow-sm overflow-hidden">
+                            <div className="px-4 py-3 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Execution Audit Timeline</h3>
+                                <span className="text-[10px] text-gray-400">Strict chronological history</span>
+                            </div>
+                            <div className="p-4 bg-gray-50/50">
+                                {auditLogs.length > 0 ? (
+                                    <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-300 before:to-transparent">
+                                        {auditLogs.map((log, index) => (
+                                            <div key={log.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                                <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white bg-blue-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-[0px]">
+                                                    <span className="w-2 h-2 rounded-full bg-white"></span>
+                                                </div>
+                                                <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-3 rounded border bg-white shadow-sm flex flex-col space-y-1">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="font-bold text-xs uppercase text-gray-800">{log.action}</span>
+                                                        <span className="text-[9px] text-gray-400 font-mono tracking-tighter">{new Date(log.timestamp).toLocaleString()}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-600 leading-tight">{log.details}</p>
+                                                    <div className="text-[10px] text-blue-600 font-medium italic">Actor: {log.userId}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-400 italic text-center py-4">No audit logs found for this execution context.</p>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
 
                     {/* Right Column: Actons & Guidance */}
@@ -249,10 +288,19 @@ export default function PrintIntentHandoffPage() {
                                 )}
 
                                 {isReadyForPrint && (
-                                    <div className="bg-green-50 p-3 rounded border border-green-200 text-center mt-4">
-                                        <span className="text-sm font-bold text-green-800 block mb-1">Ready for Print Spooler</span>
-                                        <span className="text-[10px] text-green-700 leading-tight block">
-                                            This intent awaits integration with a physical print queue. (Future Sprint)
+                                    <div className="bg-indigo-50 p-4 rounded border-2 border-indigo-300 text-center mt-4">
+                                        <div className="flex items-center justify-center space-x-2 mb-2">
+                                            <span className="flex h-3 w-3 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                                            </span>
+                                            <span className="text-sm font-black text-indigo-900 tracking-tight uppercase">Ready for Manual Print</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-indigo-800 leading-tight block uppercase tracking-widest border-t border-indigo-200 pt-2 mt-2">
+                                            Handoff Package Scaled and Ready.
+                                        </span>
+                                        <span className="text-[10px] text-indigo-700 block mt-1">
+                                            Waiting for physical manual printer dispatch by operator.
                                         </span>
                                     </div>
                                 )}

@@ -191,5 +191,41 @@ namespace Plms.Tests
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Contains("cannot be cancelled", badRequest.Value?.ToString() ?? "");
         }
+        
+        [Fact]
+        public async Task GetIntentAuditHistory_ReturnsOrderedLogs()
+        {
+            var dbName = Guid.NewGuid().ToString();
+            using var context = GetInMemoryContext(dbName);
+
+            var intentId = Guid.NewGuid();
+            var log1 = new AuditLog { Id = Guid.NewGuid(), EntityId = intentId.ToString(), EntityType = "PrintIntent", Action = "Action1", Timestamp = DateTime.UtcNow.AddMinutes(-5) };
+            var log2 = new AuditLog { Id = Guid.NewGuid(), EntityId = intentId.ToString(), EntityType = "PrintIntent", Action = "Action2", Timestamp = DateTime.UtcNow.AddMinutes(-1) };
+            var otherLog = new AuditLog { Id = Guid.NewGuid(), EntityId = Guid.NewGuid().ToString(), EntityType = "PrintIntent", Action = "ActionOther", Timestamp = DateTime.UtcNow };
+
+            context.PrintIntents.Add(new PrintIntent { Id = intentId, Status = "Pending" });
+            context.AuditLogs.AddRange(log1, log2, otherLog);
+            await context.SaveChangesAsync();
+
+            var controller = CreateController(context);
+            var result = await controller.GetIntentAudit(intentId);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+
+            var successProp = value.GetType().GetProperty("success");
+            var success = (bool)successProp!.GetValue(value, null)!;
+            Assert.True(success);
+
+            var dataProp = value.GetType().GetProperty("data");
+            var data = (System.Collections.Generic.IEnumerable<AuditLogDto>)dataProp!.GetValue(value, null)!;
+            
+            var logs = new System.Collections.Generic.List<AuditLogDto>(data);
+            
+            Assert.Equal(2, logs.Count);
+            Assert.Equal("Action2", logs[0].Action); // most recent first
+            Assert.Equal("Action1", logs[1].Action); 
+        }
     }
 }
