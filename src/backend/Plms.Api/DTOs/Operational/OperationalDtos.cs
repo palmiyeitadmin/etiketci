@@ -41,5 +41,6 @@ namespace Plms.Api.DTOs.Operational
         public string Status { get; set; } = string.Empty;
         public string RequestedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public string? ReadinessSnapshot { get; set; }
     }
 }

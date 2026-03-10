@@ -26,5 +26,8 @@ namespace Plms.Api.Domain.Entities
         public string RequestedBy { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; }
+
+        // Sprint 10 enrichment
+        public string? ReadinessSnapshot { get; set; }
     }
 }

@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
 using Plms.Api.Domain.Entities;
+using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Operational;
+using Plms.Api.Models.Operational;
+using Plms.Api.Services;
+using System.Text.Json;
 
 namespace Plms.Api.Controllers
 {
@@ -12,10 +16,12 @@ namespace Plms.Api.Controllers
     public class PrintIntentsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPreviewReadinessService _readinessService;
 
-        public PrintIntentsController(ApplicationDbContext context)
+        public PrintIntentsController(ApplicationDbContext context, IPreviewReadinessService readinessService)
         {
             _context = context;
+            _readinessService = readinessService;
         }
 
         [HttpGet]
@@ -39,7 +45,8 @@ namespace Plms.Api.Controllers
                     Quantity = pi.Quantity,
                     Status = pi.Status,
                     RequestedBy = pi.RequestedBy,
-                    CreatedAt = pi.CreatedAt
+                    CreatedAt = pi.CreatedAt,
+                    ReadinessSnapshot = pi.ReadinessSnapshot
                 })
                 .ToListAsync();
 
@@ -64,6 +71,13 @@ namespace Plms.Api.Controllers
                 return BadRequest(new { success = false, error = "Only Published template versions can be used for print intents." });
             }
 
+            // Validate Readiness
+            var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
+            if (readiness.Status == ReadinessStatus.Blocked)
+            {
+                return BadRequest(new { success = false, error = "Intent creation blocked.", details = readiness.Errors });
+            }
+
             var pi = new PrintIntent
             {
                 Id = Guid.NewGuid(),
@@ -73,7 +87,8 @@ namespace Plms.Api.Controllers
                 Quantity = dto.Quantity,
                 Status = "Ready",
                 RequestedBy = User.Identity?.Name ?? "System",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ReadinessSnapshot = JsonSerializer.Serialize(readiness)
             };
 
             _context.PrintIntents.Add(pi);

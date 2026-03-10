@@ -6,6 +6,12 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 
+interface VariableResolutionDetail {
+    name: string;
+    status: number; // 0=Resolved, 1=Missing, 2=Unsupported
+    resolvedValue?: string;
+}
+
 interface TemplatePreviewMetadata {
     templateId: string;
     templateName: string;
@@ -20,6 +26,9 @@ interface TemplatePreviewMetadata {
     hasProductContext: boolean;
     productName?: string;
     productSku?: string;
+    readinessStatus: number;
+    readinessErrors: string[];
+    variableDetails: VariableResolutionDetail[];
 }
 
 export default function TemplatePreviewPage() {
@@ -59,6 +68,11 @@ export default function TemplatePreviewPage() {
 
     const handleCreateIntent = async () => {
         if (!metadata || !productId) return;
+
+        if (metadata.readinessStatus === 2) {
+            alert("This template is NOT READY for production. Please fix errors first:\n\n" + metadata.readinessErrors.join("\n"));
+            return;
+        }
 
         const qtyStr = prompt("Enter print quantity:", "1");
         if (qtyStr === null) return;
@@ -132,6 +146,31 @@ export default function TemplatePreviewPage() {
                     {/* Sidebar */}
                     <div className="w-80 bg-white border-r overflow-y-auto p-6 space-y-8">
                         <section>
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Readiness Status</h3>
+                            <div className={`p-4 rounded-lg border flex flex-col space-y-2 ${metadata.readinessStatus === 0 ? 'bg-green-50 border-green-200' :
+                                metadata.readinessStatus === 1 ? 'bg-amber-50 border-amber-200' :
+                                    'bg-red-50 border-red-200'
+                                }`}>
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-lg">
+                                        {metadata.readinessStatus === 0 ? '✅' : metadata.readinessStatus === 1 ? '⚠️' : '❌'}
+                                    </span>
+                                    <span className={`font-bold uppercase tracking-wide text-xs ${metadata.readinessStatus === 0 ? 'text-green-700' :
+                                        metadata.readinessStatus === 1 ? 'text-amber-700' :
+                                            'text-red-700'
+                                        }`}>
+                                        {metadata.readinessStatus === 0 ? 'Ready' : metadata.readinessStatus === 1 ? 'Warning' : 'Blocked'}
+                                    </span>
+                                </div>
+                                {metadata.readinessErrors.length > 0 && (
+                                    <ul className="text-[10px] text-red-600 list-disc pl-3 space-y-1 mt-2">
+                                        {metadata.readinessErrors.map((e, i) => <li key={i}>{e}</li>)}
+                                    </ul>
+                                )}
+                            </div>
+                        </section>
+
+                        <section>
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Operational Context</h3>
                             {metadata.hasProductContext ? (
                                 <div className="bg-blue-50 border border-blue-100 rounded p-3 space-y-2">
@@ -147,16 +186,24 @@ export default function TemplatePreviewPage() {
                         </section>
 
                         <section>
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Required Variables</h3>
-                            {metadata.requiredVariables.length > 0 ? (
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Variable Diagnostics</h3>
+                            {metadata.variableDetails.length > 0 ? (
                                 <div className="space-y-2">
-                                    {metadata.requiredVariables.map(v => (
-                                        <div key={v} className="flex items-center justify-between text-xs p-2 bg-white border rounded">
-                                            <span className="font-mono text-gray-600">{"{{"}{v}{"}}"}</span>
-                                            {metadata.hasProductContext ? (
-                                                <span className="text-green-600 font-bold">✓</span>
-                                            ) : (
-                                                <span className="text-gray-300">?</span>
+                                    {metadata.variableDetails.map(v => (
+                                        <div key={v.name} className="flex flex-col p-2 bg-white border rounded space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-mono text-[10px] text-gray-600">{"{{"}{v.name}{"}}"}</span>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${v.status === 0 ? 'bg-green-100 text-green-700' :
+                                                    v.status === 1 ? 'bg-red-100 text-red-700' :
+                                                        'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {v.status === 0 ? 'Resolved' : v.status === 1 ? 'Missing' : 'Error'}
+                                                </span>
+                                            </div>
+                                            {v.status === 0 && v.resolvedValue && (
+                                                <div className="text-[10px] text-gray-400 truncate italic border-t pt-1 mt-1">
+                                                    Result: <span className="text-gray-900 not-italic">{v.resolvedValue}</span>
+                                                </div>
                                             )}
                                         </div>
                                     ))}

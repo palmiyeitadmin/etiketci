@@ -61,6 +61,11 @@ namespace Plms.Api.DTOs.Template
         public bool HasProductContext { get; set; }
         public string? ProductName { get; set; }
         public string? ProductSku { get; set; }
+        
+        // Sprint 10 additions
+        public Plms.Api.Models.Operational.ReadinessStatus ReadinessStatus { get; set; }
+        public List<string> ReadinessErrors { get; set; } = new();
+        public List<Plms.Api.Models.Operational.VariableResolutionDetail> VariableDetails { get; set; } = new();
     }
 
     public class ReviewTemplateVersionDto

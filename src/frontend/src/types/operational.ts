@@ -23,4 +23,5 @@ export interface PrintIntentDto {
     status: string;
     requestedBy: string;
     createdAt: string;
+    readinessSnapshot?: string;
 }

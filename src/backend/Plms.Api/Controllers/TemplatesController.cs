@@ -18,12 +18,14 @@ namespace Plms.Api.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ILabelRenderService _renderService;
         private readonly IVariableResolutionService _variableService;
+        private readonly IPreviewReadinessService _readinessService;
 
-        public TemplatesController(ApplicationDbContext context, ILabelRenderService renderService, IVariableResolutionService variableService)
+        public TemplatesController(ApplicationDbContext context, ILabelRenderService renderService, IVariableResolutionService variableService, IPreviewReadinessService readinessService)
         {
             _context = context;
             _renderService = renderService;
             _variableService = variableService;
+            _readinessService = readinessService;
         }
 
         [HttpGet]
@@ -345,6 +347,9 @@ namespace Plms.Api.Controllers
             }
             catch { /* ignore parse errors here */ }
 
+            var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
+            var variableDetails = _readinessService.GetVariableDetails(version.LayoutJson, product);
+
             var dto = new TemplatePreviewDto
             {
                 TemplateId = template.Id,
@@ -355,11 +360,14 @@ namespace Plms.Api.Controllers
                 Status = version.Status,
                 CreatedAt = version.CreatedAt,
                 CreatedBy = version.CreatedBy,
-                Warnings = warnings,
+                Warnings = warnings.Concat(readiness.Warnings).Distinct().ToList(),
                 RequiredVariables = requiredVariables,
                 HasProductContext = product != null,
                 ProductName = product?.Name,
-                ProductSku = product?.Sku
+                ProductSku = product?.Sku,
+                ReadinessStatus = readiness.Status,
+                ReadinessErrors = readiness.Errors,
+                VariableDetails = variableDetails
             };
 
             return Ok(new { success = true, data = dto });
