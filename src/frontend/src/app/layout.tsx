@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     description: "Epson-centric Label Management System MVP",
 };
 
+import { Providers } from "@/components/Providers";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -17,9 +19,11 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={inter.className}>
-                <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-                    {children}
-                </main>
+                <Providers>
+                    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                        {children}
+                    </main>
+                </Providers>
             </body>
         </html>
     );

@@ -19,10 +19,10 @@ The `docker-compose.yml` orchestrates backend dependencies:
 
 ## Running the Backend API
 ```bash
-cd src/backend
+cd src/backend/Plms.Api
 dotnet run
 ```
-Runs on `https://localhost:7001` with Swagger at `/swagger`.
+Runs on `http://localhost:8080` with Swagger at `/swagger`.
 
 ## Running the Next.js Frontend
 ```bash
@@ -37,18 +37,23 @@ Both frontend and backend require active `.env` files copied from a maintained `
 
 ### Frontend Requirements (`src/frontend/.env.local`)
 ```properties
-NEXT_PUBLIC_API_URL=https://localhost:7001
+NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=<generate_super_secret_for_local_JWT_session>
 AZURE_AD_CLIENT_ID=<entra_client_id>
 AZURE_AD_TENANT_ID=<entra_common_or_tenant_guid>
 ```
 
-### Backend Requirements (`src/backend/appsettings.Development.json` or env overrides)
+**Docker Compose vs Local Dev Distinction**:
+- The API always binds to `8080` (locally via `launchSettings.json`, and inside Compose via port-forwarding).
+- The Frontend always binds to `3000`.
+- CORS in `.NET` expects the `FrontendUrl` to be `http://localhost:3000` by default.
+
+### Backend Requirements (`src/backend/Plms.Api/appsettings.Development.json` or env overrides)
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=plms;Username=postgres;Password=localpass"
+    "DefaultConnection": "Host=127.0.0.1;Port=5433;Database=plms;Username=postgres;Password=localpass"
   },
   "AzureAd": {
     "Instance": "https://login.microsoftonline.com/",

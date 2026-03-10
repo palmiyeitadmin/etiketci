@@ -11,5 +11,7 @@ namespace Plms.Api.Domain.Entities
         public string EntityType { get; set; } = string.Empty;
         public string Details { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
+        public string CorrelationId { get; set; } = string.Empty;
+        public string Metadata { get; set; } = string.Empty;
     }
 }

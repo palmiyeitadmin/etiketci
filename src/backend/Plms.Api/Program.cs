@@ -36,9 +36,26 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = $"https://login.microsoftonline.com/{builder.Configuration["AzureAd:TenantId"]}";
+        options.Authority = $"https://login.microsoftonline.com/{builder.Configuration["AzureAd:TenantId"]}/v2.0";
         options.Audience = builder.Configuration["AzureAd:ClientId"];
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            RoleClaimType = "roles",
+            NameClaimType = "preferred_username"
+        };
     });
+
+// Authorization (RBAC Policies)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireOperator", policy => policy.RequireRole("Operator", "Admin"));
+    options.AddPolicy("RequireReviewer", policy => policy.RequireRole("Reviewer", "Admin"));
+    options.AddPolicy("RequireViewer", policy => policy.RequireRole("Viewer", "Operator", "Reviewer", "Admin"));
+});
 
 var app = builder.Build();
 
