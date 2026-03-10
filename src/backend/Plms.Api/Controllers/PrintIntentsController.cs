@@ -87,7 +87,7 @@ namespace Plms.Api.Controllers
                 TemplateId = dto.TemplateId,
                 VersionId = dto.VersionId,
                 Quantity = dto.Quantity,
-                Status = "Ready",
+                Status = "Pending",
                 RequestedBy = User.Identity?.Name ?? "System",
                 CreatedAt = DateTime.UtcNow,
                 ReadinessSnapshot = JsonSerializer.Serialize(readiness)
