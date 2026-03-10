@@ -148,5 +148,57 @@ namespace Plms.Api.Controllers
 
             return Ok(new { success = true });
         }
+
+        [HttpPut("{id}/versions/{versionId}")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> UpdateVersion(Guid id, Guid versionId, UpdateTemplateVersionDto dto)
+        {
+            var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
+            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+
+            if (version.Status != TemplateStatus.Draft)
+            {
+                return BadRequest(new { success = false, error = "Only Draft versions can be edited." });
+            }
+
+            // TODO: In Phase J we should validate JSON here
+            version.LayoutJson = dto.LayoutJson;
+            version.ChangeNotes = dto.ChangeNotes;
+            
+            var template = await _context.Templates.FindAsync(id);
+            if (template != null) template.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/revisions")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> CreateRevision(Guid id, [FromQuery] Guid fromVersionId)
+        {
+            var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+
+            var sourceVersion = template.Versions.FirstOrDefault(v => v.Id == fromVersionId);
+            if (sourceVersion == null) return NotFound(new { success = false, error = "Source version not found." });
+
+            var newVersionNumber = template.Versions.Max(v => v.VersionNumber) + 1;
+
+            var newVersion = new LabelTemplateVersion
+            {
+                TemplateId = id,
+                VersionNumber = newVersionNumber,
+                Status = TemplateStatus.Draft,
+                LayoutJson = sourceVersion.LayoutJson,
+                ChangeNotes = $"Revision based on V{sourceVersion.VersionNumber}",
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = User.Identity?.Name ?? "System"
+            };
+
+            _context.TemplateVersions.Add(newVersion);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, data = new { id = newVersion.Id, versionNumber = newVersion.VersionNumber } });
+        }
     }
 }

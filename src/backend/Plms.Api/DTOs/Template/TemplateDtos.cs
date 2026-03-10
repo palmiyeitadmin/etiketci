@@ -39,4 +39,10 @@ namespace Plms.Api.DTOs.Template
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
     }
+
+    public class UpdateTemplateVersionDto
+    {
+        public string LayoutJson { get; set; } = "{}";
+        public string? ChangeNotes { get; set; }
+    }
 }

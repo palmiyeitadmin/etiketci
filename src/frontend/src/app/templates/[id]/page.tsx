@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { LabelTemplate } from "@/types/template";
@@ -9,24 +9,56 @@ import Link from "next/link";
 
 export default function TemplateDetailPage() {
     const { id } = useParams();
+    const router = useRouter();
     const [template, setTemplate] = useState<LabelTemplate | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function load() {
-            try {
-                const res = await apiFetch<LabelTemplate>(`/api/Templates/${id}`);
-                if (res.success && res.data) {
-                    setTemplate(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to load template", err);
-            } finally {
-                setLoading(false);
+    const load = async () => {
+        try {
+            const res = await apiFetch<LabelTemplate>(`/api/Templates/${id}`);
+            if (res.success && res.data) {
+                setTemplate(res.data);
             }
+        } catch (err) {
+            console.error("Failed to load template", err);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
         load();
     }, [id]);
+
+    const handleEdit = () => {
+        if (!template) return;
+        const draft = template.versions?.find(v => v.status === 'Draft');
+        if (draft) {
+            router.push(`/templates/${template.id}/edit`);
+        } else {
+            alert("No Draft version found. Create a New Revision first.");
+        }
+    };
+
+    const handleNewRevision = async () => {
+        if (!template) return;
+        const sourceVersionId = template.currentActiveVersionId || template.versions?.[0]?.id;
+        if (!sourceVersionId) return;
+
+        if (confirm("Create a new Draft revision based on the current version?")) {
+            try {
+                const res = await apiFetch(`/api/Templates/${template.id}/revisions?fromVersionId=${sourceVersionId}`, {
+                    method: 'POST'
+                });
+                if (res.success) {
+                    await load();
+                    router.push(`/templates/${template.id}/edit`);
+                }
+            } catch (err) {
+                alert("Failed to create revision.");
+            }
+        }
+    };
 
     if (loading) return <div className="p-8">Loading...</div>;
     if (!template) return <div className="p-8">Template not found.</div>;
@@ -47,13 +79,20 @@ export default function TemplateDetailPage() {
                     </div>
                     <div className="flex space-x-4">
                         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                            <button className="bg-white border text-gray-700 px-4 py-2 rounded hover:bg-gray-50">
-                                Edit Details
+                            <button
+                                onClick={handleEdit}
+                                className="bg-white border text-gray-700 px-4 py-2 rounded hover:bg-gray-50 flex items-center space-x-2"
+                            >
+                                <span>✎</span>
+                                <span>Edit Draft</span>
                             </button>
                         </RoleGuard>
                         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                            <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                New Version
+                            <button
+                                onClick={handleNewRevision}
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            >
+                                New Revision
                             </button>
                         </RoleGuard>
                     </div>
@@ -87,8 +126,8 @@ export default function TemplateDetailPage() {
                                         <div className="flex justify-between items-center mb-1">
                                             <span className="font-bold text-sm">Version {v.versionNumber}</span>
                                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${v.status === 'Published' ? 'bg-green-100 text-green-800' :
-                                                    v.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-gray-100 text-gray-600'
+                                                v.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {v.status}
                                             </span>
