@@ -92,8 +92,8 @@ export default function PrintIntentHandoffPage() {
 
                     <div className="flex flex-col items-end space-y-2">
                         <span className={`px-4 py-2 rounded font-bold uppercase tracking-widest text-sm border ${isPending ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                                isReadyForPrint ? 'bg-green-100 text-green-800 border-green-300' :
-                                    'bg-gray-100 text-gray-800 border-gray-300'
+                            isReadyForPrint ? 'bg-green-100 text-green-800 border-green-300' :
+                                'bg-gray-100 text-gray-800 border-gray-300'
                             }`}>
                             STATUS: {intent.status}
                         </span>
@@ -126,14 +126,14 @@ export default function PrintIntentHandoffPage() {
 
                         {/* Final Safety Check Panel */}
                         <div className={`border rounded shadow-sm overflow-hidden ${intent.safetyCheck?.status === 0 ? 'bg-green-50 border-green-200' :
-                                intent.safetyCheck?.status === 1 ? 'bg-amber-50 border-amber-200' :
-                                    'bg-red-50 border-red-200'
+                            intent.safetyCheck?.status === 1 ? 'bg-amber-50 border-amber-200' :
+                                'bg-red-50 border-red-200'
                             }`}>
                             <div className="px-4 py-3 bg-white/50 border-b font-bold tracking-wide uppercase text-sm">
                                 Final Safety Check
                                 <span className={`ml-2 px-2 py-0.5 rounded text-[10px] text-white ${intent.safetyCheck?.status === 0 ? 'bg-green-600' :
-                                        intent.safetyCheck?.status === 1 ? 'bg-amber-600' :
-                                            'bg-red-600'
+                                    intent.safetyCheck?.status === 1 ? 'bg-amber-600' :
+                                        'bg-red-600'
                                     }`}>
                                     {intent.safetyCheck?.status === 0 ? 'READY' : intent.safetyCheck?.status === 1 ? 'WARNING' : 'BLOCKED'}
                                 </span>
@@ -163,8 +163,8 @@ export default function PrintIntentHandoffPage() {
                                         <div className="flex space-x-2 text-xs">
                                             <span className="font-bold uppercase">Initial Status:</span>
                                             <span className={`${readinessSnapshot.Status === 0 ? 'text-green-600' :
-                                                    readinessSnapshot.Status === 1 ? 'text-amber-600' :
-                                                        'text-red-600'
+                                                readinessSnapshot.Status === 1 ? 'text-amber-600' :
+                                                    'text-red-600'
                                                 }`}>
                                                 {readinessSnapshot.Status === 0 ? 'Ready' : readinessSnapshot.Status === 1 ? 'Warning' : 'Blocked'}
                                             </span>
@@ -236,18 +236,20 @@ export default function PrintIntentHandoffPage() {
                                                 Handoff disabled. Safety check failed.
                                             </p>
                                         )}
-
-                                        <button
-                                            className="w-full bg-white border border-red-300 text-red-600 font-bold py-2 rounded hover:bg-red-50 text-sm mt-4"
-                                            onClick={handleCancel}
-                                        >
-                                            Cancel Intent
-                                        </button>
                                     </>
                                 )}
 
+                                {(isPending || isReadyForPrint) && (
+                                    <button
+                                        className="w-full bg-white border border-red-300 text-red-600 font-bold py-2 rounded hover:bg-red-50 text-sm mt-4"
+                                        onClick={handleCancel}
+                                    >
+                                        Cancel Intent
+                                    </button>
+                                )}
+
                                 {isReadyForPrint && (
-                                    <div className="bg-green-50 p-3 rounded border border-green-200 text-center">
+                                    <div className="bg-green-50 p-3 rounded border border-green-200 text-center mt-4">
                                         <span className="text-sm font-bold text-green-800 block mb-1">Ready for Print Spooler</span>
                                         <span className="text-[10px] text-green-700 leading-tight block">
                                             This intent awaits integration with a physical print queue. (Future Sprint)
