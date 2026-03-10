@@ -48,7 +48,7 @@ export default function PrintIntentHandoffPage() {
         try {
             const res = await apiFetch(`/api/PrintIntents/${id}/handoff`, { method: 'POST' });
             if (res.success) {
-                alert("Intent approved and ready for manual print dispatch.");
+                alert("Intent approved and ready for operator-controlled printing.");
                 loadIntent(); // refresh state
             } else {
                 alert("Handoff failed: " + ((res as any).error?.message || "Unknown error"));
@@ -294,13 +294,13 @@ export default function PrintIntentHandoffPage() {
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
                                             </span>
-                                            <span className="text-sm font-black text-indigo-900 tracking-tight uppercase">Ready for Manual Print</span>
+                                            <span className="text-sm font-black text-indigo-900 tracking-tight uppercase">Ready for Operator Handoff</span>
                                         </div>
                                         <span className="text-xs font-bold text-indigo-800 leading-tight block uppercase tracking-widest border-t border-indigo-200 pt-2 mt-2">
-                                            Handoff Package Scaled and Ready.
+                                            Prepared PDF Scaled and Ready.
                                         </span>
                                         <span className="text-[10px] text-indigo-700 block mt-1">
-                                            Waiting for physical manual printer dispatch by operator.
+                                            Awaiting manual print action by operator. Actual print execution is not performed by PLMS.
                                         </span>
                                     </div>
                                 )}
