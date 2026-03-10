@@ -5,6 +5,9 @@ using Plms.Api.Data;
 using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Template;
+using Plms.Api.Models.Canonical;
+using Plms.Api.Services;
+using System.Text.Json;
 
 namespace Plms.Api.Controllers
 {
@@ -13,10 +16,12 @@ namespace Plms.Api.Controllers
     public class TemplatesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILabelRenderService _renderService;
 
-        public TemplatesController(ApplicationDbContext context)
+        public TemplatesController(ApplicationDbContext context, ILabelRenderService renderService)
         {
             _context = context;
+            _renderService = renderService;
         }
 
         [HttpGet]
@@ -199,6 +204,27 @@ namespace Plms.Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = new { id = newVersion.Id, versionNumber = newVersion.VersionNumber } });
+        }
+
+        [HttpGet("{id}/versions/{versionId}/preview")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> GetPreview(Guid id, Guid versionId)
+        {
+            var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
+            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+
+            try
+            {
+                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(version.LayoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (model == null) return BadRequest(new { success = false, error = "Invalid layout JSON." });
+
+                var pdf = _renderService.GeneratePdf(model);
+                return File(pdf, "application/pdf", $"template_{id}_{version.VersionNumber}.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, error = "Failed to render PDF: " + ex.Message });
+            }
         }
     }
 }

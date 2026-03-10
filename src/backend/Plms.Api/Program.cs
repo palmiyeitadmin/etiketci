@@ -15,6 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IProductImportService, ProductImportService>();
+builder.Services.AddScoped<ILabelRenderService, LabelRenderService>();
 
 // EF Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

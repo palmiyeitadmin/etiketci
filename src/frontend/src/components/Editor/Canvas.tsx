@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { CanonicalLabelModel, LabelElement } from '@/types/canvas';
-import { UnitConverter } from '@/lib/unit-converter';
+import { UnitConverter, ScreenPreviewProfile } from '@/lib/unit-converter';
+import { BarcodeRenderer } from './BarcodeRenderer';
 
 interface CanvasProps {
     model: CanonicalLabelModel;
@@ -17,8 +18,8 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [dragElement, setDragElement] = useState<LabelElement | null>(null);
 
-    const canvasWidthPx = UnitConverter.mmToPx(model.dimensions.widthMm) * zoom;
-    const canvasHeightPx = UnitConverter.mmToPx(model.dimensions.heightMm) * zoom;
+    const canvasWidthPx = UnitConverter.mmToProfile(model.dimensions.widthMm, ScreenPreviewProfile, zoom);
+    const canvasHeightPx = UnitConverter.mmToProfile(model.dimensions.heightMm, ScreenPreviewProfile, zoom);
 
     const handleMouseDown = (e: React.MouseEvent, element: LabelElement, mode: 'move' | 'resize' = 'move') => {
         e.stopPropagation();
@@ -33,8 +34,8 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
 
         const dx = (e.clientX - dragStart.x) / zoom;
         const dy = (e.clientY - dragStart.y) / zoom;
-        const dxMm = UnitConverter.pxToMm(dx);
-        const dyMm = UnitConverter.pxToMm(dy);
+        const dxMm = UnitConverter.profileToMm(dx, ScreenPreviewProfile, 1);
+        const dyMm = UnitConverter.profileToMm(dy, ScreenPreviewProfile, 1);
 
         if (dragMode === 'move') {
             onUpdateElement(dragElement.id, {
@@ -70,7 +71,7 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
                 width: canvasWidthPx,
                 height: canvasHeightPx,
                 backgroundImage: 'radial-gradient(#ccc 1px, transparent 1px)',
-                backgroundSize: `${UnitConverter.mmToPx(5) * zoom}px ${UnitConverter.mmToPx(5) * zoom}px`
+                backgroundSize: `${UnitConverter.mmToProfile(5, ScreenPreviewProfile, zoom)}px ${UnitConverter.mmToProfile(5, ScreenPreviewProfile, zoom)}px`
             }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -78,10 +79,10 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
             onClick={() => onSelect(null)}
         >
             {model.elements.map((el) => {
-                const left = UnitConverter.mmToPx(el.xMm) * zoom;
-                const top = UnitConverter.mmToPx(el.yMm) * zoom;
-                const width = UnitConverter.mmToPx(el.widthMm) * zoom;
-                const height = UnitConverter.mmToPx(el.heightMm) * zoom;
+                const left = UnitConverter.mmToProfile(el.xMm, ScreenPreviewProfile, zoom);
+                const top = UnitConverter.mmToProfile(el.yMm, ScreenPreviewProfile, zoom);
+                const width = UnitConverter.mmToProfile(el.widthMm, ScreenPreviewProfile, zoom);
+                const height = UnitConverter.mmToProfile(el.heightMm, ScreenPreviewProfile, zoom);
                 const isSelected = selectedId === el.id;
 
                 return (
@@ -99,19 +100,19 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
                                 </div>
                             )}
                             {el.type === 'rect' && (
-                                <div className="w-full h-full" style={{ backgroundColor: el.fill || '#eee', border: `${el.strokeWidthMm ? UnitConverter.mmToPx(el.strokeWidthMm) * zoom : 1}px solid ${el.stroke || '#000'}` }}></div>
+                                <div className="w-full h-full" style={{ backgroundColor: el.fill || '#eee', border: `${el.strokeWidthMm ? UnitConverter.mmToProfile(el.strokeWidthMm, ScreenPreviewProfile, zoom) : 1}px solid ${el.stroke || '#000'}` }}></div>
                             )}
                             {el.type === 'line' && (
                                 <div className="w-full bg-black" style={{ height: `${(el.strokeWidthMm || 0.5) * zoom}mm` }}></div>
                             )}
                             {(el.type === 'barcode' || el.type === 'qr') && (
-                                <div className="w-full h-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center bg-gray-50 opacity-80 p-1">
-                                    <span className="text-[8px] font-bold uppercase text-gray-400">{el.type}</span>
-                                    <div className="w-full flex-1 flex flex-col justify-center space-y-1">
-                                        {[...Array(4)].map((_, i) => <div key={i} className={`h-full bg-gray-200 ${el.type === 'qr' ? 'w-full' : 'w-full'}`} style={{ height: el.type === 'qr' ? '12.5%' : 'inherit' }}></div>)}
-                                    </div>
-                                    <span className="text-[9px] text-gray-600 truncate w-full text-center font-mono">{el.content}</span>
-                                </div>
+                                <BarcodeRenderer
+                                    type={el.type}
+                                    barcodeType={el.barcodeType}
+                                    content={el.content}
+                                    widthPx={width}
+                                    heightPx={height}
+                                />
                             )}
                             {el.type === 'image' && (
                                 <div className="w-full h-full bg-blue-50 flex items-center justify-center border border-blue-100">

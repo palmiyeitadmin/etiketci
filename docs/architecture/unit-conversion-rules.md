@@ -3,21 +3,20 @@
 ## The Source of Truth
 The physical dimension of the label paper is the absolute truth. Therefore, the standard unit of measurement across the PLMS domain is **millimeters (mm)**.
 
-## The Conversions
-- **Editor Dimensions:** The UI must display the label visually. Web browsers use CSS Pixels.
-- **Conversion Math:** 
-  `Pixels = (Millimeters / 25.4) * DPI`
-- **Standard UI DPI:** 96 (standard CSS scaling).
-- **Zoom Factor:** The UI should maintain a logical coordinate system separate from screen zoom. E.g. `RenderSize = Pixels * ZoomMap`.
+## Render Profiles
+Instead of a single fixed conversion, the system now utilizes **Render Profiles** to handle different targets:
+- **ScreenPreviewProfile (96 DPI)**: For frontend canvas display. `roundToGrid: true` by default.
+- **PdfRenderProfile (72 DPI)**: For QuestPDF generation. `roundToGrid: false`.
+- **PrinterProfile (1200 DPI)**: For future industrial print command generation.
 
-## UnitConverter.ts
-A robust, thoroughly tested `UnitConverter` utility must exist in the frontend. It should provide:
-- `mmToPx(mm: number): number`
-- `pxToMm(px: number): number`
-- `ptToPx(pt: number): number` (For Font Sizes, usually `1pt = 1.333px`)
-
-**DO NOT** scatter `* 3.779` magic numbers throughout the React components.
+## UnitConverter
+The `UnitConverter` utility handles these conversions centrally:
+- `mmToProfile(mm, profile, zoom)`: mm to target (px/pt/dots).
+- `profileToMm(value, profile, zoom)`: target to mm.
+- `snapToGrid(value, snapMm)`: Enforces configurable manual grid snapping.
+- `toPersisted(value)`: Normalizes mm values to 2 decimal places for JSON storage.
 
 ## PDF Generation 
-The backend must do the corresponding conversion when writing to the PDF format, translating mm to PDF points (typically 72 points per inch).
+The backend implements the corresponding profile rules when writing to the PDF format, translating mm to PDF points (typically 72 points per inch).
 `Points = (Millimeters / 25.4) * 72`
+QuestPDF rendering logic in `LabelRenderService` must follow the `PdfRenderProfile` expectations.

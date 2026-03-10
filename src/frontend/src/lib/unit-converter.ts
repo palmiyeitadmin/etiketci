@@ -1,45 +1,59 @@
 /**
- * Centralized UnitConverter for PLMS.
- * Source of truth for geometry persistence is always Millimeters (mm).
+ * Renderer Profiles define context-specific expectations for resolution, scaling, and snapping.
  */
 
-export const SCREEN_DPI = 96;
-export const PRINTER_DPI = 1200; // Epson CW-C4000e standard
+export interface RenderProfile {
+    dpi: number;
+    roundToGrid: boolean;
+    defaultSnapMm?: number;
+}
+
+export const ScreenPreviewProfile: RenderProfile = {
+    dpi: 96,
+    roundToGrid: true,
+    defaultSnapMm: 1.0
+};
+
+export const PdfRenderProfile: RenderProfile = {
+    dpi: 72, // Standard PDF points per inch
+    roundToGrid: false
+};
+
+export const PrinterProfile: RenderProfile = {
+    dpi: 1200, // Epson CW-C4000e standard
+    roundToGrid: true
+};
+
 export const MM_PER_INCH = 25.4;
 
 export const UnitConverter = {
     /**
-     * Converts millimeters to screen pixels at 96 DPI.
+     * Converts millimeters to target profile pixels/points.
      */
-    mmToPx(mm: number): number {
-        return (mm * SCREEN_DPI) / MM_PER_INCH;
+    mmToProfile(mm: number, profile: RenderProfile, zoom: number = 1): number {
+        const value = (mm * profile.dpi) / MM_PER_INCH * zoom;
+        return profile.roundToGrid ? Math.round(value) : value;
     },
 
     /**
-     * Converts screen pixels back to millimeters at 96 DPI.
+     * Converts target profile pixels/points to millimeters.
      */
-    pxToMm(px: number): number {
-        return (px * MM_PER_INCH) / SCREEN_DPI;
+    profileToMm(value: number, profile: RenderProfile, zoom: number = 1): number {
+        return (value * MM_PER_INCH) / (profile.dpi * zoom);
     },
 
     /**
-     * Converts millimeters to printer dots at 1200 DPI.
+     * Snaps a value to a specified grid.
      */
-    mmToDot(mm: number): number {
-        return Math.round((mm * PRINTER_DPI) / MM_PER_INCH);
+    snapToGrid(value: number, snapMm: number): number {
+        if (snapMm <= 0) return value;
+        return Math.round(value / snapMm) * snapMm;
     },
 
     /**
-     * Formats a number to a fixed precision for persistence.
+     * Enforces strict two-decimal precision for canonical storage.
      */
-    toPersisted(value: number): number {
-        return Math.round(value * 100) / 100; // 2 decimal places for mm
-    },
-
-    /**
-     * Snaps a value to a grid (in mm).
-     */
-    snapToGrid(value: number, gridStepMm: number = 1): number {
-        return Math.round(value / gridStepMm) * gridStepMm;
+    toPersisted(valueMm: number): number {
+        return Math.round(valueMm * 100) / 100;
     }
 };
