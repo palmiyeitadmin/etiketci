@@ -19,7 +19,7 @@ namespace Plms.Api.Domain.Entities
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Ready";
+        public string Status { get; set; } = "Pending";
 
         [Required]
         [MaxLength(100)]
@@ -29,5 +29,11 @@ namespace Plms.Api.Domain.Entities
 
         // Sprint 10 enrichment
         public string? ReadinessSnapshot { get; set; }
+
+        // Sprint 11 enrichment
+        public DateTime? OperatorReviewedAt { get; set; }
+        
+        [MaxLength(100)]
+        public string? OperatorReviewedBy { get; set; }
     }
 }

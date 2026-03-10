@@ -25,3 +25,15 @@ export interface PrintIntentDto {
     createdAt: string;
     readinessSnapshot?: string;
 }
+
+export interface FinalSafetyCheckResult {
+    isSafe: boolean;
+    status: number; // 0=Ready, 1=Warning, 2=Blocked
+    messages: string[];
+}
+
+export interface PrintIntentDetailDto extends PrintIntentDto {
+    operatorReviewedAt?: string;
+    operatorReviewedBy?: string;
+    safetyCheck?: FinalSafetyCheckResult;
+}

@@ -17,11 +17,13 @@ namespace Plms.Api.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IPreviewReadinessService _readinessService;
+        private readonly IFinalSafetyCheckService _safetyService;
 
-        public PrintIntentsController(ApplicationDbContext context, IPreviewReadinessService readinessService)
+        public PrintIntentsController(ApplicationDbContext context, IPreviewReadinessService readinessService, IFinalSafetyCheckService safetyService)
         {
             _context = context;
             _readinessService = readinessService;
+            _safetyService = safetyService;
         }
 
         [HttpGet]
@@ -108,6 +110,115 @@ namespace Plms.Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = new { id = pi.Id } });
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> GetPrintIntent(Guid id)
+        {
+            var pi = await _context.PrintIntents
+                .Include(p => p.Product)
+                .Include(p => p.Template)
+                .Include(p => p.Version)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
+
+            var dto = new PrintIntentDetailDto
+            {
+                Id = pi.Id,
+                ProductId = pi.ProductId,
+                ProductName = pi.Product!.Name,
+                TemplateId = pi.TemplateId,
+                TemplateName = pi.Template!.Name,
+                VersionId = pi.VersionId,
+                VersionNumber = pi.Version!.VersionNumber,
+                Quantity = pi.Quantity,
+                Status = pi.Status,
+                RequestedBy = pi.RequestedBy,
+                CreatedAt = pi.CreatedAt,
+                ReadinessSnapshot = pi.ReadinessSnapshot,
+                OperatorReviewedAt = pi.OperatorReviewedAt,
+                OperatorReviewedBy = pi.OperatorReviewedBy,
+                SafetyCheck = safetyCheck
+            };
+
+            return Ok(new { success = true, data = dto });
+        }
+
+        [HttpPost("{id}/handoff")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> ApproveHandoff(Guid id)
+        {
+            var pi = await _context.PrintIntents
+                .Include(p => p.Product)
+                .Include(p => p.Template)
+                .Include(p => p.Version)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            if (pi.Status != "Pending")
+            {
+                return BadRequest(new { success = false, error = $"Intent cannot be approved because it is in '{pi.Status}' state." });
+            }
+
+            var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
+            if (!safetyCheck.IsSafe)
+            {
+                return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
+            }
+
+            pi.Status = "ReadyForPrint";
+            pi.OperatorReviewedAt = DateTime.UtcNow;
+            pi.OperatorReviewedBy = User.Identity?.Name ?? "System";
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "PrintIntentHandoffApproved",
+                EntityId = pi.Id.ToString(),
+                EntityType = "PrintIntent",
+                UserId = pi.OperatorReviewedBy,
+                Details = "Operator confirmed readiness. Intent is now ReadyForPrint.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/cancel")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> CancelIntent(Guid id)
+        {
+            var pi = await _context.PrintIntents.FindAsync(id);
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            if (pi.Status != "Pending" && pi.Status != "ReadyForPrint")
+            {
+                return BadRequest(new { success = false, error = $"Intent cannot be cancelled from '{pi.Status}' state." });
+            }
+
+            pi.Status = "Cancelled";
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "PrintIntentCancelled",
+                EntityId = pi.Id.ToString(),
+                EntityType = "PrintIntent",
+                UserId = User.Identity?.Name ?? "System",
+                Details = "Intent cancelled by operator.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
         }
     }
 }

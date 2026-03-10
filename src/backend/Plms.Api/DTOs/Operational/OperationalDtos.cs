@@ -42,5 +42,13 @@ namespace Plms.Api.DTOs.Operational
         public string RequestedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? ReadinessSnapshot { get; set; }
+        
+        public DateTime? OperatorReviewedAt { get; set; }
+        public string? OperatorReviewedBy { get; set; }
+    }
+
+    public class PrintIntentDetailDto : PrintIntentDto
+    {
+        public Plms.Api.Services.FinalSafetyCheckResult? SafetyCheck { get; set; }
     }
 }

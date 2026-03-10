@@ -9,7 +9,6 @@ import Link from "next/link";
 export default function PrintIntentsPage() {
     const [intents, setIntents] = useState<PrintIntentDto[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedIntent, setSelectedIntent] = useState<PrintIntentDto | null>(null);
 
     useEffect(() => {
         async function load() {
@@ -65,8 +64,12 @@ export default function PrintIntentsPage() {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{intent.templateName}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">V{intent.versionNumber}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center font-bold text-blue-600">{intent.quantity}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold uppercase">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${intent.status === 'ReadyForPrint' ? 'bg-green-100 text-green-800' :
+                                                    intent.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                                        intent.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                    }`}>
                                                     {intent.status}
                                                 </span>
                                             </td>
@@ -75,75 +78,18 @@ export default function PrintIntentsPage() {
                                                 {new Date(intent.createdAt).toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => setSelectedIntent(intent)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                <Link
+                                                    href={`/print-intents/${intent.id}`}
+                                                    className="text-blue-600 hover:text-blue-900 font-bold"
                                                 >
-                                                    Audit Log
-                                                </button>
+                                                    Open Shell
+                                                </Link>
                                             </td>
                                         </tr>
                                     ))
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                )}
-
-                {/* Audit Modal */}
-                {selectedIntent && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-                            <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                                <div>
-                                    <h2 className="text-lg font-bold">Readiness Audit Log</h2>
-                                    <p className="text-xs text-gray-500">Intent ID: {selectedIntent.id}</p>
-                                </div>
-                                <button
-                                    onClick={() => setSelectedIntent(null)}
-                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                            <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="bg-gray-50 p-3 rounded border">
-                                        <div className="text-[10px] uppercase text-gray-400 font-bold mb-1">Product</div>
-                                        <div className="font-bold">{selectedIntent.productName}</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-3 rounded border">
-                                        <div className="text-[10px] uppercase text-gray-400 font-bold mb-1">Template</div>
-                                        <div className="font-bold">{selectedIntent.templateName} (V{selectedIntent.versionNumber})</div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Persisted Readiness Snapshot</h3>
-                                    {selectedIntent.readinessSnapshot ? (
-                                        <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto">
-                                            <pre>{JSON.stringify(JSON.parse(selectedIntent.readinessSnapshot), null, 2)}</pre>
-                                        </div>
-                                    ) : (
-                                        <div className="text-gray-500 italic text-sm p-4 bg-gray-50 rounded border border-dashed">
-                                            No readiness snapshot recorded for this intent.
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-blue-800 italic">
-                                    This snapshot captures the exact validation state at the moment the print intent was created.
-                                </div>
-                            </div>
-                            <div className="p-4 border-t bg-gray-50 rounded-b-xl flex justify-end">
-                                <button
-                                    onClick={() => setSelectedIntent(null)}
-                                    className="bg-white border text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-100 text-sm font-bold"
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>
