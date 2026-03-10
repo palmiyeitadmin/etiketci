@@ -43,12 +43,12 @@ export default function PrintIntentHandoffPage() {
     }, [id]);
 
     const handleHandoff = async () => {
-        if (!confirm("Are you sure you want to approve this intent for print execution?")) return;
+        if (!confirm("Are you sure you want to approve this intent for manual handoff?")) return;
 
         try {
             const res = await apiFetch(`/api/PrintIntents/${id}/handoff`, { method: 'POST' });
             if (res.success) {
-                alert("Intent approved and ready for print.");
+                alert("Intent approved and ready for manual print dispatch.");
                 loadIntent(); // refresh state
             } else {
                 alert("Handoff failed: " + ((res as any).error?.message || "Unknown error"));
