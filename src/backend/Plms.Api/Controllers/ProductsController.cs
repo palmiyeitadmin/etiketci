@@ -11,7 +11,6 @@ namespace Plms.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "RequireOperator")] 
     public class ProductsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -24,6 +23,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetProducts()
         {
             var items = await _context.Products
@@ -49,6 +49,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetProduct(Guid id)
         {
             var p = await _context.Products
@@ -82,6 +83,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> CreateProduct(CreateProductDto dto)
         {
             if (await _context.Products.AnyAsync(p => p.Sku == dto.Sku))
@@ -112,6 +114,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> UpdateProduct(Guid id, UpdateProductDto dto)
         {
             var p = await _context.Products.FindAsync(id);
@@ -133,6 +136,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("import/dry-run")]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> ImportDryRun(IFormFile file)
         {
             if (file == null || file.Length == 0)

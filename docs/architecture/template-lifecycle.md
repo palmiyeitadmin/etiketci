@@ -11,21 +11,15 @@ Templates govern the visual layout. Because printed physical goods rely on them,
 - `Deprecated`: Replaced by a newer version. Used only to view historical print jobs.
 - `Archived`: Soft-deleted.
 
-## Immutability Rule
-Once a Template crosses into `Published`, its underlying Canonical Layout JSON is frozen. 
-If an edit is required, the user "Creates New Version", which copies the JSON into a new `Draft` associated with the exact same parent `TemplateId`, but a new incremented `VersionNumber`.
+## Finalized State Model
+The implementation follows the finite state machine defined in [Template Domain Architecture](./template-domain.md).
 
-## Database Schema Model (Conceptual)
-```
-Table: Templates
-- Id (UUID)
-- Name
-- CurrentActiveVersionId
+### Immutability Rule
+Once a Template version reaches `Published`, it can no longer be edited. 
+1. User clicks "New Version".
+2. System clones the layout to a new `Draft` with `VersionNumber++`.
 
-Table: TemplateVersions
-- Id (UUID)
-- TemplateId (UUID, FK)
-- VersionNumber (Int)
-- Status (String/Enum)
-- LayoutJson (JSONB)
-```
+### Database Schema (Implemented)
+- `Templates` table: Stores metadata and current active pointer.
+- `TemplateVersions` table: Stores `LayoutJson` and historical status.
+

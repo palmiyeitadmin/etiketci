@@ -9,7 +9,6 @@ namespace Plms.Api.Controllers
 {
     [ApiController]
     [Route("api/categories")]
-    [Authorize(Policy = "RequireOperator")] 
     public class ProductCategoriesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -20,6 +19,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetCategories()
         {
             var items = await _context.ProductCategories
@@ -36,6 +36,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetCategory(Guid id)
         {
             var cat = await _context.ProductCategories.FindAsync(id);
@@ -59,6 +60,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> CreateCategory(CreateProductCategoryDto dto)
         {
             if (await _context.ProductCategories.AnyAsync(c => c.Code == dto.Code))
@@ -90,6 +92,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> UpdateCategory(Guid id, UpdateProductCategoryDto dto)
         {
             var cat = await _context.ProductCategories.FindAsync(id);

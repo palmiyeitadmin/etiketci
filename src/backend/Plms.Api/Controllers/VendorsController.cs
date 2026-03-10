@@ -9,7 +9,6 @@ namespace Plms.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "RequireOperator")] // Operators and Admins can manage Vendors
     public class VendorsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -20,6 +19,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetVendors()
         {
             var vendors = await _context.Vendors
@@ -36,6 +36,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetVendor(Guid id)
         {
             var vendor = await _context.Vendors.FindAsync(id);
@@ -59,6 +60,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> CreateVendor(CreateVendorDto dto)
         {
             if (await _context.Vendors.AnyAsync(v => v.Code == dto.Code))
@@ -90,6 +92,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> UpdateVendor(Guid id, UpdateVendorDto dto)
         {
             var vendor = await _context.Vendors.FindAsync(id);

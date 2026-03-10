@@ -1,4 +1,6 @@
 // src/lib/api-client.ts
+import { getSession } from "next-auth/react";
+import { v4 as uuidv4 } from "uuid";
 
 export type ApiResponse<T> = {
   success: true;
@@ -27,13 +29,18 @@ export async function apiFetch<T>(
   try {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    // In a real implementation with MSAL, you would inject the Bearer token here
-    // const token = await getAccessToken();
-    const headers = {
+    const session: any = typeof window !== "undefined" ? await getSession() : null;
+    const token = session?.accessToken;
+
+    const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      // 'Authorization': `Bearer ${token}`,
+      'x-correlation-id': (options.headers as any)?.['x-correlation-id'] || uuidv4(),
       ...options.headers,
     };
+
+    if (token) {
+      (headers as any)['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch(url, { ...options, headers });
     const json = await response.json();
