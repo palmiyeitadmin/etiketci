@@ -11,6 +11,9 @@ namespace Plms.Api.Data
         }
 
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Vendor> Vendors { get; set; }
+        public DbSet<ProductCategory> ProductCategories { get; set; }
+        public DbSet<Product> Products { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -21,6 +24,18 @@ namespace Plms.Api.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
             });
+
+            modelBuilder.Entity<Vendor>()
+                .HasIndex(v => v.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<ProductCategory>()
+                .HasIndex(c => c.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Sku)
+                .IsUnique();
         }
     }
 }

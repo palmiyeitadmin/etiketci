@@ -65,5 +65,7 @@ AZURE_AD_TENANT_ID=<entra_common_or_tenant_guid>
 ```
 **Local Secrets Guidance:** Never track connection strings or Tenant IDs in `.git`. `appsettings.Development.json` or `.env` handles local state entirely.
 
+**Strict Auth Requirement:** PLMS strictly requires a real Microsoft Entra ID Tenant for local development. "Fake auth" or mock JWT generation is not supported. You must provision an App Registration in your MS Developer Tenant and populate the `.env.local` and `appsettings.Development.json` values to test the application.
+
 ## Seed Data
 EF Core migrations include basic seed data (one `Admin` Role, one default `Template`). Keep migrations clean.
