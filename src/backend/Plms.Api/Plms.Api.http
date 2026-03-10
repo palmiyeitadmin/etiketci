@@ -1,0 +1,6 @@
+@Plms.Api_HostAddress = http://localhost:5075
+
+GET {{Plms.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
