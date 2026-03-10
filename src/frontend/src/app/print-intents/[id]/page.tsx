@@ -43,12 +43,12 @@ export default function PrintIntentHandoffPage() {
     }, [id]);
 
     const handleHandoff = async () => {
-        if (!confirm("Are you sure you want to approve this intent for manual handoff?")) return;
+        if (!confirm("Are you sure you want to confirm manual handoff?")) return;
 
         try {
             const res = await apiFetch(`/api/PrintIntents/${id}/handoff`, { method: 'POST' });
             if (res.success) {
-                alert("Intent approved and ready for operator-controlled printing.");
+                alert("Intent marked ready for manual handoff.");
                 loadIntent(); // refresh state
             } else {
                 alert("Handoff failed: " + ((res as any).error?.message || "Unknown error"));
@@ -74,7 +74,7 @@ export default function PrintIntentHandoffPage() {
         }
     };
 
-    if (loading) return <div className="p-8">Loading Execution Shell...</div>;
+    if (loading) return <div className="p-8">Loading Intent Shell...</div>;
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-200 rounded">{error}</div>;
     if (!intent) return <div className="p-8">Intent not found.</div>;
 
@@ -200,10 +200,10 @@ export default function PrintIntentHandoffPage() {
                             </div>
                         </div>
 
-                        {/* Execution Audit Timeline */}
+                        {/* Audit History */}
                         <div className="bg-white border rounded shadow-sm overflow-hidden">
                             <div className="px-4 py-3 border-b bg-gray-50 flex justify-between items-center">
-                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Execution Audit Timeline</h3>
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Audit History</h3>
                                 <span className="text-[10px] text-gray-400">Strict chronological history</span>
                             </div>
                             <div className="p-4 bg-gray-50/50">
@@ -226,7 +226,7 @@ export default function PrintIntentHandoffPage() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-gray-400 italic text-center py-4">No audit logs found for this execution context.</p>
+                                    <p className="text-xs text-gray-400 italic text-center py-4">No audit history available for this print intent.</p>
                                 )}
                             </div>
                         </div>
@@ -238,7 +238,7 @@ export default function PrintIntentHandoffPage() {
 
                         <div className="bg-white border rounded shadow-sm">
                             <div className="px-4 py-3 border-b bg-gray-50">
-                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Execution Parameters</h3>
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Intent Parameters</h3>
                             </div>
                             <div className="p-6 flex flex-col items-center justify-center space-y-2">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase">Quantity</span>
@@ -267,7 +267,7 @@ export default function PrintIntentHandoffPage() {
                                             disabled={!isSafeToHandoff}
                                             onClick={handleHandoff}
                                         >
-                                            Approve Handoff
+                                            Confirm Handoff
                                         </button>
 
                                         {!isSafeToHandoff && (
@@ -297,7 +297,7 @@ export default function PrintIntentHandoffPage() {
                                             <span className="text-sm font-black text-indigo-900 tracking-tight uppercase">Ready for Operator Handoff</span>
                                         </div>
                                         <span className="text-xs font-bold text-indigo-800 leading-tight block uppercase tracking-widest border-t border-indigo-200 pt-2 mt-2">
-                                            Prepared PDF Scaled and Ready.
+                                            Prepared PDF available for manual print handling.
                                         </span>
                                         <span className="text-[10px] text-indigo-700 block mt-1">
                                             Awaiting manual print action by operator. Actual print execution is not performed by PLMS.

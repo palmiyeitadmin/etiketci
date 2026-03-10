@@ -224,8 +224,8 @@ namespace Plms.Tests
             var logs = new System.Collections.Generic.List<AuditLogDto>(data);
             
             Assert.Equal(2, logs.Count);
-            Assert.Equal("Action2", logs[0].Action); // most recent first
-            Assert.Equal("Action1", logs[1].Action); 
+            Assert.Equal("Action1", logs[0].Action); // oldest first
+            Assert.Equal("Action2", logs[1].Action); 
         }
     }
 }

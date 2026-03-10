@@ -229,7 +229,7 @@ namespace Plms.Api.Controllers
 
             var logs = await _context.AuditLogs
                 .Where(a => a.EntityId == id.ToString() && a.EntityType == "PrintIntent")
-                .OrderByDescending(a => a.Timestamp)
+                .OrderBy(a => a.Timestamp)
                 .Select(a => new AuditLogDto
                 {
                     Id = a.Id,
