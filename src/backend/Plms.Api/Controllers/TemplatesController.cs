@@ -17,11 +17,13 @@ namespace Plms.Api.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILabelRenderService _renderService;
+        private readonly IVariableResolutionService _variableService;
 
-        public TemplatesController(ApplicationDbContext context, ILabelRenderService renderService)
+        public TemplatesController(ApplicationDbContext context, ILabelRenderService renderService, IVariableResolutionService variableService)
         {
             _context = context;
             _renderService = renderService;
+            _variableService = variableService;
         }
 
         [HttpGet]
@@ -293,7 +295,7 @@ namespace Plms.Api.Controllers
 
         [HttpGet("{id}/versions/{versionId}/preview-metadata")]
         [Authorize(Policy = "RequireViewer")]
-        public async Task<IActionResult> GetPreviewMetadata(Guid id, Guid versionId)
+        public async Task<IActionResult> GetPreviewMetadata(Guid id, Guid versionId, [FromQuery] Guid? productId)
         {
             var template = await _context.Templates
                 .Include(t => t.Versions.Where(v => v.Id == versionId))
@@ -304,10 +306,32 @@ namespace Plms.Api.Controllers
             var version = template.Versions.FirstOrDefault();
             if (version == null) return NotFound(new { success = false, error = "Version not found." });
 
+            Product? product = null;
+            if (productId.HasValue)
+            {
+                product = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Vendor)
+                    .FirstOrDefaultAsync(p => p.Id == productId.Value);
+            }
+
             var warnings = new List<string>();
+            var requiredVariables = _variableService.GetRequiredVariables(version.LayoutJson).ToList();
+
+            if (productId.HasValue && product == null)
+            {
+                warnings.Add("Product context requested but product not found.");
+            }
+
             try
             {
-                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(version.LayoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var layoutJson = version.LayoutJson;
+                if (product != null)
+                {
+                    layoutJson = _variableService.ResolveVariables(layoutJson, product);
+                }
+
+                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (model != null)
                 {
                     foreach (var el in model.Elements)
@@ -331,7 +355,11 @@ namespace Plms.Api.Controllers
                 Status = version.Status,
                 CreatedAt = version.CreatedAt,
                 CreatedBy = version.CreatedBy,
-                Warnings = warnings
+                Warnings = warnings,
+                RequiredVariables = requiredVariables,
+                HasProductContext = product != null,
+                ProductName = product?.Name,
+                ProductSku = product?.Sku
             };
 
             return Ok(new { success = true, data = dto });
@@ -339,14 +367,28 @@ namespace Plms.Api.Controllers
 
         [HttpGet("{id}/versions/{versionId}/preview")]
         [Authorize(Policy = "RequireViewer")]
-        public async Task<IActionResult> GetPreview(Guid id, Guid versionId)
+        public async Task<IActionResult> GetPreview(Guid id, Guid versionId, [FromQuery] Guid? productId)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
             if (version == null) return NotFound(new { success = false, error = "Version not found." });
 
             try
             {
-                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(version.LayoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var layoutJson = version.LayoutJson;
+                if (productId.HasValue)
+                {
+                    var product = await _context.Products
+                        .Include(p => p.Category)
+                        .Include(p => p.Vendor)
+                        .FirstOrDefaultAsync(p => p.Id == productId.Value);
+                    
+                    if (product != null)
+                    {
+                        layoutJson = _variableService.ResolveVariables(layoutJson, product);
+                    }
+                }
+
+                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (model == null) return BadRequest(new { success = false, error = "Invalid layout JSON." });
 
                 var pdf = _renderService.GeneratePdf(model);

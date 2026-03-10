@@ -149,16 +149,19 @@ export default function TemplateDetailPage() {
                     <div className="lg:col-span-2 space-y-8">
                         <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
                             <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                                <h3 className="font-semibold text-gray-700">Active Version Layout (JSON Placeholder)</h3>
-                                <span className={`text-xs px-2 py-1 rounded-full font-bold ${template.currentActiveVersion?.status === 'Published'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-gray-100 text-gray-600'
-                                    }`}>
-                                    {template.currentActiveVersion?.status || "NO ACTIVE VERSION"}
-                                </span>
+                                <h3 className="font-semibold text-gray-700">Latest Layout Definition</h3>
+                                <div className="flex items-center space-x-2">
+                                    <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${template.currentActiveVersion?.status === 'Published'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                        Active: {template.currentActiveVersion?.status || "None"}
+                                    </span>
+                                </div>
                             </div>
                             <div className="p-6">
-                                <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto h-64">
+                                <div className="text-xs text-gray-500 mb-2 uppercase font-bold tracking-wider">Layout JSON Snapshot</div>
+                                <pre className="bg-slate-900 text-emerald-400 p-6 rounded-lg text-[11px] font-mono overflow-x-auto h-96 leading-relaxed border border-slate-800 custom-scrollbar">
                                     {template.currentActiveVersionId
                                         ? template.versions?.find(v => v.id === template.currentActiveVersionId)?.layoutJson
                                         : "// No active version layout available"}
@@ -169,81 +172,102 @@ export default function TemplateDetailPage() {
 
                     <div className="space-y-6">
                         <div className="bg-white border rounded-lg p-6 shadow-sm">
-                            <h3 className="font-semibold text-gray-700 mb-4">Version History</h3>
-                            <div className="space-y-4">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-bold text-gray-800">Version History</h3>
+                                <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded border uppercase font-bold">
+                                    {template.versions?.length || 0} Versions
+                                </span>
+                            </div>
+
+                            <div className="space-y-6 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-gray-100">
                                 {template.versions?.map((v) => (
-                                    <div key={v.id} className="border-l-2 border-blue-500 pl-4 py-1">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="font-bold text-sm">Version {v.versionNumber}</span>
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${v.status === 'Published' ? 'bg-green-100 text-green-800' :
-                                                    v.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                                                        v.status === 'InReview' ? 'bg-blue-100 text-blue-800' :
-                                                            v.status === 'Approved' ? 'bg-purple-100 text-purple-800' :
-                                                                v.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                                                    'bg-gray-100 text-gray-600'
-                                                }`}>
-                                                {v.status}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mb-1">
-                                            Created {new Date(v.createdAt).toLocaleDateString()} by {v.createdBy}
-                                        </p>
-                                        {v.changeNotes && (
-                                            <p className="text-xs italic text-gray-600 mb-2">"{v.changeNotes}"</p>
-                                        )}
-                                        <div className="mb-2">
-                                            <Link
-                                                href={`/templates/${template.id}/preview?versionId=${v.id}`}
-                                                className="text-blue-600 hover:underline text-xs font-bold"
-                                            >
-                                                View PDF Preview →
-                                            </Link>
-                                        </div>
+                                    <div key={v.id} className="relative pl-8">
+                                        <div className={`absolute left-1.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm ring-1 ${v.status === 'Published' ? 'bg-green-500 ring-green-200' :
+                                                v.status === 'Draft' ? 'bg-yellow-400 ring-yellow-100' :
+                                                    v.status === 'InReview' ? 'bg-blue-500 ring-blue-100' :
+                                                        'bg-gray-400 ring-gray-100'
+                                            }`}></div>
 
-                                        {/* Workflow Actions */}
-                                        <div className="flex flex-wrap gap-2 mt-1">
-                                            {(v.status === 'Draft' || v.status === 'Rejected') && (
-                                                <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                                    <button
-                                                        onClick={() => handleWorkflowAction(v.id, 'request-approval')}
-                                                        className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold"
-                                                    >
-                                                        Request Approval
-                                                    </button>
-                                                </RoleGuard>
+                                        <div className="flex flex-col">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="font-bold text-sm text-gray-900">Version {v.versionNumber}</span>
+                                                <span className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded tracking-tighter ${v.status === 'Published' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                                        v.status === 'Draft' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
+                                                            v.status === 'InReview' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
+                                                                v.status === 'Approved' ? 'bg-purple-50 text-purple-800 border border-purple-200' :
+                                                                    v.status === 'Rejected' ? 'bg-red-50 text-red-800 border border-red-200' :
+                                                                        'bg-gray-50 text-gray-600 border border-gray-200'
+                                                    }`}>
+                                                    {v.status}
+                                                </span>
+                                            </div>
+
+                                            <div className="text-[10px] text-gray-400 mb-2 flex items-center">
+                                                <span>{new Date(v.createdAt).toLocaleDateString()}</span>
+                                                <span className="mx-1.5">·</span>
+                                                <span>{v.createdBy}</span>
+                                            </div>
+
+                                            {v.changeNotes && (
+                                                <p className="text-[11px] text-gray-500 bg-gray-50 p-2 rounded mb-3 border border-gray-100 italic">
+                                                    "{v.changeNotes}"
+                                                </p>
                                             )}
 
-                                            {v.status === 'InReview' && (
-                                                <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                                    <button
-                                                        onClick={() => handleWorkflowAction(v.id, 'review')}
-                                                        className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-2 py-1 rounded hover:bg-amber-100 font-bold"
-                                                    >
-                                                        Review
-                                                    </button>
-                                                </RoleGuard>
-                                            )}
+                                            <div className="flex flex-col space-y-2">
+                                                <Link
+                                                    href={`/templates/${template.id}/preview?versionId=${v.id}`}
+                                                    className="inline-flex items-center text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded transition-colors w-fit"
+                                                >
+                                                    <span className="mr-1">👁</span> View Preview
+                                                </Link>
 
-                                            {v.status === 'Approved' && (
-                                                <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                                    <button
-                                                        onClick={() => handleWorkflowAction(v.id, 'publish')}
-                                                        className="text-[10px] bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 font-bold"
-                                                    >
-                                                        Publish
-                                                    </button>
-                                                </RoleGuard>
-                                            )}
+                                                {/* Workflow Actions */}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {(v.status === 'Draft' || v.status === 'Rejected') && (
+                                                        <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                                                            <button
+                                                                onClick={() => handleWorkflowAction(v.id, 'request-approval')}
+                                                                className="text-[9px] uppercase font-black bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 shadow-sm transition-all shadow-blue-100"
+                                                            >
+                                                                Submit for Review
+                                                            </button>
+                                                        </RoleGuard>
+                                                    )}
+
+                                                    {v.status === 'InReview' && (
+                                                        <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
+                                                            <button
+                                                                onClick={() => handleWorkflowAction(v.id, 'review')}
+                                                                className="text-[9px] uppercase font-black bg-amber-500 text-white px-2 py-1 rounded hover:bg-amber-600 shadow-sm transition-all"
+                                                            >
+                                                                Review & Decide
+                                                            </button>
+                                                        </RoleGuard>
+                                                    )}
+
+                                                    {v.status === 'Approved' && (
+                                                        <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
+                                                            <button
+                                                                onClick={() => handleWorkflowAction(v.id, 'publish')}
+                                                                className="text-[9px] uppercase font-black bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700 shadow-sm transition-all"
+                                                            >
+                                                                Publish Version
+                                                            </button>
+                                                        </RoleGuard>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 border rounded-lg p-6">
-                            <h3 className="font-semibold text-gray-700 mb-2">Description</h3>
-                            <p className="text-sm text-gray-600">
-                                {template.description || "No description provided for this template."}
+                        <div className="bg-gray-50 border border-dashed rounded-lg p-6">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h3>
+                            <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                                {template.description || "No description provided."}
                             </p>
                         </div>
                     </div>

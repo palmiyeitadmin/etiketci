@@ -16,6 +16,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IProductImportService, ProductImportService>();
 builder.Services.AddScoped<ILabelRenderService, LabelRenderService>();
+builder.Services.AddScoped<IVariableResolutionService, VariableResolutionService>();
 
 // EF Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

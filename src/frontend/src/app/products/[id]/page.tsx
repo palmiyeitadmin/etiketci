@@ -200,12 +200,12 @@ export default function ProductDetailPage() {
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
-                                                        <button
-                                                            onClick={() => handlePrintIntent(link.templateId)}
+                                                        <Link
+                                                            href={`/templates/${link.templateId}/preview?versionId=${templates.find(t => t.id === link.templateId)?.currentActiveVersionId}&productId=${id}`}
                                                             className="text-blue-600 hover:text-blue-800 text-sm font-bold"
                                                         >
-                                                            Intent-to-Print
-                                                        </button>
+                                                            Preview & Print
+                                                        </Link>
                                                         <RoleGuard allowedRoles={["Admin"]}>
                                                             <button
                                                                 onClick={() => handleUnlink(link.id)}

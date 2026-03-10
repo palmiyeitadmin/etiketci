@@ -57,6 +57,10 @@ namespace Plms.Api.DTOs.Template
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public List<string> Warnings { get; set; } = new();
+        public List<string> RequiredVariables { get; set; } = new();
+        public bool HasProductContext { get; set; }
+        public string? ProductName { get; set; }
+        public string? ProductSku { get; set; }
     }
 
     public class ReviewTemplateVersionDto
