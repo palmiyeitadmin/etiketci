@@ -97,13 +97,13 @@ export default function ProductDetailPage() {
                 
                 {/* Industrial Header & Snapshot */}
                 <div className="bg-slate-900 rounded-[2rem] p-10 text-white shadow-2xl relative overflow-hidden group">
-                    <div className="absolute right-[-40px] top-[-40px] font-black text-[120px] text-white/5 italic select-none pointer-events-none tracking-tighter">PRODUCT</div>
+                    <div className="absolute right-[-40px] top-[-40px] font-black text-[120px] text-white/5 italic select-none pointer-events-none tracking-tighter uppercase">Record</div>
                     
                     <div className="relative z-10">
                         <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-6">
                             <Link href="/products" className="hover:text-emerald-400 transition-colors">Catalog</Link>
                             <span>/</span>
-                            <span className="text-white">Master Record</span>
+                            <span className="text-white">Product Detail</span>
                         </div>
 
                         <div className="flex justify-between items-start">
@@ -212,30 +212,17 @@ export default function ProductDetailPage() {
                             </div>
                         </section>
                     </div>
-
-                    {/* Meta Intelligence */}
+                    {/* Audit Summary */}
                     <div className="space-y-8">
-                        <section className="bg-emerald-900 rounded-[2rem] p-8 text-white shadow-xl relative overflow-hidden group">
-                             <div className="absolute right-[-20px] bottom-[-20px] font-black text-6xl text-white/5 italic">INFO</div>
-                             <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-4 flex items-center">
-                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-                                 Operational Tip
-                             </h4>
-                             <p className="text-xs font-medium text-emerald-100/70 leading-relaxed italic">
-                                associations enable the mapping of industrial variables.
-                                Primary templates are automatically focused for high-velocity batch processing.
-                             </p>
-                        </section>
-
                         <section className="bg-slate-50 border border-slate-200 rounded-[2rem] p-8">
-                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-100 pb-2">Audit History Summary</h4>
+                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 border-b border-slate-100 pb-2">Record Timeline</h4>
                              <div className="space-y-4">
                                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tight">
-                                     <span className="text-slate-400">Registry Input</span>
+                                     <span className="text-slate-400">Created At</span>
                                      <span className="text-slate-900">{new Date(product.createdAt).toLocaleDateString()}</span>
                                  </div>
                                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tight">
-                                     <span className="text-slate-400">Last System Sync</span>
+                                     <span className="text-slate-400">Status</span>
                                      <span className="text-slate-900">VERIFIED</span>
                                  </div>
                              </div>

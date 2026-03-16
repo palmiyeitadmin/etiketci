@@ -93,19 +93,19 @@ export default function PrintIntentHandoffPage() {
 
                 {/* Industrial Header & Control Status */}
                 <div className="bg-slate-900 rounded-[2rem] p-10 text-white shadow-2xl relative overflow-hidden">
-                    <div className="absolute right-[-40px] top-[-40px] font-black text-[100px] text-white/5 italic select-none pointer-events-none tracking-tighter">HANDOFF</div>
+                    <div className="absolute right-[-40px] top-[-40px] font-black text-[100px] text-white/5 italic select-none pointer-events-none tracking-tighter uppercase">Status</div>
                     
                     <div className="relative z-10">
                         <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-6">
-                            <Link href="/print-intents" className="hover:text-blue-400 transition-colors">Queue</Link>
+                            <Link href="/print-intents" className="hover:text-blue-400 transition-colors">Registry</Link>
                             <span>/</span>
                             <span className="text-white font-mono">{intent.id}</span>
                         </div>
 
                         <div className="flex justify-between items-start">
                             <div className="space-y-4">
-                                <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Operator Handoff Shell</h1>
-                                <p className="text-white/50 text-xs font-bold uppercase tracking-widest italic">Manual print preparation foundation</p>
+                                <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">Intent detail shell</h1>
+                                <p className="text-white/50 text-xs font-bold uppercase tracking-widest italic">Manual preparation and handoff</p>
                             </div>
 
                             <div className="flex flex-col items-end space-y-2">
@@ -114,7 +114,7 @@ export default function PrintIntentHandoffPage() {
                                     isReadyForPrint ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-900/20' :
                                     'bg-slate-700 text-slate-400 border-slate-600'
                                 }`}>
-                                    FLUX: {intent.status.replace(/([A-Z])/g, '_$1').toUpperCase().replace(/^_/, '')}
+                                    STATUS: {intent.status.replace(/([A-Z])/g, '_$1').toUpperCase().replace(/^_/, '')}
                                 </div>
                                 {isReadyForPrint && intent.operatorReviewedBy && (
                                     <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-2 flex items-center">
