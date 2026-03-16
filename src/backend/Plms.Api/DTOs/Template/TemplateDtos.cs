@@ -13,6 +13,18 @@ namespace Plms.Api.DTOs.Template
         public string CreatedBy { get; set; } = string.Empty;
     }
 
+    public class ApprovalSummaryDto
+    {
+        public Guid TemplateId { get; set; }
+        public string TemplateName { get; set; } = string.Empty;
+        public string TemplateCode { get; set; } = string.Empty;
+        public Guid VersionId { get; set; }
+        public int VersionNumber { get; set; }
+        public DateTime RequestedAt { get; set; }
+        public string RequestedBy { get; set; } = string.Empty;
+        public string? ChangeNotes { get; set; }
+    }
+
     public class TemplateDto
     {
         public Guid Id { get; set; }

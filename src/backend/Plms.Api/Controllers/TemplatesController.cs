@@ -407,5 +407,28 @@ namespace Plms.Api.Controllers
                 return BadRequest(new { success = false, error = "Failed to render PDF: " + ex.Message });
             }
         }
+        [HttpGet("approvals")]
+        [Authorize(Policy = "RequireReviewer")]
+        public async Task<IActionResult> GetInReviewVersions()
+        {
+            var items = await _context.TemplateVersions
+                .Include(v => v.Template)
+                .Where(v => v.Status == TemplateStatus.InReview)
+                .OrderBy(v => v.CreatedAt)
+                .Select(v => new ApprovalSummaryDto
+                {
+                    TemplateId = v.TemplateId,
+                    TemplateName = v.Template != null ? v.Template.Name : "N/A",
+                    TemplateCode = v.Template != null ? v.Template.Code : "N/A",
+                    VersionId = v.Id,
+                    VersionNumber = v.VersionNumber,
+                    RequestedAt = v.CreatedAt,
+                    RequestedBy = v.CreatedBy,
+                    ChangeNotes = v.ChangeNotes
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, data = items });
+        }
     }
 }
