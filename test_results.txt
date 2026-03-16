@@ -1,0 +1,34 @@
+  Determining projects to restore...
+C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj : warning NU1903: Package 'Npgsql' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-x9vc-6hfv-hg8c
+  All projects are up-to-date for restore.
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj : warning NU1903: Package 'Npgsql' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-x9vc-6hfv-hg8c
+  Plms.Api -> C:\Project\etiketci\src\backend\Plms.Api\bin\Debug\net8.0\Plms.Api.dll
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: Found conflicts between different versions of "Microsoft.EntityFrameworkCore.Relational" that could not be resolved. [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277: There was a conflict between "Microsoft.EntityFrameworkCore.Relational, Version=8.0.2.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" and "Microsoft.EntityFrameworkCore.Relational, Version=8.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60". [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     "Microsoft.EntityFrameworkCore.Relational, Version=8.0.2.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" was chosen because it was primary and "Microsoft.EntityFrameworkCore.Relational, Version=8.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" was not. [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on "Microsoft.EntityFrameworkCore.Relational, Version=8.0.2.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" [C:\Users\guray\.nuget\packages\microsoft.entityframeworkcore.relational\8.0.2\lib\net8.0\Microsoft.EntityFrameworkCore.Relational.dll]. [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         C:\Users\guray\.nuget\packages\microsoft.entityframeworkcore.relational\8.0.2\lib\net8.0\Microsoft.EntityFrameworkCore.Relational.dll [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "C:\Users\guray\.nuget\packages\microsoft.entityframeworkcore.relational\8.0.2\lib\net8.0\Microsoft.EntityFrameworkCore.Relational.dll". [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             C:\Users\guray\.nuget\packages\microsoft.entityframeworkcore.relational\8.0.2\lib\net8.0\Microsoft.EntityFrameworkCore.Relational.dll [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:     References which depend on or have been unified to "Microsoft.EntityFrameworkCore.Relational, Version=8.0.4.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" []. [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:         C:\Project\etiketci\src\backend\Plms.Api\bin\Debug\net8.0\Plms.Api.dll [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:           Project file item includes which caused reference "C:\Project\etiketci\src\backend\Plms.Api\bin\Debug\net8.0\Plms.Api.dll". [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Microsoft.Common.CurrentVersion.targets(2437,5): warning MSB3277:             C:\Project\etiketci\src\backend\Plms.Api\bin\Debug\net8.0\Plms.Api.dll [C:\Project\etiketci\src\backend\Plms.Tests\Plms.Tests.csproj]
+  Plms.Tests -> C:\Project\etiketci\src\backend\Plms.Tests\bin\Debug\net10.0\Plms.Tests.dll
+Test run for C:\Project\etiketci\src\backend\Plms.Tests\bin\Debug\net10.0\Plms.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.0-preview-25451-107 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:02.71]     Plms.Tests.LifecycleEdgeCaseTests.ApproveHandoff_SafetyFailure_LogsAudit [FAIL]
+  Failed Plms.Tests.LifecycleEdgeCaseTests.ApproveHandoff_SafetyFailure_LogsAudit [90 ms]
+  Error Message:
+   Assert.IsType() Failure: Value is not the exact type
+Expected: typeof(Microsoft.AspNetCore.Mvc.BadRequestObjectResult)
+Actual:   typeof(Microsoft.AspNetCore.Mvc.NotFoundObjectResult)
+  Stack Trace:
+     at Plms.Tests.LifecycleEdgeCaseTests.ApproveHandoff_SafetyFailure_LogsAudit() in C:\Project\etiketci\src\backend\Plms.Tests\LifecycleEdgeCaseTests.cs:line 64
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:    14, Skipped:     0, Total:    15, Duration: 1 s - Plms.Tests.dll (net10.0)

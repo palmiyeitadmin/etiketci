@@ -22,6 +22,10 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Database=plms;Username=postgres;Password=localpass
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - AzureAd__TenantId=placeholder_entra_tenant_id
+      - AzureAd__ClientId=placeholder_backend_client_id
+      - FrontendUrl=http://localhost:3000
     depends_on:
       - db
     # Used for prod/test, in dev we usually run `dotnet run` locally instead of in compose.

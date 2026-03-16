@@ -108,16 +108,22 @@ export default function PrintIntentsPage() {
                                             <td className="px-8 py-5 whitespace-nowrap text-center">
                                                 <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">{intent.quantity}</span>
                                             </td>
-                                            <td className="px-8 py-5 whitespace-nowrap">
-                                                <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border inline-flex items-center space-x-1.5 ${
-                                                    intent.status === 'ReadyForPrint' 
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                                        : intent.status === 'Cancelled'
-                                                        ? 'bg-red-50 text-red-700 border-red-200'
-                                                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                                                }`}>
-                                                    <span className={`w-1 h-1 rounded-full ${intent.status === 'ReadyForPrint' ? 'bg-emerald-500' : intent.status === 'Cancelled' ? 'bg-red-500' : 'bg-amber-500'}`}></span>
-                                                    <span>{intent.status === 'ReadyForPrint' ? 'READY_HANDOFF' : intent.status.toUpperCase()}</span>
+                                            <td className="px-8 py-4 whitespace-nowrap">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className={`w-2 h-2 rounded-full ${
+                                                        intent.status === 'ReadyForPrint' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
+                                                        intent.status === 'Pending' ? 'bg-amber-400' :
+                                                        'bg-slate-300'
+                                                    }`}></span>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${
+                                                        intent.status === 'ReadyForPrint' ? 'text-emerald-700' :
+                                                        intent.status === 'Pending' ? 'text-amber-700' :
+                                                        'text-slate-500'
+                                                    }`}>
+                                                        {intent.status === 'ReadyForPrint' ? 'Ready for Handoff' :
+                                                         intent.status === 'Pending' ? 'Awaiting Handoff' :
+                                                         intent.status}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5 whitespace-nowrap text-[10px] font-bold text-slate-400 uppercase tracking-tight italic">

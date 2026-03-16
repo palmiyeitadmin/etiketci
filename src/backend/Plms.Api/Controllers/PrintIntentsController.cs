@@ -150,7 +150,7 @@ namespace Plms.Api.Controllers
 
         [HttpPost("{id}/handoff")]
         [Authorize(Policy = "RequireOperator")]
-        public async Task<IActionResult> ApproveHandoff(Guid id)
+        public async Task<IActionResult> ConfirmHandoff(Guid id)
         {
             var pi = await _context.PrintIntents
                 .Include(p => p.Product)
@@ -162,12 +162,24 @@ namespace Plms.Api.Controllers
 
             if (pi.Status != "Pending")
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be approved because it is in '{pi.Status}' state." });
+                return BadRequest(new { success = false, error = $"Intent cannot be confirmed because it is in '{pi.Status}' state." });
             }
 
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
             if (!safetyCheck.IsSafe)
             {
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Timestamp = DateTime.UtcNow,
+                    Action = "PrintIntentHandoffFailed",
+                    EntityId = pi.Id.ToString(),
+                    EntityType = "PrintIntent",
+                    UserId = User.Identity?.Name ?? "System",
+                    Details = $"Safety check failed: {string.Join(", ", safetyCheck.Messages)}",
+                    CorrelationId = HttpContext.TraceIdentifier
+                });
+                await _context.SaveChangesAsync();
                 return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
             }
 
@@ -179,7 +191,7 @@ namespace Plms.Api.Controllers
             {
                 Id = Guid.NewGuid(),
                 Timestamp = DateTime.UtcNow,
-                Action = "PrintIntentHandoffApproved",
+                Action = "PrintIntentHandoffConfirmed",
                 EntityId = pi.Id.ToString(),
                 EntityType = "PrintIntent",
                 UserId = pi.OperatorReviewedBy,

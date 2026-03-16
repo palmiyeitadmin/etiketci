@@ -430,5 +430,37 @@ namespace Plms.Api.Controllers
 
             return Ok(new { success = true, data = items });
         }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> DeleteTemplate(Guid id)
+        {
+            var t = await _context.Templates.FindAsync(id);
+            if (t == null) return NotFound(new { success = false, error = "Template not found." });
+
+            // Safety Guard: Check for non-cancelled print intents
+            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && pi.Status != "Cancelled");
+            if (hasActiveIntents)
+            {
+                return BadRequest(new { success = false, error = "Template cannot be deleted because it is referenced by active Print Intents." });
+            }
+
+            _context.Templates.Remove(t);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateDeleted",
+                EntityId = id.ToString(),
+                EntityType = "LabelTemplate",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template {t.Code} deleted.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
     }
 }

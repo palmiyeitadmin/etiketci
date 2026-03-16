@@ -114,7 +114,9 @@ export default function PrintIntentHandoffPage() {
                                     isReadyForPrint ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-900/20' :
                                     'bg-slate-700 text-slate-400 border-slate-600'
                                 }`}>
-                                    STATUS: {intent.status.replace(/([A-Z])/g, '_$1').toUpperCase().replace(/^_/, '')}
+                                    STATUS: {intent.status === 'ReadyForPrint' ? 'READY FOR HANDOFF' : 
+                                            intent.status === 'Pending' ? 'AWAITING HANDOFF' : 
+                                            intent.status.toUpperCase()}
                                 </div>
                                 {isReadyForPrint && intent.operatorReviewedBy && (
                                     <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-2 flex items-center">

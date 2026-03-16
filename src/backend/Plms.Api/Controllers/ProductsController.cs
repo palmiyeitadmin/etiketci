@@ -154,5 +154,37 @@ namespace Plms.Api.Controllers
 
             return Ok(new { success = true, data = report });
         }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> DeleteProduct(Guid id)
+        {
+            var p = await _context.Products.FindAsync(id);
+            if (p == null) return NotFound(new { success = false, error = "Product not found." });
+
+            // Safety Guard: Check for non-cancelled print intents
+            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && pi.Status != "Cancelled");
+            if (hasActiveIntents)
+            {
+                return BadRequest(new { success = false, error = "Product cannot be deleted because it is referenced by active Print Intents." });
+            }
+
+            _context.Products.Remove(p);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "ProductDeleted",
+                EntityId = id.ToString(),
+                EntityType = "Product",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Product {p.Sku} deleted.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
     }
 }

@@ -76,6 +76,17 @@ namespace Plms.Api.Controllers
             };
 
             _context.ProductCategories.Add(cat);
+            
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "CategoryCreated",
+                EntityId = cat.Id.ToString(),
+                EntityType = "ProductCategory",
+                Details = $"Category '{cat.Name}' ({cat.Code}) created."
+            });
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetCategory), new { id = cat.Id }, new
@@ -104,9 +115,53 @@ namespace Plms.Api.Controllers
             cat.Name = dto.Name;
             cat.IsActive = dto.IsActive;
 
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "CategoryUpdated",
+                EntityId = cat.Id.ToString(),
+                EntityType = "ProductCategory",
+                Details = $"Category '{cat.Name}' updated. IsActive: {cat.IsActive}"
+            });
+
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = cat });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "RequireAdmin")]
+        public async Task<IActionResult> DeleteCategory(Guid id)
+        {
+            var cat = await _context.ProductCategories.FindAsync(id);
+            if (cat == null)
+            {
+                return NotFound(new { success = false, error = "Category not found." });
+            }
+
+            // Safety Guard: Check for linked products
+            var hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
+            if (hasProducts)
+            {
+                return BadRequest(new { success = false, error = "Cannot delete category because it is referenced by one or more products." });
+            }
+
+            _context.ProductCategories.Remove(cat);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "CategoryDeleted",
+                EntityId = id.ToString(),
+                EntityType = "ProductCategory",
+                Details = $"Category '{cat.Name}' ({cat.Code}) deleted."
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
         }
     }
 }

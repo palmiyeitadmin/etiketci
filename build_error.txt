@@ -1,0 +1,14 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Program Files\dotnet\sdk\10.0.100-rc.1.25451.107\Sdks\Microsoft.NET.Sdk\targets\Microsoft.NET.RuntimeIdentifierInference.targets(345,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [C:\Project\etiketci\src\backend\Plms.Api\Plms.Api.csproj]
+C:\Project\etiketci\src\backend\Plms.Api\Services\FinalSafetyCheckService.cs(22,51): warning CS1998: This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread. [C:\Project\etiketci\src\backend\Plms.Api\Plms.Api.csproj]
+C:\Project\etiketci\src\backend\Plms.Api\Controllers\PrintIntentsController.cs(179,108): error CS1061: 'string' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [C:\Project\etiketci\src\backend\Plms.Api\Plms.Api.csproj]
+
+Build FAILED.
+
+C:\Project\etiketci\src\backend\Plms.Api\Services\FinalSafetyCheckService.cs(22,51): warning CS1998: This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread. [C:\Project\etiketci\src\backend\Plms.Api\Plms.Api.csproj]
+C:\Project\etiketci\src\backend\Plms.Api\Controllers\PrintIntentsController.cs(179,108): error CS1061: 'string' does not contain a definition for 'Content' and no accessible extension method 'Content' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [C:\Project\etiketci\src\backend\Plms.Api\Plms.Api.csproj]
+    1 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:05.74

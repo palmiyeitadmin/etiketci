@@ -84,7 +84,7 @@ namespace Plms.Tests
         }
 
         [Fact]
-        public async Task ApproveHandoff_ValidPending_TransitionsToReadyForPrint()
+        public async Task ConfirmHandoff_ValidPending_TransitionsToReadyForPrint()
         {
             var dbName = Guid.NewGuid().ToString();
             using var context = GetInMemoryContext(dbName);
@@ -102,7 +102,7 @@ namespace Plms.Tests
 
             var controller = CreateController(context);
             
-            var result = await controller.ApproveHandoff(intent.Id);
+            var result = await controller.ConfirmHandoff(intent.Id);
             
             Assert.IsType<OkObjectResult>(result);
             var updatedIntent = await context.PrintIntents.FindAsync(intent.Id);
@@ -112,7 +112,7 @@ namespace Plms.Tests
         }
 
         [Fact]
-        public async Task ApproveHandoff_InvalidStatus_Fails()
+        public async Task ConfirmHandoff_InvalidStatus_Fails()
         {
             var dbName = Guid.NewGuid().ToString();
             using var context = GetInMemoryContext(dbName);
@@ -130,10 +130,10 @@ namespace Plms.Tests
 
             var controller = CreateController(context);
             
-            var result = await controller.ApproveHandoff(intent.Id);
+            var result = await controller.ConfirmHandoff(intent.Id);
             
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Contains("cannot be approved", badRequest.Value?.ToString() ?? "");
+            Assert.Contains("cannot be confirmed", badRequest.Value?.ToString() ?? "");
         }
 
         [Fact]

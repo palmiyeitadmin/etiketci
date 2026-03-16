@@ -76,6 +76,17 @@ namespace Plms.Api.Controllers
             };
 
             _context.Vendors.Add(vendor);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "VendorCreated",
+                EntityId = vendor.Id.ToString(),
+                EntityType = "Vendor",
+                Details = $"Vendor '{vendor.Name}' ({vendor.Code}) created."
+            });
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetVendor), new { id = vendor.Id }, new
@@ -104,9 +115,53 @@ namespace Plms.Api.Controllers
             vendor.Name = dto.Name;
             vendor.IsActive = dto.IsActive;
 
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "VendorUpdated",
+                EntityId = vendor.Id.ToString(),
+                EntityType = "Vendor",
+                Details = $"Vendor '{vendor.Name}' updated. IsActive: {vendor.IsActive}"
+            });
+
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = vendor });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "RequireAdmin")]
+        public async Task<IActionResult> DeleteVendor(Guid id)
+        {
+            var vendor = await _context.Vendors.FindAsync(id);
+            if (vendor == null)
+            {
+                return NotFound(new { success = false, error = "Vendor not found." });
+            }
+
+            // Safety Guard: Check for linked products
+            var hasProducts = await _context.Products.AnyAsync(p => p.VendorId == id);
+            if (hasProducts)
+            {
+                return BadRequest(new { success = false, error = "Cannot delete vendor because it is referenced by one or more products." });
+            }
+
+            _context.Vendors.Remove(vendor);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "VendorDeleted",
+                EntityId = id.ToString(),
+                EntityType = "Vendor",
+                Details = $"Vendor '{vendor.Name}' ({vendor.Code}) deleted."
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
         }
     }
 }
