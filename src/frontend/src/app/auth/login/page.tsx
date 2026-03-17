@@ -3,34 +3,46 @@
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 
-function mapSignInError(errorCode?: string): string {
+function mapSignInError(
+    errorCode: string | undefined,
+    messages: {
+        invalidCredentials: string;
+        backendUnreachable: string;
+        backendError: string;
+        serviceUnavailable: string;
+        invalidResponse: string;
+        fallback: string;
+    }
+): string {
     if (!errorCode) return "";
 
     if (errorCode === "CredentialsSignin") {
-        return "Email veya parola hatali.";
+        return messages.invalidCredentials;
     }
 
     if (errorCode === "AUTH_BACKEND_UNREACHABLE") {
-        return "API'ye ulasilamiyor. Backend calisiyor mu?";
+        return messages.backendUnreachable;
     }
 
     if (/^AUTH_BACKEND_HTTP_5\d{2}$/.test(errorCode)) {
-        return "Backend hatasi olustu.";
+        return messages.backendError;
     }
 
     if (/^AUTH_BACKEND_HTTP_\d{3}$/.test(errorCode)) {
-        return "Kimlik dogrulama servisi yanit vermedi.";
+        return messages.serviceUnavailable;
     }
 
     if (errorCode === "AUTH_BACKEND_INVALID_RESPONSE") {
-        return "Kimlik dogrulama servisi gecersiz yanit dondurdu.";
+        return messages.invalidResponse;
     }
 
-    return "Giris islemi sirasinda beklenmeyen bir hata olustu.";
+    return messages.fallback;
 }
 
 function LoginContent() {
+    const { t } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -54,13 +66,20 @@ function LoginContent() {
             });
 
             if (result?.error) {
-                setError(mapSignInError(result.error));
+                setError(mapSignInError(result.error, {
+                    invalidCredentials: t("auth.login.invalidCredentials", "Invalid email or password."),
+                    backendUnreachable: t("auth.login.backendUnreachable", "API is unreachable. Is the backend running?"),
+                    backendError: t("auth.login.backendError", "A backend error occurred."),
+                    serviceUnavailable: t("auth.login.serviceUnavailable", "Authentication service did not respond."),
+                    invalidResponse: t("auth.login.invalidResponse", "Authentication service returned an invalid response."),
+                    fallback: t("auth.login.defaultError"),
+                }));
             } else {
                 router.push(callbackUrl);
                 router.refresh();
             }
         } catch (err) {
-            setError("A network error occurred. Please try again.");
+            setError(t("auth.login.networkError"));
         } finally {
             setLoading(false);
         }
@@ -71,10 +90,10 @@ function LoginContent() {
             <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-2xl">
                 <div className="text-center">
                     <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">
-                        PLMS Identity Gateway
+                        {t("auth.login.gateway")}
                     </div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-2">Sign In</h1>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest italic">Local authentication shell</p>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-2">{t("auth.login.title")}</h1>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest italic">{t("auth.login.subtitle")}</p>
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -86,7 +105,7 @@ function LoginContent() {
                     
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Corporate Email</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("auth.login.email")}</label>
                             <input
                                 type="email"
                                 required
@@ -97,7 +116,7 @@ function LoginContent() {
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Access Password</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("auth.login.password")}</label>
                             <input
                                 type="password"
                                 required
@@ -115,14 +134,14 @@ function LoginContent() {
                             disabled={loading}
                             className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-xs font-black uppercase tracking-[0.2em] rounded-2xl text-white bg-slate-900 hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50"
                         >
-                            {loading ? "Initializing..." : "Authorize Session"}
+                            {loading ? t("auth.login.loading") : t("auth.login.authorize")}
                         </button>
                     </div>
                 </form>
 
                 <div className="text-center pt-4 border-t border-slate-100">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed italic">
-                        By signing in, you agree to the enterprise data governance policies of PLMS.
+                        {t("auth.login.governanceNote")}
                     </p>
                 </div>
             </div>
@@ -131,10 +150,12 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
+    const { t } = useI18n();
+
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-black uppercase tracking-widest italic">
-                Cortex Auth Initializing...
+                {t("auth.login.initializing")}
             </div>
         }>
             <LoginContent />

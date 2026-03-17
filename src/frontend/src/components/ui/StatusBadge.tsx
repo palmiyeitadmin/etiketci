@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
 const toneClasses: Record<StatusTone, string> = {
@@ -11,9 +13,11 @@ const toneClasses: Record<StatusTone, string> = {
 };
 
 export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: StatusTone }) {
+    const { translateLabel } = useI18n();
+
     return (
         <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${toneClasses[tone]}`}>
-            {label}
+            {translateLabel(label)}
         </span>
     );
 }

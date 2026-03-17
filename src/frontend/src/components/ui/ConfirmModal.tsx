@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n";
+
 export function ConfirmModal({
     open,
     title,
@@ -21,6 +23,11 @@ export function ConfirmModal({
     onCancel: () => void;
     loading?: boolean;
 }) {
+    const { locale } = useI18n();
+    const text = locale === "tr"
+        ? { title: "Onay", working: "Calisiyor..." }
+        : { title: "Confirmation", working: "Working..." };
+
     if (!open) return null;
 
     const confirmClasses = tone === "danger"
@@ -31,7 +38,7 @@ export function ConfirmModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_30px_90px_rgba(15,23,42,0.55)]">
                 <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">Confirmation</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{text.title}</div>
                     <h2 className="text-2xl font-black tracking-[-0.04em] text-white">{title}</h2>
                     <p className="text-sm font-medium text-[color:var(--plms-text-subtle)]">{description}</p>
                 </div>
@@ -44,7 +51,7 @@ export function ConfirmModal({
                         onClick={onConfirm}
                         disabled={loading}
                     >
-                        {loading ? "Working..." : confirmLabel}
+                        {loading ? text.working : confirmLabel}
                     </button>
                 </div>
             </div>

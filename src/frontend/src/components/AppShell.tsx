@@ -8,64 +8,66 @@ import { MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { apiFetch } from "@/lib/api-client";
+import { localeLabels, type Locale, useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 
 type NavItem = {
-    label: string;
+    labelKey: string;
     href: string;
     permissions?: string[];
 };
 
 type NavGroup = {
-    label: string;
+    labelKey: string;
     items: NavItem[];
 };
 
 const navGroups: NavGroup[] = [
     {
-        label: "Operations",
+        labelKey: "nav.operations",
         items: [
-            { label: "Dashboard", href: "/", permissions: [permissions.dashboardView] },
-            { label: "Products", href: "/products", permissions: [permissions.productsView] },
-            { label: "Templates", href: "/templates", permissions: [permissions.templatesView] },
-            { label: "Print Intents", href: "/print-intents", permissions: [permissions.printIntentsView] },
-            { label: "Approval Queue", href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
-            { label: "Library", href: "/content-library", permissions: [permissions.assetsView] },
+            { labelKey: "nav.dashboard", href: "/", permissions: [permissions.dashboardView] },
+            { labelKey: "nav.products", href: "/products", permissions: [permissions.productsView] },
+            { labelKey: "nav.templates", href: "/templates", permissions: [permissions.templatesView] },
+            { labelKey: "nav.printIntents", href: "/print-intents", permissions: [permissions.printIntentsView] },
+            { labelKey: "nav.approvals", href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
+            { labelKey: "nav.library", href: "/content-library", permissions: [permissions.assetsView] },
         ],
     },
     {
-        label: "Administration",
+        labelKey: "nav.administration",
         items: [
-            { label: "Vendors", href: "/vendors", permissions: [permissions.vendorsView] },
-            { label: "Categories", href: "/categories", permissions: [permissions.categoriesView] },
-            { label: "Audit Logs", href: "/audit-logs", permissions: [permissions.auditView] },
-            { label: "Users", href: "/admin/users", permissions: [permissions.usersView] },
-            { label: "Roles", href: "/admin/roles", permissions: [permissions.rolesView] },
+            { labelKey: "nav.vendors", href: "/vendors", permissions: [permissions.vendorsView] },
+            { labelKey: "nav.categories", href: "/categories", permissions: [permissions.categoriesView] },
+            { labelKey: "nav.auditLogs", href: "/audit-logs", permissions: [permissions.auditView] },
+            { labelKey: "nav.users", href: "/admin/users", permissions: [permissions.usersView] },
+            { labelKey: "nav.roles", href: "/admin/roles", permissions: [permissions.rolesView] },
         ],
     },
 ];
 
-function pageTitle(pathname: string) {
-    if (pathname === "/") return "Operational Dashboard";
-    if (pathname.startsWith("/products/import")) return "CSV Import Workflow";
-    if (pathname.startsWith("/products")) return "Products";
-    if (pathname.startsWith("/templates")) return "Templates";
-    if (pathname.startsWith("/content-library")) return "Content Library";
-    if (pathname.startsWith("/print-intents")) return "Print Intents";
-    if (pathname.startsWith("/approvals")) return "Approval Queue";
-    if (pathname.startsWith("/vendors")) return "Vendors";
-    if (pathname.startsWith("/categories")) return "Categories";
-    if (pathname.startsWith("/audit-logs")) return "Audit Logs";
-    if (pathname.startsWith("/admin/users")) return "User Management";
-    if (pathname.startsWith("/admin/roles")) return "Role Management";
-    return "PLMS";
+function getPageTitleKey(pathname: string) {
+    if (pathname === "/") return "pageTitle.dashboard";
+    if (pathname.startsWith("/products/import")) return "pageTitle.productsImport";
+    if (pathname.startsWith("/products")) return "pageTitle.products";
+    if (pathname.startsWith("/templates")) return "pageTitle.templates";
+    if (pathname.startsWith("/content-library")) return "pageTitle.library";
+    if (pathname.startsWith("/print-intents")) return "pageTitle.printIntents";
+    if (pathname.startsWith("/approvals")) return "pageTitle.approvals";
+    if (pathname.startsWith("/vendors")) return "pageTitle.vendors";
+    if (pathname.startsWith("/categories")) return "pageTitle.categories";
+    if (pathname.startsWith("/audit-logs")) return "pageTitle.auditLogs";
+    if (pathname.startsWith("/admin/users")) return "pageTitle.users";
+    if (pathname.startsWith("/admin/roles")) return "pageTitle.roles";
+    return "pageTitle.fallback";
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { data: session } = useSession();
+    const { locale, setLocale, t } = useI18n();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [pulseExpanded, setPulseExpanded] = useState(false);
@@ -166,23 +168,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <Link href="/" className="flex items-center gap-3">
                                     <div className="flex h-11 w-11 items-center justify-center rounded-[1.2rem] bg-[linear-gradient(180deg,#2563eb,#1d4ed8)] text-sm font-black tracking-[-0.06em] text-white shadow-[0_12px_28px_rgba(37,99,235,0.35)]">PL</div>
                                     <div>
-                                        <div className="text-xl font-black tracking-[-0.06em] text-white">PLMS</div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.26em] text-blue-200/80">Unified Ops Shell</div>
+                                        <div className="text-xl font-black tracking-[-0.06em] text-white">{t("shell.title")}</div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.26em] text-blue-200/80">{t("shell.subtitle")}</div>
                                     </div>
                                 </Link>
-                                <div className="hidden rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-blue-200 xl:inline-flex">Live</div>
+                                <div className="hidden rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-blue-200 xl:inline-flex">{t("shell.live")}</div>
                             </div>
                             <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/25 px-3 py-2 text-[11px] text-[color:var(--plms-text-subtle)]">
                                 <Sparkle size={16} weight="fill" className="text-amber-300" />
-                                <span>Operational shell with governed templates, print flow and shared assets.</span>
+                                <span>{t("shell.description")}</span>
                             </div>
                         </div>
 
                         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
                             <div className="space-y-6">
                                 {visibleGroups.map((group) => (
-                                    <section key={group.label} className="space-y-2">
-                                        <div className="px-3 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{group.label}</div>
+                                    <section key={group.labelKey} className="space-y-2">
+                                        <div className="px-3 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>
                                         <div className="space-y-1.5">
                                             {group.items.map((item) => {
                                                 const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -196,7 +198,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                         onClick={() => setMobileOpen(false)}
                                                     >
                                                         <span className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full transition-opacity ${active ? "opacity-100 bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.6)]" : "opacity-0 group-hover:opacity-60 bg-white/25"}`} />
-                                                        <span className="pl-2">{item.label}</span>
+                                                        <span className="pl-2">{t(item.labelKey)}</span>
                                                     </Link>
                                                 );
                                             })}
@@ -207,17 +209,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </div>
 
                         <div className="mt-auto rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] p-4 shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
-                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">Session</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t("shell.session")}</div>
                             <div className="mt-3 text-base font-black tracking-[-0.04em] text-white">{session.user?.name || session.user?.email}</div>
                             <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300">
-                                {userRoles.length > 0 ? userRoles.join(" / ") : "User"}
+                                {userRoles.length > 0 ? userRoles.join(" / ") : t("common.unknown")}
                             </div>
-                            {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">Password rotation required before normal use.</div> : null}
+                            {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">{t("shell.passwordRotationRequired")}</div> : null}
                             <button
                                 onClick={() => signOut({ callbackUrl: "/auth/login" })}
                                 className="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
-                                Sign Out
+                                {t("shell.signOut")}
                             </button>
                         </div>
                     </div>
@@ -228,11 +230,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                             <div className="flex items-center gap-3">
                                 <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)] md:hidden" onClick={() => setMobileOpen(true)}>
-                                    Menu
+                                    {t("shell.menu")}
                                 </button>
                                 <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Palmiye Label Management System</div>
-                                    <div className="text-xl font-black tracking-[-0.04em] text-white">{pageTitle(pathname)}</div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.suite")}</div>
+                                    <div className="text-xl font-black tracking-[-0.04em] text-white">{t(getPageTitleKey(pathname))}</div>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
@@ -245,11 +247,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                         <MagnifyingGlass size={18} weight="bold" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Search Shell</div>
-                                        <div className="truncate text-sm font-medium text-white/80">Search pages, templates, products and queue state</div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.searchTitle")}</div>
+                                        <div className="truncate text-sm font-medium text-white/80">{t("shell.searchDescription")}</div>
                                     </div>
                                     <div className="rounded-full border border-[color:var(--plms-border)] px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">Ctrl K</div>
                                 </button>
+                                <div className="inline-flex items-center rounded-[1.2rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(16,27,45,0.98),rgba(10,20,35,0.98))] p-1 shadow-[0_18px_50px_rgba(3,8,20,0.18)]">
+                                    {(Object.keys(localeLabels) as Locale[]).map((option) => {
+                                        const active = locale === option;
+                                        return (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                className={`rounded-[0.95rem] px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors ${active ? "bg-blue-500 text-white" : "text-[color:var(--plms-text-subtle)] hover:text-white"}`}
+                                                onClick={() => setLocale(option)}
+                                            >
+                                                {localeLabels[option]}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                                 <OperationalPulse
                                     summary={summary}
                                     activity={activity}

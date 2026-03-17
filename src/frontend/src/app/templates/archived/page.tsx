@@ -11,13 +11,57 @@ import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { useI18n } from "@/lib/i18n";
 
 export default function ArchivedTemplatesPage() {
+    const { locale } = useI18n();
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
     const [form, setForm] = useState({ businessJustification: "", targetEnvironment: "", requestedUntil: "" });
     const [submitting, setSubmitting] = useState(false);
+
+    const text = locale === "tr"
+        ? {
+            eyebrow: "Sablon arsivi",
+            title: "Arsivlenmis Sablonlar",
+            description: "Yonetisim, denetim ve kurtarma akislarinda tutulan gecmis sablon surumleri.",
+            emptyTitle: "Arsiv bos",
+            emptyDescription: "Henuz arsivlenmis veya kullanimi kaldirilmis surum yok.",
+            columns: ["Kod", "Sablon", "Arsivlenmis Surumler", "Aksiyonlar"],
+            noDescription: "Aciklama yok",
+            requestRestore: "Geri Yukleme Talep Et",
+            openDetail: "Detayi Ac",
+            requestRestoration: "Geri Yukleme Talebi",
+            restoreWarning: "Arsivlenmis sablonlari geri yuklemek denetlenebilir bir islemdir. Yeni bir taslak olusmadan once reviewer onayi gerekir.",
+            businessJustification: "Is Gerekcesi",
+            targetEnvironment: "Hedef Ortam",
+            targetEnvironmentPlaceholder: "Uretim, staging, sandbox...",
+            requestedUntil: "Gecerlilik Tarihi",
+            submitting: "Gonderiliyor...",
+            submitRequest: "Geri Yukleme Talebini Gonder",
+            success: "Geri yukleme talebi gonderildi.",
+        }
+        : {
+            eyebrow: "Template archive",
+            title: "Archived Templates",
+            description: "Historical template versions retained for governance, audit and recovery workflows.",
+            emptyTitle: "Archive is empty",
+            emptyDescription: "There are no archived or deprecated versions available yet.",
+            columns: ["Code", "Template", "Archived Versions", "Actions"],
+            noDescription: "No description",
+            requestRestore: "Request Restore",
+            openDetail: "Open Detail",
+            requestRestoration: "Request Restoration",
+            restoreWarning: "Restoring archived templates is an auditable action. Approval from a reviewer is required before a new draft is created.",
+            businessJustification: "Business Justification",
+            targetEnvironment: "Target Environment",
+            targetEnvironmentPlaceholder: "Production, staging, sandbox...",
+            requestedUntil: "Requested Until",
+            submitting: "Submitting...",
+            submitRequest: "Submit Restoration Request",
+            success: "Restoration request submitted.",
+        };
 
     async function load() {
         const res = await apiFetch<LabelTemplate[]>("/api/Templates/archived");
@@ -49,7 +93,7 @@ export default function ArchivedTemplatesPage() {
         if (res.success) {
             setSelected(null);
             setForm({ businessJustification: "", targetEnvironment: "", requestedUntil: "" });
-            alert("Restoration request submitted.");
+            alert(text.success);
             return;
         }
 
@@ -60,23 +104,23 @@ export default function ArchivedTemplatesPage() {
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
-                    eyebrow="Template archive"
-                    title="Archived Templates"
-                    description="Historical template versions retained for governance, audit and recovery workflows."
+                    eyebrow={text.eyebrow}
+                    title={text.title}
+                    description={text.description}
                 />
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
                 ) : templates.length === 0 ? (
-                    <EmptyState title="Archive is empty" description="There are no archived or deprecated versions available yet." />
+                    <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
-                    <DataTable columns={["Code", "Template", "Archived Versions", "Actions"]}>
+                    <DataTable columns={text.columns}>
                         {templates.map((template) => (
                             <tr key={template.id} className="transition-colors hover:bg-white/5">
                                 <td className="px-6 py-4"><span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{template.code}</span></td>
                                 <td className="px-6 py-4">
                                     <div className="text-sm font-bold text-white">{template.name}</div>
-                                    <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">{template.description || "No description"}</div>
+                                    <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">{template.description || text.noDescription}</div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="space-y-2">
@@ -84,7 +128,7 @@ export default function ArchivedTemplatesPage() {
                                             <div key={version.id} className="flex flex-wrap items-center gap-2">
                                                 <StatusBadge label={`v${version.versionNumber} ${version.status}`} tone={version.status === "Archived" ? "danger" : "warning"} />
                                                 <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => setSelected({ template, version })}>
-                                                    Request Restore
+                                                    {text.requestRestore}
                                                 </button>
                                             </div>
                                         ))}
@@ -92,7 +136,7 @@ export default function ArchivedTemplatesPage() {
                                 </td>
                                 <td className="px-6 py-4">
                                     <Link href={`/templates/${template.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200">
-                                        Open Detail
+                                        {text.openDetail}
                                     </Link>
                                 </td>
                             </tr>
@@ -102,27 +146,27 @@ export default function ArchivedTemplatesPage() {
 
                 <SlideOver
                     open={Boolean(selected)}
-                    title="Request Restoration"
+                    title={text.requestRestoration}
                     subtitle={selected ? `${selected.template.code} v${selected.version.versionNumber}` : undefined}
                     onClose={() => setSelected(null)}
                 >
                     <form className="space-y-5" onSubmit={submit}>
                         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
-                            Restoring archived templates is an auditable action. Approval from a reviewer is required before a new draft is created.
+                            {text.restoreWarning}
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Business Justification</label>
+                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.businessJustification}</label>
                             <textarea className="plms-input min-h-32" value={form.businessJustification} onChange={(e) => setForm({ ...form, businessJustification: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Target Environment</label>
-                            <input className="plms-input" value={form.targetEnvironment} onChange={(e) => setForm({ ...form, targetEnvironment: e.target.value })} placeholder="Production, staging, sandbox..." />
+                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.targetEnvironment}</label>
+                            <input className="plms-input" value={form.targetEnvironment} onChange={(e) => setForm({ ...form, targetEnvironment: e.target.value })} placeholder={text.targetEnvironmentPlaceholder} />
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Requested Until</label>
+                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.requestedUntil}</label>
                             <input className="plms-input" type="date" value={form.requestedUntil} onChange={(e) => setForm({ ...form, requestedUntil: e.target.value })} />
                         </div>
-                        <button className="plms-button-primary w-full" type="submit" disabled={submitting}>{submitting ? "Submitting..." : "Submit Restoration Request"}</button>
+                        <button className="plms-button-primary w-full" type="submit" disabled={submitting}>{submitting ? text.submitting : text.submitRequest}</button>
                     </form>
                 </SlideOver>
             </div>

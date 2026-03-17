@@ -1,6 +1,7 @@
 import { createElement, type AnchorHTMLAttributes } from "react";
 import { render } from "@testing-library/react";
 import { AppShell } from "@/components/AppShell";
+import { useLanguageStore } from "@/lib/i18n";
 
 const mockUsePathname = vi.fn();
 const mockUseSession = vi.fn();
@@ -36,6 +37,7 @@ vi.mock("@/components/Search/GlobalSearchPalette", () => ({
 
 describe("AppShell", () => {
   beforeEach(() => {
+    useLanguageStore.setState({ locale: "tr", hydrated: true });
     mockUseSession.mockReturnValue({
       data: {
         user: {
@@ -86,5 +88,12 @@ describe("AppShell", () => {
 
     expect(container.querySelector("[data-testid='auth-child']")).not.toBeNull();
     expect(container.querySelector("main")).toBeNull();
+  });
+
+  it("renders translated navigation labels from the active locale", () => {
+    const { getAllByText, getByText } = render(createElement(AppShell, null, createElement("div", null, "Templates")));
+
+    expect(getAllByText("Sablonlar").length).toBeGreaterThan(0);
+    expect(getByText("Operasyonlar")).not.toBeNull();
   });
 });

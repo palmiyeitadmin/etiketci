@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -22,8 +23,32 @@ interface ApprovalSummary {
 }
 
 export default function ApprovalReviewDetailPage() {
+    const { formatDateTime, locale } = useI18n();
     const params = useParams();
     const versionId = String(params.versionId);
+    const text = locale === "tr"
+        ? {
+            eyebrow: "Onay incelemesi",
+            title: "Sablon Onay Detayi",
+            description: "Incelemedeki sablon surumu icin odakli inceleme giris noktasi.",
+            open: "Sablon Incelemesini Ac",
+            notFound: "Onay kaydi bulunamadi",
+            notFoundDescription: "Hedef surum artik onay kuyrugunda degil.",
+            requestedByOn: "Talep eden {user} - {date}",
+            changeNotes: "Degisiklik Notlari",
+            noNotes: "Inceleme notu girilmedi.",
+        }
+        : {
+            eyebrow: "Approval review",
+            title: "Template Approval Detail",
+            description: "Focused review entrypoint for an in-review template version.",
+            open: "Open Template Review",
+            notFound: "Approval record not found",
+            notFoundDescription: "The target version is no longer in the approval queue.",
+            requestedByOn: "Requested by {user} on {date}",
+            changeNotes: "Change Notes",
+            noNotes: "No review notes provided.",
+        };
     const [item, setItem] = useState<ApprovalSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -43,16 +68,16 @@ export default function ApprovalReviewDetailPage() {
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
             <div className="mx-auto max-w-4xl space-y-6">
                 <PageHeader
-                    eyebrow="Approval review"
-                    title="Template Approval Detail"
-                    description="Focused review entrypoint for an in-review template version."
-                    actions={item ? <Link href={`/templates/${item.templateId}`} className="plms-button-primary">Open Template Review</Link> : null}
+                    eyebrow={text.eyebrow}
+                    title={text.title}
+                    description={text.description}
+                    actions={item ? <Link href={`/templates/${item.templateId}`} className="plms-button-primary">{text.open}</Link> : null}
                 />
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
                 ) : !item ? (
-                    <EmptyState title="Approval record not found" description="The target version is no longer in the approval queue." />
+                    <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
                     <div className="space-y-6 rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-8">
                         <div className="flex flex-wrap items-center gap-3">
@@ -62,12 +87,12 @@ export default function ApprovalReviewDetailPage() {
                         <div>
                             <h2 className="text-3xl font-black tracking-[-0.05em] text-white">{item.templateName}</h2>
                             <p className="mt-2 text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                                Requested by {item.requestedBy} on {new Date(item.requestedAt).toLocaleString()}.
+                                {text.requestedByOn.replace("{user}", item.requestedBy).replace("{date}", formatDateTime(item.requestedAt))}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Change Notes</div>
-                            <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">{item.reviewCommentSummary || item.changeNotes || "No review notes provided."}</p>
+                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.changeNotes}</div>
+                            <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">{item.reviewCommentSummary || item.changeNotes || text.noNotes}</p>
                         </div>
                     </div>
                 )}

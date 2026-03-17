@@ -12,8 +12,10 @@ import { EditorWorkspace } from "@/components/Editor/EditorWorkspace";
 import { CanonicalLabelModel } from "@/types/canvas";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
 
 export default function TemplateEditorPage() {
+    const { locale } = useI18n();
     const { id: routeId } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -24,6 +26,32 @@ export default function TemplateEditorPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+    const text = locale === "tr"
+        ? {
+            loadError: "Sablon yuklenemedi.",
+            loadFailed: "Duzenleme icin sablon yuklenemedi.",
+            draftUnavailable: "Taslak surum kullanilabilir degil.",
+            saved: "Taslak v{version} kaydedildi.",
+            saveFailed: "Taslak v{version} kaydi basarisiz: {message}",
+            loading: "Editor yukleniyor...",
+            backToDetail: "Detaya Don",
+            notFound: "Sablon bulunamadi.",
+            changeNotes: "Editor uzerinden kaydedildi",
+            networkError: "Kayit sirasinda ag hatasi olustu.",
+        }
+        : {
+            loadError: "Template could not be loaded.",
+            loadFailed: "Failed to load template for editing.",
+            draftUnavailable: "Draft version is not available.",
+            saved: "Draft v{version} saved.",
+            saveFailed: "Draft v{version} save failed: {message}",
+            loading: "Loading editor...",
+            backToDetail: "Back to Detail",
+            notFound: "Template not found.",
+            changeNotes: "Saved from editor",
+            networkError: "Network error while saving.",
+        };
 
     useEffect(() => {
         let cancelled = false;
@@ -48,11 +76,11 @@ export default function TemplateEditorPage() {
                         router.replace(`/templates/${id}/edit?versionId=${version.id}`);
                     }
                 } else {
-                    setError(res.success ? "Template could not be loaded." : res.error.message);
+                    setError(res.success ? text.loadError : res.error.message);
                 }
             } catch (err) {
                 if (!cancelled) {
-                    setError((err as Error).message || "Failed to load template for editing.");
+                    setError((err as Error).message || text.loadFailed);
                 }
             } finally {
                 if (!cancelled) {
@@ -71,7 +99,7 @@ export default function TemplateEditorPage() {
 
     const handleSave = async (model: CanonicalLabelModel): Promise<EditorSaveResult> => {
         if (!editableVersion) {
-            return { ok: false, versionId: "", message: "Draft version is not available." };
+            return { ok: false, versionId: "", message: text.draftUnavailable };
         }
 
         try {
@@ -80,12 +108,12 @@ export default function TemplateEditorPage() {
                 method: "PUT",
                 body: JSON.stringify({
                     layoutJson: JSON.stringify(model),
-                    changeNotes: "Saved from editor",
+                    changeNotes: text.changeNotes,
                 }),
             });
 
             if (res.success) {
-                const message = `Draft v${editableVersion.versionNumber} saved.`;
+                const message = text.saved.replace("{version}", String(editableVersion.versionNumber));
                 setSaveMessage(message);
                 return {
                     ok: true,
@@ -93,7 +121,9 @@ export default function TemplateEditorPage() {
                     message,
                 };
             } else {
-                const message = `Draft v${editableVersion.versionNumber} save failed: ${res.error.message}`;
+                const message = text.saveFailed
+                    .replace("{version}", String(editableVersion.versionNumber))
+                    .replace("{message}", res.error.message);
                 setSaveMessage(message);
                 return {
                     ok: false,
@@ -102,7 +132,9 @@ export default function TemplateEditorPage() {
                 };
             }
         } catch (err) {
-            const message = `Draft v${editableVersion.versionNumber} save failed: ${(err as Error).message || "Network error while saving."}`;
+            const message = text.saveFailed
+                .replace("{version}", String(editableVersion.versionNumber))
+                .replace("{message}", (err as Error).message || text.networkError);
             setSaveMessage(message);
             return {
                 ok: false,
@@ -112,14 +144,14 @@ export default function TemplateEditorPage() {
         }
     };
 
-    if (loading) return <div className="p-8">Loading editor...</div>;
+    if (loading) return <div className="p-8">{text.loading}</div>;
     if (error) return (
         <div className="p-8 text-center">
             <p className="text-red-600 mb-4">{error}</p>
-            <Link href={`/templates/${id}`} className="text-blue-600 underline">Back to Detail</Link>
+            <Link href={`/templates/${id}`} className="text-blue-600 underline">{text.backToDetail}</Link>
         </div>
     );
-    if (!template || !editableVersion) return <div className="p-8">Template not found.</div>;
+    if (!template || !editableVersion) return <div className="p-8">{text.notFound}</div>;
 
     const initialModel: CanonicalLabelModel = normalizeCanonicalLabelModel(
         JSON.parse(editableVersion.layoutJson || "{}"),

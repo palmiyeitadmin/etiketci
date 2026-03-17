@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { useI18n } from "@/lib/i18n";
 import { Product } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
@@ -12,6 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function ProductsPage() {
+    const { formatDate, t } = useI18n();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -43,17 +45,17 @@ export default function ProductsPage() {
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
-                    eyebrow="Product governance"
-                    title="Products"
-                    description="Industrial product catalog, category linkage and vendor readiness in a single operational registry."
+                    eyebrow={t("products.eyebrow")}
+                    title={t("products.title")}
+                    description={t("products.description")}
                     actions={
                         <>
                             <Link href="/products/import" className="plms-button-secondary">
-                                CSV Import
+                                {t("products.csvImport")}
                             </Link>
                             <RoleGuard allowedRoles={["Admin", "Operator"]}>
                                 <Link href="/products/new" className="plms-button-primary">
-                                    New Product
+                                    {t("products.newProduct")}
                                 </Link>
                             </RoleGuard>
                         </>
@@ -64,14 +66,14 @@ export default function ProductsPage() {
                     left={
                         <input
                             className="plms-input max-w-xl"
-                            placeholder="Search by SKU, product name, category or vendor"
+                            placeholder={t("products.searchPlaceholder")}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
                     }
                     right={
                         <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                            {filteredProducts.length} visible
+                            {t("products.visible", undefined, { count: filteredProducts.length })}
                         </div>
                     }
                 />
@@ -82,16 +84,16 @@ export default function ProductsPage() {
                     </div>
                 ) : filteredProducts.length === 0 ? (
                     <EmptyState
-                        title="No products matched this filter"
-                        description="Try a broader search or import product data from the CSV workflow."
+                        title={t("products.emptyTitle")}
+                        description={t("products.emptyDescription")}
                         action={
                             <Link href="/products/import" className="plms-button-primary">
-                                Open Import Workflow
+                                {t("products.openImportWorkflow")}
                             </Link>
                         }
                     />
                 ) : (
-                    <DataTable columns={["SKU", "Product", "Category", "Vendor", "Status", "Created", "Open"]}>
+                    <DataTable columns={[t("products.table.sku"), t("products.table.product"), t("products.table.category"), t("products.table.vendor"), t("products.table.status"), t("products.table.created"), t("products.table.open")]}>
                         {filteredProducts.map((product) => (
                             <tr key={product.id} className="bg-transparent transition-colors hover:bg-white/5">
                                 <td className="px-6 py-4">
@@ -102,7 +104,7 @@ export default function ProductsPage() {
                                 <td className="px-6 py-4">
                                     <div className="text-sm font-bold text-white">{product.name}</div>
                                     <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
-                                        {product.description || "No description"}
+                                        {product.description || t("products.noDescription")}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
@@ -115,11 +117,11 @@ export default function ProductsPage() {
                                     <StatusBadge label={product.isActive ? "Active" : "Inactive"} tone={product.isActive ? "success" : "danger"} />
                                 </td>
                                 <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                                    {new Date(product.createdAt).toLocaleDateString()}
+                                    {formatDate(product.createdAt)}
                                 </td>
                                 <td className="px-6 py-4">
                                     <Link href={`/products/${product.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200">
-                                        Open
+                                        {t("common.open")}
                                     </Link>
                                 </td>
                             </tr>

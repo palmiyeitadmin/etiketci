@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api-client";
 import { normalizeTemplateStatus } from "@/lib/template-status";
 import { buildTemplatePreviewDownloadUrl, buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { Product } from "@/types/product";
+import { useI18n } from "@/lib/i18n";
 
 interface VariableResolutionDetail {
     name: string;
@@ -34,6 +35,7 @@ interface TemplatePreviewMetadata {
 }
 
 export default function TemplatePreviewPage() {
+    const { locale, formatDate } = useI18n();
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -51,6 +53,118 @@ export default function TemplatePreviewPage() {
     const [pdfErrorMessage, setPdfErrorMessage] = useState<string | null>(null);
     const [pdfObjectUrl, setPdfObjectUrl] = useState<string | null>(null);
     const [pdfReloadKey, setPdfReloadKey] = useState(0);
+
+    const text = locale === "tr"
+        ? {
+            metadataLoadError: "Onizleme metadata bilgisi yuklenemedi.",
+            loadPreviewFailed: "Onizleme metadata bilgisi yuklenemedi.",
+            pdfRenderError: "PDF onizlemesi olusturulamadi.",
+            selectProduct: "Print intent olusturmak icin bir urun secin.",
+            statusNotAllowed: "Yalnizca Approved veya Published sablon surumleri baski icin kullanilabilir.",
+            readinessBlocked: "Print intent olusturmadan once hazirlik engellerini giderin.",
+            quantityInvalid: "Miktar sifirdan buyuk olmalidir.",
+            createIntentFailed: "Print intent olusturulamadi: {message}",
+            createIntentError: "Print intent olusturulurken hata olustu.",
+            allowPopups: "Yazdirma penceresini acmak icin popup izni verin.",
+            printHint: "PDF yuklendiginde yazdirma penceresi otomatik acilmaya calisacak.",
+            print: "Yazdir",
+            loadingEngine: "PDF Motoru Hazirlaniyor",
+            metadataContextLoss: "Metadata baglami kayboldu.",
+            version: "Surum",
+            productionBlocked: "Uretim Engelli",
+            readyWithWarnings: "Uyarilarla Hazir",
+            readinessPass: "Hazirlik: GECTI",
+            downloadPdf: "PDF Indir",
+            creatingIntent: "Intent Olusturuluyor...",
+            createPrintIntent: "Print Intent Olustur",
+            masterDiagnostic: "Ana Teshis",
+            critical: "KRITIK",
+            caution: "DIKKAT",
+            verified: "DOGRULANDI",
+            visualArtifacts: "Gorsel artifaktlar veya kritik olmayan eksik veriler tespit edildi.",
+            layoutPass: "Layout motoru uretim degiskenleri icin %100 cozumleme raporluyor.",
+            operationalContext: "Operasyonel Baglam",
+            selectProductContext: "Urun baglami secin",
+            quantity: "Miktar",
+            productContextActive: "Urun baglami aktif. Onizleme ve print intent secilen urunu kullanacak.",
+            selectProductToValidate: "Hazirlik durumunu dogrulamak ve print intent acmak icin bir urun secin.",
+            previewAllowed: "Surum durumu {status}. Onizlemeye izin verilir, ancak print intent icin Approved veya Published surum gerekir.",
+            targetProduct: "Hedef Urun",
+            noProductContext: "Aktif urun baglami yok",
+            placeholdersRemain: "Degiskenler placeholder durumunda kalacak.",
+            variableResolution: "Degisken Cozumleme",
+            found: "BULUNDU",
+            staticLayout: "Statik yerlesim - Tanimli degisken yok.",
+            resolved: "Cozuldu",
+            missing: "Eksik",
+            resolutionFailure: "Cozumleme Hatasi",
+            governanceSnapshot: "Yonetişim Ozeti",
+            status: "Durum",
+            publisher: "Yayinlayan",
+            timestamp: "Zaman Damgasi",
+            loadingPdfPreview: "PDF onizlemesi yukleniyor",
+            previewFailure: "Onizleme hatasi",
+            pdfCouldNotRender: "PDF onizlemesi olusturulamadi.",
+            retry: "Tekrar Dene",
+            unusablePdf: "Onizleme servisi kullanilabilir bir PDF donmedi.",
+            productionPdfStream: "Uretim PDF Akisi",
+            awaitingPdf: "PDF akis yaniti bekleniyor...",
+        }
+        : {
+            metadataLoadError: "Preview metadata could not be loaded.",
+            loadPreviewFailed: "Failed to load preview metadata.",
+            pdfRenderError: "PDF preview could not be rendered.",
+            selectProduct: "Select a product to create a print intent.",
+            statusNotAllowed: "Only Approved or Published template versions can be used for printing.",
+            readinessBlocked: "Resolve readiness blockers before creating a print intent.",
+            quantityInvalid: "Quantity must be greater than zero.",
+            createIntentFailed: "Failed to create print intent: {message}",
+            createIntentError: "Error creating print intent.",
+            allowPopups: "Allow popups to open the print dialog.",
+            printHint: "When the PDF loads, the print dialog will try to open automatically.",
+            print: "Print",
+            loadingEngine: "Rendering PDF Engine",
+            metadataContextLoss: "Metadata context loss.",
+            version: "Version",
+            productionBlocked: "Production Blocked",
+            readyWithWarnings: "Ready with Warnings",
+            readinessPass: "Readiness: PASS",
+            downloadPdf: "Download PDF",
+            creatingIntent: "Creating Intent...",
+            createPrintIntent: "Create Print Intent",
+            masterDiagnostic: "Master Diagnostic",
+            critical: "CRITICAL",
+            caution: "CAUTION",
+            verified: "VERIFIED",
+            visualArtifacts: "Visual artifacts or missing non-critical data detected.",
+            layoutPass: "Layout engine reports 100% resolution for production variables.",
+            operationalContext: "Operational Context",
+            selectProductContext: "Select product context",
+            quantity: "Quantity",
+            productContextActive: "Product context is active. Preview and print intent will use the selected product.",
+            selectProductToValidate: "Select a product to validate readiness and enable print intent creation.",
+            previewAllowed: "Version status is {status}. Preview is allowed, but print intent creation requires an Approved or Published version.",
+            targetProduct: "Target Product",
+            noProductContext: "No Active Product Context",
+            placeholdersRemain: "Variables will remain in placeholder state.",
+            variableResolution: "Variable Resolution",
+            found: "FOUND",
+            staticLayout: "Static layout - No variables defined.",
+            resolved: "Resolved",
+            missing: "Missing",
+            resolutionFailure: "Resolution Failure",
+            governanceSnapshot: "Governance Snapshot",
+            status: "Status",
+            publisher: "Publisher",
+            timestamp: "Timestamp",
+            loadingPdfPreview: "Loading PDF preview",
+            previewFailure: "Preview failure",
+            pdfCouldNotRender: "PDF preview could not be rendered.",
+            retry: "Retry",
+            unusablePdf: "The preview service did not return a usable PDF.",
+            productionPdfStream: "Production PDF Stream",
+            awaitingPdf: "Awaiting PDF stream response...",
+        };
 
     useEffect(() => {
         setSelectedProductId(initialProductId || "");
@@ -85,7 +199,7 @@ export default function TemplatePreviewPage() {
                     });
                 } else {
                     setMetadata(null);
-                    setActionMessage(metadataRes.success ? "Preview metadata could not be loaded." : metadataRes.error.message);
+                    setActionMessage(metadataRes.success ? text.metadataLoadError : metadataRes.error.message);
                 }
 
                 if (productsRes.success && Array.isArray(productsRes.data)) {
@@ -93,7 +207,7 @@ export default function TemplatePreviewPage() {
                 }
             } catch (err) {
                 console.error("Failed to load preview metadata", err);
-                setActionMessage((err as Error).message || "Failed to load preview metadata.");
+                setActionMessage((err as Error).message || text.loadPreviewFailed);
             } finally {
                 setLoading(false);
             }
@@ -122,7 +236,7 @@ export default function TemplatePreviewPage() {
 
                 if (!response.ok) {
                     const body = await response.text();
-                    throw new Error(body || "PDF preview could not be rendered.");
+                    throw new Error(body || text.pdfRenderError);
                 }
 
                 const blob = await response.blob();
@@ -139,7 +253,7 @@ export default function TemplatePreviewPage() {
                     return null;
                 });
                 setPdfStatus("error");
-                setPdfErrorMessage((error as Error).message || "PDF preview could not be rendered.");
+                setPdfErrorMessage((error as Error).message || text.pdfRenderError);
             }
         }
 
@@ -157,22 +271,22 @@ export default function TemplatePreviewPage() {
         if (!metadata) return;
 
         if (!selectedProductId) {
-            setActionMessage("Select a product to create a print intent.");
+            setActionMessage(text.selectProduct);
             return;
         }
 
         if (metadata.status !== "Published" && metadata.status !== "Approved") {
-            setActionMessage("Only Approved or Published template versions can be used for printing.");
+            setActionMessage(text.statusNotAllowed);
             return;
         }
 
         if (metadata.readinessStatus === 2) {
-            setActionMessage("Resolve readiness blockers before creating a print intent.");
+            setActionMessage(text.readinessBlocked);
             return;
         }
 
         if (!Number.isFinite(quantity) || quantity <= 0) {
-            setActionMessage("Quantity must be greater than zero.");
+            setActionMessage(text.quantityInvalid);
             return;
         }
 
@@ -191,11 +305,11 @@ export default function TemplatePreviewPage() {
             if (res.success) {
                 router.push(`/print-intents/${res.data.id}`);
             } else {
-                setActionMessage(`Failed to create print intent: ${res.error.message}`);
+                setActionMessage(text.createIntentFailed.replace("{message}", res.error.message));
             }
         } catch (err) {
             console.error("Error creating print intent", err);
-            setActionMessage((err as Error).message || "Error creating print intent.");
+            setActionMessage((err as Error).message || text.createIntentError);
         } finally {
             setCreatingIntent(false);
         }
@@ -216,7 +330,7 @@ export default function TemplatePreviewPage() {
 
         const printWindow = window.open("", "plms-preview-print", "popup=yes,width=980,height=760");
         if (!printWindow) {
-            setActionMessage("Allow popups to open the print dialog.");
+            setActionMessage(text.allowPopups);
             return;
         }
 
@@ -236,8 +350,8 @@ export default function TemplatePreviewPage() {
             </head>
             <body>
               <div class="toolbar">
-                <div class="hint">PDF yuklendiginde print dialog otomatik acilmaya calisacak.</div>
-                <button onclick="triggerPrint()">Print</button>
+                <div class="hint">${text.printHint}</div>
+                <button onclick="triggerPrint()">${text.print}</button>
               </div>
               <iframe id="pdf-frame" src=${escapedUrl} title="PLMS PDF Preview"></iframe>
               <script>
@@ -267,12 +381,12 @@ export default function TemplatePreviewPage() {
         <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
             <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mb-4"></div>
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Rendering PDF Engine</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">{text.loadingEngine}</div>
             </div>
         </div>
     );
 
-    if (!metadata) return <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest">Metadata context loss.</div>;
+    if (!metadata) return <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest">{text.metadataContextLoss}</div>;
 
     const isBlocked = metadata.readinessStatus === 2;
     const hasWarnings = metadata.readinessStatus === 1 || metadata.warnings.length > 0;
@@ -295,7 +409,7 @@ export default function TemplatePreviewPage() {
                             <div className="flex items-center space-x-2 mt-1">
                                 <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest">{metadata.templateCode}</span>
                                 <span className="text-white/20 text-[10px]">|</span>
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Version {metadata.versionNumber}</span>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{text.version} {metadata.versionNumber}</span>
                             </div>
                         </div>
                     </div>
@@ -306,7 +420,7 @@ export default function TemplatePreviewPage() {
                             "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                         }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${isBlocked ? "bg-red-500" : hasWarnings ? "bg-amber-500" : "bg-emerald-500"}`}></span>
-                            <span>{isBlocked ? "Production Blocked" : hasWarnings ? "Ready with Warnings" : "Readiness: PASS"}</span>
+                            <span>{isBlocked ? text.productionBlocked : hasWarnings ? text.readyWithWarnings : text.readinessPass}</span>
                         </div>
 
                         <div className="h-8 w-px bg-white/10 mx-2"></div>
@@ -316,14 +430,14 @@ export default function TemplatePreviewPage() {
                             disabled={pdfStatus !== "ready"}
                             className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10"
                         >
-                            Print
+                            {text.print}
                         </button>
                         <button
                             onClick={handleDownloadPdf}
                             disabled={!downloadPdfUrl}
                             className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Download PDF
+                            {text.downloadPdf}
                         </button>
                         <button
                             onClick={handleCreateIntent}
@@ -334,7 +448,7 @@ export default function TemplatePreviewPage() {
                                 : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/40"
                             }`}
                         >
-                            {creatingIntent ? "Creating Intent..." : "Create Print Intent"}
+                            {creatingIntent ? text.creatingIntent : text.createPrintIntent}
                         </button>
                     </div>
                 </div>
@@ -350,13 +464,13 @@ export default function TemplatePreviewPage() {
                             "bg-emerald-50/50 border-emerald-100"
                         }`}>
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Diagnostic</h3>
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{text.masterDiagnostic}</h3>
                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${
                                     isBlocked ? "text-red-700 border-red-200 bg-red-100" :
                                     hasWarnings ? "text-amber-700 border-amber-200 bg-amber-100" :
                                     "text-emerald-700 border-emerald-200 bg-emerald-100"
                                 }`}>
-                                    {isBlocked ? "CRITICAL" : hasWarnings ? "CAUTION" : "VERIFIED"}
+                                    {isBlocked ? text.critical : hasWarnings ? text.caution : text.verified}
                                 </span>
                             </div>
 
@@ -370,11 +484,11 @@ export default function TemplatePreviewPage() {
                                 {!isBlocked && hasWarnings && (
                                     <div className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
                                         <span className="text-amber-600 text-xs">!</span>
-                                        <p className="text-[11px] font-bold text-amber-900 leading-tight">Visual artifacts or missing non-critical data detected.</p>
+                                        <p className="text-[11px] font-bold text-amber-900 leading-tight">{text.visualArtifacts}</p>
                                     </div>
                                 )}
                                 {!isBlocked && !hasWarnings && (
-                                    <p className="text-[11px] font-medium text-emerald-800 italic">Layout engine reports 100% resolution for production variables.</p>
+                                    <p className="text-[11px] font-medium text-emerald-800 italic">{text.layoutPass}</p>
                                 )}
                             </div>
                         </div>
@@ -386,7 +500,7 @@ export default function TemplatePreviewPage() {
                             <section>
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
                                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
-                                    Operational Context
+                                    {text.operationalContext}
                                 </h4>
                                 <div className="space-y-3">
                                     <select
@@ -397,7 +511,7 @@ export default function TemplatePreviewPage() {
                                             setActionMessage(null);
                                         }}
                                     >
-                                        <option value="">Select product context</option>
+                                        <option value="">{text.selectProductContext}</option>
                                         {products.map((product) => (
                                             <option key={product.id} value={product.id}>
                                                 {product.sku} - {product.name}
@@ -413,14 +527,14 @@ export default function TemplatePreviewPage() {
                                             setQuantity(Math.max(1, Number(event.target.value) || 1));
                                             setActionMessage(null);
                                         }}
-                                        placeholder="Quantity"
+                                        placeholder={text.quantity}
                                     />
                                     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] font-medium text-slate-500">
                                         {(metadata.status === "Published" || metadata.status === "Approved")
                                             ? selectedProductId
-                                                ? "Product context is active. Preview and print intent will use the selected product."
-                                                : "Select a product to validate readiness and enable print intent creation."
-                                            : `Version status is ${metadata.status}. Preview is allowed, but print intent creation requires an Approved or Published version.`}
+                                                ? text.productContextActive
+                                                : text.selectProductToValidate
+                                            : text.previewAllowed.replace("{status}", metadata.status)}
                                       </div>
                                     {actionMessage ? (
                                         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] font-bold text-amber-900">
@@ -432,7 +546,7 @@ export default function TemplatePreviewPage() {
                                 {metadata.hasProductContext ? (
                                     <div className="bg-slate-900 rounded-xl p-5 shadow-lg relative overflow-hidden group">
                                         <div className="absolute right-[-10px] top-[-10px] font-black text-4xl text-white/5 italic select-none">DATA</div>
-                                        <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Target Product</div>
+                                        <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{text.targetProduct}</div>
                                         <div className="text-lg font-black text-white uppercase tracking-tighter leading-tight">{metadata.productName}</div>
                                         <div className="mt-2 flex items-center space-x-2">
                                             <span className="text-[10px] font-mono text-white/40 tracking-widest">SKU_REF:</span>
@@ -441,8 +555,8 @@ export default function TemplatePreviewPage() {
                                     </div>
                                 ) : (
                                     <div className="p-5 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-center">
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">No Active Product Context</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">Variables will remain in placeholder state.</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{text.noProductContext}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">{text.placeholdersRemain}</p>
                                     </div>
                                 )}
                                 </div>
@@ -453,15 +567,15 @@ export default function TemplatePreviewPage() {
                                 <div className="flex items-center justify-between mb-4">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                                        Variable Resolution
+                                        {text.variableResolution}
                                     </h4>
                                     <span className="text-[9px] font-black text-slate-300">
-                                        {metadata.variableDetails.length} FOUND
+                                        {metadata.variableDetails.length} {text.found}
                                     </span>
                                 </div>
                                 <div className="space-y-3">
                                     {metadata.variableDetails.length === 0 ? (
-                                        <div className="text-[11px] text-slate-400 italic font-medium p-4 bg-slate-50 rounded-lg">Static layout - No variables defined.</div>
+                                        <div className="text-[11px] text-slate-400 italic font-medium p-4 bg-slate-50 rounded-lg">{text.staticLayout}</div>
                                     ) : (
                                         metadata.variableDetails.map(varDetail => (
                                             <div key={varDetail.name} className={`p-3 rounded-lg border transition-all ${
@@ -474,7 +588,7 @@ export default function TemplatePreviewPage() {
                                                         varDetail.status === 0 ? "text-emerald-700 border-emerald-100 bg-emerald-50" :
                                                         "text-red-700 border-red-100 bg-red-100"
                                                     }`}>
-                                                        {varDetail.status === 0 ? "Resolved" : "Missing"}
+                                                        {varDetail.status === 0 ? text.resolved : text.missing}
                                                     </span>
                                                 </div>
                                                 {varDetail.status === 0 ? (
@@ -483,7 +597,7 @@ export default function TemplatePreviewPage() {
                                                     </div>
                                                 ) : (
                                                     <div className="text-[9px] font-black text-red-600 uppercase tracking-widest italic decoration-red-300 decoration-wavy underline">
-                                                        Resolution Failure
+                                                        {text.resolutionFailure}
                                                     </div>
                                                 )}
                                             </div>
@@ -494,10 +608,10 @@ export default function TemplatePreviewPage() {
 
                             {/* System Governance */}
                             <section className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-4">Governance Snapshot</h4>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-4">{text.governanceSnapshot}</h4>
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase">Status</span>
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase">{text.status}</span>
                                         <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
                                             metadata.status === 'Published' || metadata.status === 'Approved' ? 'bg-emerald-900 text-white' : 'bg-slate-200 text-slate-600'
                                           }`}>
@@ -505,12 +619,12 @@ export default function TemplatePreviewPage() {
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-slate-500 uppercase">Publisher</span>
+                                        <span className="font-bold text-slate-500 uppercase">{text.publisher}</span>
                                         <span className="font-black text-slate-900">{metadata.createdBy}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-slate-500 uppercase">Timestamp</span>
-                                        <span className="font-black text-slate-900">{new Date(metadata.createdAt).toLocaleDateString()}</span>
+                                        <span className="font-bold text-slate-500 uppercase">{text.timestamp}</span>
+                                        <span className="font-black text-slate-900">{formatDate(metadata.createdAt)}</span>
                                     </div>
                                 </div>
                             </section>
@@ -524,18 +638,18 @@ export default function TemplatePreviewPage() {
                         {pdfStatus === "loading" ? (
                             <div className="flex w-full max-w-5xl flex-col items-center justify-center rounded-sm border border-slate-300 bg-white/80 p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)]">
                                 <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-slate-700" />
-                                <div className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Loading PDF preview</div>
+                                <div className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">{text.loadingPdfPreview}</div>
                             </div>
                         ) : null}
 
                         {pdfStatus === "error" ? (
                             <div className="w-full max-w-3xl rounded-[2rem] border border-red-200 bg-white p-10 text-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)]">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-500">Preview failure</div>
-                                <h3 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">PDF preview could not be rendered.</h3>
-                                <p className="mt-3 text-sm font-medium text-slate-500">{pdfErrorMessage || "The preview service did not return a usable PDF."}</p>
+                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-500">{text.previewFailure}</div>
+                                <h3 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">{text.pdfCouldNotRender}</h3>
+                                <p className="mt-3 text-sm font-medium text-slate-500">{pdfErrorMessage || text.unusablePdf}</p>
                                 <div className="mt-6 flex items-center justify-center gap-3">
-                                    <button className="plms-button-secondary" onClick={handleRetryPdf}>Retry</button>
-                                    <button className="plms-button-secondary" onClick={handleDownloadPdf} disabled={!downloadPdfUrl}>Download PDF</button>
+                                    <button className="plms-button-secondary" onClick={handleRetryPdf}>{text.retry}</button>
+                                    <button className="plms-button-secondary" onClick={handleDownloadPdf} disabled={!downloadPdfUrl}>{text.downloadPdf}</button>
                                 </div>
                             </div>
                         ) : null}
@@ -545,7 +659,7 @@ export default function TemplatePreviewPage() {
                                 <iframe
                                     src={pdfObjectUrl}
                                     className="w-full h-full"
-                                    title="Production PDF Stream"
+                                    title={text.productionPdfStream}
                                 />
                             </div>
                         ) : null}
@@ -553,7 +667,7 @@ export default function TemplatePreviewPage() {
                         {pdfStatus === "idle" ? (
                             <div className="flex flex-col items-center animate-pulse">
                                 <div className="w-64 h-80 bg-slate-300 rounded-lg mb-6 shadow-inner"></div>
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Awaiting PDF stream response...</div>
+                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{text.awaitingPdf}</div>
                             </div>
                         ) : null}
 

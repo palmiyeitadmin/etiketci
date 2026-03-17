@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -22,6 +23,7 @@ interface ApprovalSummary {
 }
 
 export default function ApprovalQueuePage() {
+    const { formatDateTime, t } = useI18n();
     const [approvals, setApprovals] = useState<ApprovalSummary[]>([]);
     const [restorations, setRestorations] = useState<TemplateRestorationRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,9 +53,9 @@ export default function ApprovalQueuePage() {
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader
-                    eyebrow="Reviewer workflow"
-                    title="Approval Queue"
-                    description="Pending template revisions and restoration requests waiting for reviewer action."
+                    eyebrow={t("approvals.eyebrow")}
+                    title={t("approvals.title")}
+                    description={t("approvals.description")}
                 />
 
                 {loading ? (
@@ -62,15 +64,15 @@ export default function ApprovalQueuePage() {
                     </div>
                 ) : approvals.length === 0 && restorations.length === 0 ? (
                     <EmptyState
-                        title="Queue is clear"
-                        description="There are no template revisions or restoration requests waiting for reviewer action."
+                        title={t("approvals.emptyTitle")}
+                        description={t("approvals.emptyDescription")}
                     />
                 ) : (
                     <div className="space-y-8">
                         <section className="space-y-4">
-                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">Template Reviews</div>
+                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{t("approvals.templateReviews")}</div>
                             {approvals.length === 0 ? (
-                                <EmptyState title="No template reviews" description="No template versions are currently awaiting review." />
+                                <EmptyState title={t("approvals.noTemplateReviews")} description={t("approvals.noTemplateReviewsDescription")} />
                             ) : approvals.map((item) => (
                                 <div
                                     key={item.versionId}
@@ -87,7 +89,7 @@ export default function ApprovalQueuePage() {
                                             <div>
                                                 <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
                                                 <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
-                                                    Requested by {item.requestedBy} on {new Date(item.requestedAt).toLocaleString()}
+                                                    {t("approvals.requestedByOn", undefined, { user: item.requestedBy, date: formatDateTime(item.requestedAt) })}
                                                 </div>
                                             </div>
                                             {item.reviewCommentSummary || item.changeNotes ? (
@@ -95,7 +97,7 @@ export default function ApprovalQueuePage() {
                                             ) : null}
                                         </div>
                                         <Link href={`/approvals/templates/${item.versionId}`} className="plms-button-primary">
-                                            Open Review
+                                            {t("approvals.openReview")}
                                         </Link>
                                     </div>
                                 </div>
@@ -103,9 +105,9 @@ export default function ApprovalQueuePage() {
                         </section>
 
                         <section className="space-y-4">
-                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">Restoration Requests</div>
+                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{t("approvals.restorationRequests")}</div>
                             {restorations.length === 0 ? (
-                                <EmptyState title="No restoration requests" description="No archived versions are waiting for restoration review." />
+                                <EmptyState title={t("approvals.noRestorationRequests")} description={t("approvals.noRestorationRequestsDescription")} />
                             ) : restorations.map((item) => (
                                 <div key={item.id} className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -118,13 +120,13 @@ export default function ApprovalQueuePage() {
                                             <div>
                                                 <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
                                                 <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
-                                                    Requested by {item.requestedBy} on {new Date(item.requestedAt).toLocaleString()}
+                                                    {t("approvals.requestedByOn", undefined, { user: item.requestedBy, date: formatDateTime(item.requestedAt) })}
                                                 </div>
                                             </div>
                                             <p className="max-w-3xl text-sm font-medium text-[color:var(--plms-text-muted)]">{item.businessJustification}</p>
                                         </div>
                                         <Link href={`/approvals/restorations/${item.id}`} className="plms-button-primary">
-                                            Open Request
+                                            {t("approvals.openRequest")}
                                         </Link>
                                     </div>
                                 </div>

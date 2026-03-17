@@ -4,6 +4,7 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { searchEverywhere } from "@/lib/search";
+import { useI18n } from "@/lib/i18n";
 import { SearchGroup } from "@/types/search";
 
 export function GlobalSearchPalette({
@@ -13,6 +14,7 @@ export function GlobalSearchPalette({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [groups, setGroups] = useState<SearchGroup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,13 +73,13 @@ export function GlobalSearchPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="w-full bg-transparent text-base font-semibold text-white outline-none placeholder:text-[color:var(--plms-text-subtle)]"
-            placeholder="Search pages, templates, products, print intents, users and roles"
+            placeholder={t("search.placeholder")}
           />
-          <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]" onClick={onClose}>Close</button>
+          <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]" onClick={onClose}>{t("common.close")}</button>
         </div>
         <div className="flex items-center justify-between border-b border-[color:var(--plms-border)] px-5 py-3 text-[11px] font-medium text-[color:var(--plms-text-subtle)]">
-          <span>{loading ? "Searching..." : `${resultCount} results`}</span>
-          <span>Ctrl/Cmd + K</span>
+          <span>{loading ? t("search.searching") : t("search.results", undefined, { count: resultCount })}</span>
+          <span>{t("search.shortcut")}</span>
         </div>
         <div className="custom-scrollbar max-h-[62vh] overflow-y-auto p-5">
           <div className="space-y-5">
@@ -102,7 +104,7 @@ export function GlobalSearchPalette({
             ))}
             {!loading && resultCount === 0 ? (
               <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-12 text-center text-sm text-[color:var(--plms-text-subtle)]">
-                No results matched the current query.
+                {t("search.noResults")}
               </div>
             ) : null}
           </div>

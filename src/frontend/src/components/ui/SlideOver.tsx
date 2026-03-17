@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export function SlideOver({
     open,
@@ -15,6 +16,8 @@ export function SlideOver({
     onClose: () => void;
     children: ReactNode;
 }) {
+    const { t } = useI18n();
+
     if (!open) return null;
 
     return (
@@ -26,7 +29,7 @@ export function SlideOver({
                         {subtitle ? <p className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{subtitle}</p> : null}
                     </div>
                     <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]" onClick={onClose}>
-                        Close
+                        {t("common.close")}
                     </button>
                 </div>
                 <div className="h-[calc(100%-97px)] overflow-y-auto px-6 py-6">{children}</div>

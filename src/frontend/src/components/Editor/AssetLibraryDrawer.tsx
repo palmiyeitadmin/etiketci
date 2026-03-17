@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { uploadAsset, listAssets, deleteAsset, buildAssetContentUrl, fetchAssetAsDataUri } from "@/lib/assets";
+import { useI18n } from "@/lib/i18n";
 import { phosphorIconToDataUri, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { hasPermission, permissions } from "@/lib/permissions";
 import { ContentAssetSummary } from "@/types/assets";
@@ -17,7 +18,53 @@ export function AssetLibraryDrawer({
   onClose: () => void;
   onInsertImage: (payload: { name: string; content: string; assetId?: string; assetSource?: "upload" | "phosphor"; assetKey?: string }) => void;
 }) {
+  const { locale } = useI18n();
   const { data: session } = useSession();
+  const text = locale === "tr"
+    ? {
+      title: "Paylasilan Icerik Kutuphanesi",
+      heading: "Varliklar ve ikonlar",
+      description: "Ayni dosyayi her sablona yeniden yuklemeden, yuklenmis gorselleri ve secili Phosphor ikonlarini tekrar kullanin.",
+      uploads: "Yuklemeler",
+      phosphor: "Phosphor",
+      search: "Varlik ara",
+      refresh: "Yenile",
+      close: "Kapat",
+      loading: "Kutuphane yukleniyor...",
+      empty: "Paylasilan varlik bulunamadi.",
+      uploading: "Yukleniyor",
+      uploadDescription: "Varlik paylasilan kutuphaneye ekleniyor ve tekrarlar kontrol ediliyor.",
+      uploadCallout: "PNG, JPEG veya SVG dosyasini paylasilan kutuphaneye yukleyin",
+      uploadHint: "Varlik basina 5 MB'a kadar",
+      reused: "Mevcut paylasilan varlik yeniden kullanildi.",
+      uploaded: "Varlik paylasilan kutuphaneye yuklendi.",
+      removed: "Varlik paylasilan kutuphaneden kaldirildi.",
+      insertFailed: "Varlik eklenemedi.",
+      add: "Ekle",
+      adding: "Ekleniyor",
+    }
+    : {
+      title: "Shared Content Library",
+      heading: "Assets and icons",
+      description: "Reuse uploaded visuals and curated Phosphor icons without re-uploading the same file into every template.",
+      uploads: "Uploads",
+      phosphor: "Phosphor",
+      search: "Search assets",
+      refresh: "Refresh",
+      close: "Close",
+      loading: "Loading library...",
+      empty: "No shared assets found.",
+      uploading: "Uploading",
+      uploadDescription: "Adding asset to shared library and checking for duplicates.",
+      uploadCallout: "Upload PNG, JPEG or SVG into the shared library",
+      uploadHint: "Up to 5 MB per asset",
+      reused: "Existing shared asset reused.",
+      uploaded: "Asset uploaded to shared library.",
+      removed: "Asset removed from shared library.",
+      insertFailed: "Asset could not be inserted.",
+      add: "Add",
+      adding: "Adding",
+    };
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = hasPermission(userPermissions, permissions.assetsUpload) || (session?.user as any)?.roles?.includes?.("Admin");
   const canDelete = hasPermission(userPermissions, permissions.assetsDelete) || (session?.user as any)?.roles?.includes?.("Admin");
@@ -43,7 +90,7 @@ export function AssetLibraryDrawer({
     void loadAssets("");
   }, [open]);
 
-  const emptyText = useMemo(() => loading ? "Loading library..." : "No shared assets found.", [loading]);
+  const emptyText = useMemo(() => loading ? text.loading : text.empty, [loading, text.empty, text.loading]);
 
   if (!open) return null;
 
@@ -52,20 +99,20 @@ export function AssetLibraryDrawer({
       <div className="absolute inset-y-0 right-0 flex w-full max-w-3xl flex-col border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] shadow-[0_24px_80px_rgba(2,6,23,0.5)]" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between border-b border-[color:var(--plms-border)] px-6 py-6">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Shared Content Library</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-white">Assets and icons</h2>
-            <p className="mt-2 max-w-xl text-sm text-[color:var(--plms-text-subtle)]">Reuse uploaded visuals and curated Phosphor icons without re-uploading the same file into every template.</p>
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.title}</div>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-white">{text.heading}</h2>
+            <p className="mt-2 max-w-xl text-sm text-[color:var(--plms-text-subtle)]">{text.description}</p>
           </div>
-          <button className="plms-button-secondary" onClick={onClose}>Close</button>
+          <button className="plms-button-secondary" onClick={onClose}>{text.close}</button>
         </div>
 
         <div className="flex items-center gap-2 border-b border-[color:var(--plms-border)] px-6 py-4">
-          <button className={`plms-button-compact ${tab === "uploads" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("uploads")}>Uploads</button>
-          <button className={`plms-button-compact ${tab === "phosphor" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("phosphor")}>Phosphor</button>
+          <button className={`plms-button-compact ${tab === "uploads" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("uploads")}>{text.uploads}</button>
+          <button className={`plms-button-compact ${tab === "phosphor" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("phosphor")}>{text.phosphor}</button>
           {tab === "uploads" ? (
             <div className="ml-auto flex items-center gap-2">
-              <input className="plms-input w-72" placeholder="Search assets" value={query} onChange={(event) => setQuery(event.target.value)} />
-              <button className="plms-button-compact" onClick={() => void loadAssets()}>Refresh</button>
+              <input className="plms-input w-72" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
+              <button className="plms-button-compact" onClick={() => void loadAssets()}>{text.refresh}</button>
             </div>
           ) : null}
         </div>
@@ -76,8 +123,8 @@ export function AssetLibraryDrawer({
             <div className="mb-4 flex items-center gap-3 rounded-2xl border border-blue-400/20 bg-[linear-gradient(180deg,rgba(37,99,235,0.14),rgba(14,165,233,0.08))] px-4 py-3 text-sm text-blue-100">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300/30 border-t-blue-200" />
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200">Uploading</div>
-                <div className="mt-1 text-sm text-blue-50">Adding asset to shared library and checking for duplicates.</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200">{text.uploading}</div>
+                <div className="mt-1 text-sm text-blue-50">{text.uploadDescription}</div>
               </div>
             </div>
           ) : null}
@@ -99,7 +146,7 @@ export function AssetLibraryDrawer({
                       try {
                         const response = await uploadAsset(file);
                         if (response.success) {
-                          setMessage(response.data.deduplicated ? "Existing shared asset reused." : "Asset uploaded to shared library.");
+                          setMessage(response.data.deduplicated ? text.reused : text.uploaded);
                           await loadAssets();
                         } else {
                           setMessage(response.error.message);
@@ -111,8 +158,8 @@ export function AssetLibraryDrawer({
                     }}
                   />
                   <div>
-                    <div>Upload PNG, JPEG or SVG into the shared library</div>
-                    <div className="mt-1 text-[11px] text-[color:var(--plms-text-subtle)]/80">Up to 5 MB per asset</div>
+                    <div>{text.uploadCallout}</div>
+                    <div className="mt-1 text-[11px] text-[color:var(--plms-text-subtle)]/80">{text.uploadHint}</div>
                   </div>
                 </label>
               ) : null}
@@ -140,13 +187,13 @@ export function AssetLibraryDrawer({
                               const content = await fetchAssetAsDataUri(asset.id);
                               onInsertImage({ name: asset.name, content, assetId: asset.id, assetSource: "upload" });
                             } catch (error) {
-                              setMessage(error instanceof Error ? error.message : "Asset could not be inserted.");
+                              setMessage(error instanceof Error ? error.message : text.insertFailed);
                             } finally {
                               setInsertingAssetId(null);
                             }
                           }}
                         >
-                          {insertingAssetId === asset.id ? "Adding" : "Add"}
+                          {insertingAssetId === asset.id ? text.adding : text.add}
                         </button>
                         {canDelete ? (
                           <button
@@ -155,7 +202,7 @@ export function AssetLibraryDrawer({
                             onClick={async () => {
                               const response = await deleteAsset(asset.id);
                               if (response.success) {
-                                setMessage("Asset removed from shared library.");
+                                setMessage(text.removed);
                                 await loadAssets();
                               } else {
                                 setMessage(response.error.message);

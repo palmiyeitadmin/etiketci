@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { useI18n } from "@/lib/i18n";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 
 export function OperationalPulse({
@@ -15,6 +16,7 @@ export function OperationalPulse({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { formatTime, t } = useI18n();
   const latestAudit = activity?.recentAuditItems?.[0];
   const latestImport = activity?.recentImportSummaries?.[0];
 
@@ -24,19 +26,19 @@ export function OperationalPulse({
         type="button"
         onClick={onToggle}
         className="flex min-w-[260px] items-center gap-3 rounded-[1.2rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(16,27,45,0.98),rgba(10,20,35,0.98))] px-3 py-2 text-left shadow-[0_18px_50px_rgba(3,8,20,0.28)] transition-colors hover:bg-white/[0.04]"
-        aria-label={expanded ? "Collapse operational pulse" : "Expand operational pulse"}
+        aria-label={expanded ? t("pulse.collapse") : t("pulse.expand")}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Operational Pulse</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("pulse.title")}</span>
             <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-200">
-              Active
+              {t("pulse.active")}
             </span>
           </div>
           <div className="mt-1 truncate text-xs text-white/80">
             A:{summary?.pendingApprovals ?? 0} Q:{summary?.pendingPrintIntents ?? 0} I:{summary?.recentImportCount ?? 0}
             <span className="ml-2 text-[color:var(--plms-text-subtle)]">
-              {latestAudit?.title || latestImport?.title || "No recent activity"}
+              {latestAudit?.title || latestImport?.title || t("pulse.noRecentActivity")}
             </span>
           </div>
         </div>
@@ -49,29 +51,29 @@ export function OperationalPulse({
         <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 w-[340px] rounded-[1.6rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(16,27,45,0.98),rgba(10,20,35,0.98))] px-4 py-3 shadow-[0_18px_50px_rgba(3,8,20,0.45)]">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Operational Pulse</div>
-              <div className="mt-1 text-sm font-bold text-white">Live production posture</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("pulse.title")}</div>
+              <div className="mt-1 text-sm font-bold text-white">{t("pulse.livePosture")}</div>
             </div>
             <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-200">
-              Active
+              {t("pulse.active")}
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <MetricPill label="Approvals" value={summary?.pendingApprovals ?? 0} tone="warning" />
-            <MetricPill label="Queue" value={summary?.pendingPrintIntents ?? 0} tone="primary" />
-            <MetricPill label="Imports" value={summary?.recentImportCount ?? 0} tone="success" />
+            <MetricPill label={t("pulse.approvals")} value={summary?.pendingApprovals ?? 0} tone="warning" />
+            <MetricPill label={t("pulse.queue")} value={summary?.pendingPrintIntents ?? 0} tone="primary" />
+            <MetricPill label={t("pulse.imports")} value={summary?.recentImportCount ?? 0} tone="success" />
           </div>
           <div className="mt-4 space-y-2 rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] p-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">Latest signal</div>
-              {latestAudit ? <span className="text-[10px] font-bold text-blue-200">{new Date(latestAudit.timestamp).toLocaleTimeString()}</span> : null}
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{t("pulse.latestSignal")}</div>
+              {latestAudit ? <span className="text-[10px] font-bold text-blue-200">{formatTime(latestAudit.timestamp)}</span> : null}
             </div>
-            <div className="text-sm font-semibold text-white">{latestAudit?.title || latestImport?.title || "No recent activity"}</div>
-            <div className="text-xs text-[color:var(--plms-text-subtle)] line-clamp-2">{latestAudit?.subtitle || latestImport?.subtitle || "Dashboard activity will appear here once events are recorded."}</div>
+            <div className="text-sm font-semibold text-white">{latestAudit?.title || latestImport?.title || t("pulse.noRecentActivity")}</div>
+            <div className="text-xs text-[color:var(--plms-text-subtle)] line-clamp-2">{latestAudit?.subtitle || latestImport?.subtitle || t("pulse.emptySubtitle")}</div>
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <Link href="/approvals" className="plms-button-compact flex-1">Open Approvals</Link>
-            <Link href="/print-intents" className="plms-button-compact flex-1">Open Queue</Link>
+            <Link href="/approvals" className="plms-button-compact flex-1">{t("pulse.openApprovals")}</Link>
+            <Link href="/print-intents" className="plms-button-compact flex-1">{t("pulse.openQueue")}</Link>
           </div>
         </div>
       ) : null}

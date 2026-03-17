@@ -6,6 +6,7 @@ import { PermissionGuard } from "@/components/PermissionGuard";
 import { permissions } from "@/lib/permissions";
 import { PermissionCatalogGroup, RoleSummary } from "@/types/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useI18n } from "@/lib/i18n";
 
 const emptyRoleForm = {
   id: "",
@@ -15,12 +16,47 @@ const emptyRoleForm = {
 };
 
 export default function RolesPage() {
+  const { locale } = useI18n();
   const [roles, setRoles] = useState<RoleSummary[]>([]);
   const [catalog, setCatalog] = useState<PermissionCatalogGroup[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [form, setForm] = useState(emptyRoleForm);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+
+  const text = locale === "tr"
+    ? {
+        eyebrow: "Yonetim",
+        title: "Roller",
+        description: "Varsayilan ve ozel rolleri yonetin, sonra aksiyon seviyesinde yetki atayin.",
+        newRole: "Yeni Rol",
+        permissionsCount: "{count} yetki",
+        usersCount: "{count} kullanici",
+        roleName: "Rol adi",
+        descriptionLabel: "Aciklama",
+        immutableWarning: "Bu rol degistirilemez. Yetkiler degistirilemez.",
+        saveRole: "Rolu Kaydet",
+        deleteRole: "Rolu Sil",
+        updated: "Rol guncellendi.",
+        created: "Rol olusturuldu.",
+        deleted: "Rol silindi.",
+      }
+    : {
+        eyebrow: "Administration",
+        title: "Roles",
+        description: "Manage default and custom roles, then assign action-level permissions.",
+        newRole: "New Role",
+        permissionsCount: "{count} permissions",
+        usersCount: "{count} users",
+        roleName: "Role name",
+        descriptionLabel: "Description",
+        immutableWarning: "This role is immutable. Permissions cannot be changed.",
+        saveRole: "Save Role",
+        deleteRole: "Delete Role",
+        updated: "Role updated.",
+        created: "Role created.",
+        deleted: "Role deleted.",
+      };
 
   async function load() {
     setLoading(true);
@@ -74,7 +110,7 @@ export default function RolesPage() {
       return;
     }
 
-    setMessage(form.id ? "Role updated." : "Role created.");
+    setMessage(form.id ? text.updated : text.created);
     await load();
     setSelectedRoleId(response.data.id);
   }
@@ -90,7 +126,7 @@ export default function RolesPage() {
       return;
     }
 
-    setMessage("Role deleted.");
+    setMessage(text.deleted);
     setSelectedRoleId("");
     setForm(emptyRoleForm);
     await load();
@@ -109,10 +145,10 @@ export default function RolesPage() {
     <PermissionGuard permissions={[permissions.rolesView]}>
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
-          eyebrow="Administration"
-          title="Roles"
-          description="Manage default and custom roles, then assign action-level permissions."
-          actions={<button className="plms-button-primary" onClick={() => { setSelectedRoleId(""); setForm(emptyRoleForm); }}>New Role</button>}
+          eyebrow={text.eyebrow}
+          title={text.title}
+          description={text.description}
+          actions={<button className="plms-button-primary" onClick={() => { setSelectedRoleId(""); setForm(emptyRoleForm); }}>{text.newRole}</button>}
         />
         {message ? <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-100">{message}</div> : null}
 
@@ -126,9 +162,9 @@ export default function RolesPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-lg font-black text-white">{role.name}</div>
-                      <div className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{role.description || `${role.permissionKeys.length} permissions`}</div>
+                      <div className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</div>
                     </div>
-                    <div className="text-right text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{role.assignedUserCount} users</div>
+                    <div className="text-right text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.usersCount.replace("{count}", String(role.assignedUserCount))}</div>
                   </div>
                 </button>
               ))}
@@ -136,12 +172,12 @@ export default function RolesPage() {
 
             <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <input className="plms-input" placeholder="Role name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
-                <input className="plms-input" placeholder="Description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+                <input className="plms-input" placeholder={text.roleName} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
+                <input className="plms-input" placeholder={text.descriptionLabel} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
               </div>
 
               {selectedRole?.isImmutable ? (
-                <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">This role is immutable. Permissions cannot be changed.</div>
+                <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
               ) : null}
 
               <div className="mt-6 space-y-5">
@@ -164,8 +200,8 @@ export default function RolesPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>Save Role</button>
-                {selectedRole && !selectedRole.isSystem ? <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={deleteRole}>Delete Role</button> : null}
+                <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
+                {selectedRole && !selectedRole.isSystem ? <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
               </div>
             </div>
           </div>

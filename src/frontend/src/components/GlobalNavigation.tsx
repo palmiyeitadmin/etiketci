@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
 
 export function GlobalNavigation() {
     const pathname = usePathname();
     const { data: session } = useSession();
+    const { t } = useI18n();
 
     if (!session) return null;
 
     const navItems = [
-        { label: "Dashboard", href: "/", permissions: [permissions.dashboardView] },
-        { label: "Products", href: "/products", permissions: [permissions.productsView] },
-        { label: "Templates", href: "/templates", permissions: [permissions.templatesView] },
-        { label: "Print Intents", href: "/print-intents", permissions: [permissions.printIntentsView] },
-        { label: "Approval Queue", href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
+        { label: t("nav.dashboard"), href: "/", permissions: [permissions.dashboardView] },
+        { label: t("nav.products"), href: "/products", permissions: [permissions.productsView] },
+        { label: t("nav.templates"), href: "/templates", permissions: [permissions.templatesView] },
+        { label: t("nav.printIntents"), href: "/print-intents", permissions: [permissions.printIntentsView] },
+        { label: t("nav.approvals"), href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
     ];
 
     const userRoles = (session.user as any).roles || [];
@@ -53,14 +55,14 @@ export function GlobalNavigation() {
                         <div className="flex flex-col items-end">
                             <span className="text-[10px] font-bold text-slate-300 leading-none">{session.user?.name}</span>
                             <span className="text-[9px] text-blue-400 font-mono tracking-tighter uppercase mt-1">
-                                {userRoles.length > 0 ? userRoles.join(" | ") : "Viewer"}
+                                {userRoles.length > 0 ? userRoles.join(" | ") : t("common.unknown")}
                             </span>
                         </div>
                         <button
                             onClick={() => signOut({ callbackUrl: "/auth/login" })}
                             className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded hover:bg-slate-700 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
                         >
-                            Sign Out
+                            {t("shell.signOut")}
                         </button>
                     </div>
                 </div>

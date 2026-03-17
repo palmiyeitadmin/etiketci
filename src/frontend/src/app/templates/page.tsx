@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { useI18n } from "@/lib/i18n";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
@@ -17,6 +18,7 @@ import { SlideOver } from "@/components/ui/SlideOver";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
 
 export default function TemplatesPage() {
+    const { formatDate, t } = useI18n();
     const router = useRouter();
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,13 +68,13 @@ export default function TemplatesPage() {
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
-                    eyebrow="Template lifecycle"
-                    title="Templates"
-                    description="Canonical label models, governed revisions and published production-ready versions."
+                    eyebrow={t("templates.eyebrow")}
+                    title={t("templates.title")}
+                    description={t("templates.description")}
                     actions={
                         <RoleGuard allowedRoles={["Admin", "Operator"]}>
                             <Link href="/templates/new" className="plms-button-primary">
-                                New Template
+                                {t("templates.newTemplate")}
                             </Link>
                         </RoleGuard>
                     }
@@ -82,7 +84,7 @@ export default function TemplatesPage() {
                     left={
                         <input
                             className="plms-input max-w-xl"
-                            placeholder="Search by template code, name or description"
+                            placeholder={t("templates.searchPlaceholder")}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
@@ -95,11 +97,11 @@ export default function TemplatesPage() {
                     </div>
                 ) : filteredTemplates.length === 0 ? (
                     <EmptyState
-                        title="No templates available"
-                        description="Create a new canonical template or adjust the active filter."
+                        title={t("templates.emptyTitle")}
+                        description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={["Code", "Template", "Active Version", "Lifecycle", "Updated", "Open"]}>
+                    <DataTable columns={[t("templates.table.code"), t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), t("templates.table.updated"), t("templates.table.open")]}>
                         {filteredTemplates.map((template) => {
                             const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "In Review" : "Draft only";
                             return (
@@ -112,7 +114,7 @@ export default function TemplatesPage() {
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-bold text-white">{template.name}</div>
                                         <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
-                                            {template.description || "No description"}
+                                            {template.description || t("templates.detail.noDescription")}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
@@ -122,11 +124,11 @@ export default function TemplatesPage() {
                                         <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
                                     </td>
                                     <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                                        {new Date(template.updatedAt).toLocaleDateString()}
+                                        {formatDate(template.updatedAt)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <Link href={`/templates/${template.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200" onClick={(event) => event.stopPropagation()}>
-                                            Open
+                                            {t("common.open")}
                                         </Link>
                                     </td>
                                 </tr>
@@ -138,8 +140,8 @@ export default function TemplatesPage() {
 
             <SlideOver
                 open={selectedTemplate !== null}
-                title={selectedTemplate?.name || "Template"}
-                subtitle={selectedTemplate ? `${selectedTemplate.code} · ${selectedTemplate.lastUpdatedBy || "Unknown updater"}` : undefined}
+                title={selectedTemplate?.name || t("templates.title")}
+                subtitle={selectedTemplate ? `${selectedTemplate.code} · ${selectedTemplate.lastUpdatedBy || t("common.unknown")}` : undefined}
                 onClose={() => setSelectedTemplate(null)}
             >
                 {selectedTemplate ? (
@@ -147,33 +149,33 @@ export default function TemplatesPage() {
                         <TemplatePreviewCard template={selectedTemplate} version={previewVersion} />
 
                         <section className="grid gap-4 md:grid-cols-2">
-                            <DetailMetric label="Active version" value={selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "None"} />
-                            <DetailMetric label="Latest version" value={selectedTemplate.latestVersion ? `v${selectedTemplate.latestVersion.versionNumber}` : "None"} />
-                            <DetailMetric label="Linked products" value={String(selectedTemplate.linkedProductCount ?? 0)} />
-                            <DetailMetric label="Published count" value={String(selectedTemplate.publishedCount ?? 0)} />
-                            <DetailMetric label="Drafts" value={String(selectedTemplate.draftCount ?? 0)} />
-                            <DetailMetric label="In review" value={String(selectedTemplate.inReviewCount ?? 0)} />
+                            <DetailMetric label={t("templates.detail.activeVersion")} value={selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "-"} />
+                            <DetailMetric label={t("templates.detail.latestVersion")} value={selectedTemplate.latestVersion ? `v${selectedTemplate.latestVersion.versionNumber}` : "-"} />
+                            <DetailMetric label={t("templates.detail.linkedProducts")} value={String(selectedTemplate.linkedProductCount ?? 0)} />
+                            <DetailMetric label={t("templates.detail.publishedCount")} value={String(selectedTemplate.publishedCount ?? 0)} />
+                            <DetailMetric label={t("templates.detail.drafts")} value={String(selectedTemplate.draftCount ?? 0)} />
+                            <DetailMetric label={t("templates.detail.inReview")} value={String(selectedTemplate.inReviewCount ?? 0)} />
                         </section>
 
                         <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Lifecycle Snapshot</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.lifecycleSnapshot")}</div>
                             <div className="mt-4 flex flex-wrap gap-2">
                                 <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "In Review" : "Draft only"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
                                 {selectedTemplate.latestVersion ? <StatusBadge label={`Latest ${selectedTemplate.latestVersion.status}`} tone="neutral" /> : null}
                             </div>
-                            <div className="mt-4 text-sm text-[color:var(--plms-text-subtle)]">{selectedTemplate.description || "No template description was provided for this label model."}</div>
+                            <div className="mt-4 text-sm text-[color:var(--plms-text-subtle)]">{selectedTemplate.description || t("templates.detail.noLifecycleDescription")}</div>
                         </section>
 
                         <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Quick Actions</div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.quickActions")}</div>
                             <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                                <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">Open Detail</Link>
+                                <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">{t("templates.detail.openDetail")}</Link>
                                 <RoleGuard allowedRoles={["Admin", "Operator"]}>
                                     <button type="button" className="plms-button-compact" onClick={() => void handleOpenEditor(selectedTemplate.id)} disabled={openingTemplateId === selectedTemplate.id}>
-                                        {openingTemplateId === selectedTemplate.id ? "Opening..." : "Open Editor"}
+                                        {openingTemplateId === selectedTemplate.id ? t("templates.detail.opening") : t("templates.detail.openEditor")}
                                     </button>
                                 </RoleGuard>
-                                {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-compact">Preview PDF</Link> : null}
+                                {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-compact">{t("templates.detail.previewPdf")}</Link> : null}
                             </div>
                         </section>
                     </div>

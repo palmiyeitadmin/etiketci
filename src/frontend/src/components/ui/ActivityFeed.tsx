@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { DashboardFeedItem } from "@/types/dashboard";
+import { useI18n } from "@/lib/i18n";
 import { StatusBadge } from "./StatusBadge";
 
 function toTone(status?: string) {
@@ -19,18 +20,20 @@ export function ActivityFeed({
     title: string;
     items: DashboardFeedItem[];
 }) {
+    const { formatDateTime, t } = useI18n();
+
     return (
         <section className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
             <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-sm font-black uppercase tracking-[0.18em] text-white">{title}</h2>
                 <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                    {items.length} items
+                    {items.length} {t("common.items")}
                 </span>
             </div>
             <div className="space-y-3">
                 {items.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-[color:var(--plms-border-strong)] px-4 py-8 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                        No activity available.
+                        {t("activity.empty")}
                     </div>
                 ) : (
                     items.map((item) => {
@@ -46,7 +49,7 @@ export function ActivityFeed({
                                     {item.status ? <StatusBadge label={item.status} tone={toTone(item.status)} /> : null}
                                 </div>
                                 <div className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                                    {new Date(item.timestamp).toLocaleString()}
+                                    {formatDateTime(item.timestamp)}
                                 </div>
                             </div>
                         );
