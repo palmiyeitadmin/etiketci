@@ -41,4 +41,4 @@ For domain context, architectural limits, and guardrails, refer to the files in 
 - The frontend needs the public API URL at build time. Portainer must build from the repository using the values in `stack.env`.
 - Shared uploaded assets are stored in PostgreSQL, so there is no separate asset volume at this time.
 - `pull_policy: build` is set for frontend and backend so Portainer rebuilds the images from the repository source.
-- Based on the current Portainer host port usage, the committed defaults use `http://192.168.0.99:3004` for the frontend and `http://192.168.0.99:5001` for the API to avoid collisions.
+- Based on the current Portainer host port usage, the committed defaults use `http://192.168.0.99:3000` for the frontend and `http://192.168.0.99:5001` for the API.

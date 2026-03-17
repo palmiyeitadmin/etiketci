@@ -36,12 +36,12 @@ Recommended values:
 
 ## Current host-safe default ports
 Based on the current Portainer host screenshot, these defaults avoid the already used ports:
-- Frontend: `3004`
+- Frontend: `3000`
 - Backend API: `5001`
 - PostgreSQL: `5433`
 
 Public URLs currently prepared in `stack.env`:
-- `APP_PUBLIC_ORIGIN=http://192.168.0.99:3004`
+- `APP_PUBLIC_ORIGIN=http://192.168.0.99:3000`
 - `API_PUBLIC_ORIGIN=http://192.168.0.99:5001`
 
 ## Published ports
