@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
@@ -18,6 +19,7 @@ const emptyActivity: DashboardActivity = {
 
 export default function HomePage() {
     const { t } = useI18n();
+    const router = useRouter();
     const { data: session, status } = useSession();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [activity, setActivity] = useState<DashboardActivity>(emptyActivity);
@@ -51,6 +53,12 @@ export default function HomePage() {
         load();
     }, [session]);
 
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.replace("/auth/login?callbackUrl=%2F");
+        }
+    }, [router, status]);
+
     if (status === "loading" || loading) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center">
@@ -64,7 +72,18 @@ export default function HomePage() {
         );
     }
 
-    if (!session) return null;
+    if (!session) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center">
+                <div className="text-center">
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                        {t("auth.login.initializing")}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto max-w-7xl space-y-8">

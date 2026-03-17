@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { useLanguageStore } from "@/lib/i18n";
 
 const mockUsePathname = vi.fn();
+const mockUseSearchParams = vi.fn();
 const mockUseSession = vi.fn();
 const mockApiFetch = vi.fn();
 const mockReplace = vi.fn();
@@ -15,6 +16,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
+  useSearchParams: () => mockUseSearchParams(),
   useRouter: () => ({ replace: mockReplace }),
 }));
 
@@ -39,6 +41,7 @@ describe("AppShell", () => {
   beforeEach(() => {
     useLanguageStore.setState({ locale: "tr", hydrated: true });
     mockUseSession.mockReturnValue({
+      status: "authenticated",
       data: {
         user: {
           name: "Test User",
@@ -50,6 +53,7 @@ describe("AppShell", () => {
     });
     mockApiFetch.mockResolvedValue({ success: false, error: { message: "ignored" } });
     mockUsePathname.mockReturnValue("/templates");
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
     mockReplace.mockReset();
   });
 
@@ -88,6 +92,19 @@ describe("AppShell", () => {
 
     expect(container.querySelector("[data-testid='auth-child']")).not.toBeNull();
     expect(container.querySelector("main")).toBeNull();
+  });
+
+  it("redirects unauthenticated users from protected routes as a client fallback", () => {
+    mockUseSession.mockReturnValue({
+      status: "unauthenticated",
+      data: null,
+    });
+    mockUsePathname.mockReturnValue("/");
+    mockUseSearchParams.mockReturnValue(new URLSearchParams());
+
+    render(createElement(AppShell, null, createElement("div", null, "Dashboard")));
+
+    expect(mockReplace).toHaveBeenCalledWith("/auth/login?callbackUrl=%2F");
   });
 
   it("renders translated navigation labels from the active locale", () => {

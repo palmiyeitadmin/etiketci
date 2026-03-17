@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { apiFetch } from "@/lib/api-client";
+import { buildLoginRedirectPath, isProtectedAppPath } from "@/lib/auth-routing";
 import { localeLabels, type Locale, useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
@@ -66,8 +67,9 @@ function getPageTitleKey(pathname: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const router = useRouter();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const { locale, setLocale, t } = useI18n();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -145,7 +147,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, []);
 
-    if (isAuthRoute || !session) {
+    useEffect(() => {
+        if (isAuthRoute || status !== "unauthenticated" || !isProtectedAppPath(pathname)) {
+            return;
+        }
+
+        const search = searchParams.toString();
+        router.replace(buildLoginRedirectPath(`${pathname}${search ? `?${search}` : ""}`));
+    }, [isAuthRoute, pathname, router, searchParams, status]);
+
+    if (isAuthRoute) {
+        return <>{children}</>;
+    }
+
+    if (status === "loading") {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[color:var(--plms-bg)] text-white">
+                <div className="text-center">
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                        {t("common.loading")}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!session && isProtectedAppPath(pathname)) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[color:var(--plms-bg)] text-white">
+                <div className="text-center">
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                        {t("auth.login.initializing")}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!session) {
         return <>{children}</>;
     }
 
