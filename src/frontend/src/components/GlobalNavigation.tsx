@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { hasAnyPermission, permissions } from "@/lib/permissions";
 
 export function GlobalNavigation() {
     const pathname = usePathname();
@@ -11,16 +12,17 @@ export function GlobalNavigation() {
     if (!session) return null;
 
     const navItems = [
-        { label: "Dashboard", href: "/" },
-        { label: "Products", href: "/products" },
-        { label: "Templates", href: "/templates" },
-        { label: "Print Intents", href: "/print-intents" },
-        { label: "Approval Queue", href: "/approvals", roles: ["Admin", "Reviewer"] },
+        { label: "Dashboard", href: "/", permissions: [permissions.dashboardView] },
+        { label: "Products", href: "/products", permissions: [permissions.productsView] },
+        { label: "Templates", href: "/templates", permissions: [permissions.templatesView] },
+        { label: "Print Intents", href: "/print-intents", permissions: [permissions.printIntentsView] },
+        { label: "Approval Queue", href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
     ];
 
     const userRoles = (session.user as any).roles || [];
+    const userPermissions = (session.user as any).permissions || [];
     const filteredNav = navItems.filter(item => 
-        !item.roles || item.roles.some(role => userRoles.includes(role))
+        !item.permissions || userRoles.includes("Admin") || hasAnyPermission(userPermissions, item.permissions)
     );
 
     return (
@@ -51,11 +53,11 @@ export function GlobalNavigation() {
                         <div className="flex flex-col items-end">
                             <span className="text-[10px] font-bold text-slate-300 leading-none">{session.user?.name}</span>
                             <span className="text-[9px] text-blue-400 font-mono tracking-tighter uppercase mt-1">
-                                {userRoles.join(" | ") || "OPERATOR"}
+                                {userRoles.length > 0 ? userRoles.join(" | ") : "Viewer"}
                             </span>
                         </div>
                         <button
-                            onClick={() => signOut()}
+                            onClick={() => signOut({ callbackUrl: "/auth/login" })}
                             className="bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded hover:bg-slate-700 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest"
                         >
                             Sign Out

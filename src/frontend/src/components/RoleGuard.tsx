@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { hasLegacyRoleAccess } from "@/lib/permissions";
 
 interface RoleGuardProps {
     children: React.ReactNode;
@@ -16,9 +17,8 @@ export function RoleGuard({ children, allowedRoles, fallback = null }: RoleGuard
     }
 
     const userRoles = (session?.user as any)?.roles || [];
-
-    // Verify if user has ANY of the allowed roles
-    const isAuthorized = allowedRoles.some(role => userRoles.includes(role));
+    const userPermissions = (session?.user as any)?.permissions || [];
+    const isAuthorized = hasLegacyRoleAccess(userRoles, userPermissions, allowedRoles);
 
     if (!isAuthorized) {
         return <>{fallback}</>;

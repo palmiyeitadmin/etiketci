@@ -45,11 +45,22 @@ namespace Plms.Api.DTOs.Operational
         
         public DateTime? OperatorReviewedAt { get; set; }
         public string? OperatorReviewedBy { get; set; }
+        public DateTime? DispatchedAt { get; set; }
+        public string? DispatchedBy { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public string? CompletedBy { get; set; }
+        public string? FailureReason { get; set; }
+        public TemplateStatus? SourceVersionStatus { get; set; }
     }
 
     public class PrintIntentDetailDto : PrintIntentDto
     {
         public Plms.Api.Services.FinalSafetyCheckResult? SafetyCheck { get; set; }
+    }
+
+    public class MarkPrintIntentFailedDto
+    {
+        public string? Reason { get; set; }
     }
 
     public class AuditLogDto

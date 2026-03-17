@@ -19,7 +19,7 @@ namespace Plms.Api.Services
 
     public class FinalSafetyCheckService : IFinalSafetyCheckService
     {
-        public async Task<FinalSafetyCheckResult> EvaluateIntentSafetyAsync(PrintIntent intent)
+        public Task<FinalSafetyCheckResult> EvaluateIntentSafetyAsync(PrintIntent intent)
         {
             var result = new FinalSafetyCheckResult { IsSafe = true, Status = ReadinessStatus.Ready };
 
@@ -29,7 +29,7 @@ namespace Plms.Api.Services
                 result.IsSafe = false;
                 result.Status = ReadinessStatus.Blocked;
                 result.Messages.Add("Intent is missing critical context (Template, Version, or Product).");
-                return result; // Fast fail
+                return Task.FromResult(result); // Fast fail
             }
 
             // 2. Validate template version immutability and status
@@ -37,7 +37,7 @@ namespace Plms.Api.Services
             {
                 result.IsSafe = false;
                 result.Status = ReadinessStatus.Blocked;
-                result.Messages.Add($"Template version is in '{intent.Version.Status}' state. It must be Published or Approved.");
+                result.Messages.Add($"Template version is in '{intent.Version.Status}' state. It must be Approved or Published.");
             }
 
             // 3. Re-evaluate readiness snapshot for any critical warnings recorded at creation
@@ -85,7 +85,7 @@ namespace Plms.Api.Services
                  result.Messages.Add("No readiness snapshot found for this intent.");
             }
 
-            return result;
+            return Task.FromResult(result);
         }
     }
 }

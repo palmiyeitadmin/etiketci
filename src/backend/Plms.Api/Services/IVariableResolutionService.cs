@@ -1,4 +1,5 @@
 using Plms.Api.Domain.Entities;
+using Plms.Api.DTOs.Template;
 using Plms.Api.Models.Canonical;
 
 namespace Plms.Api.Services
@@ -19,5 +20,10 @@ namespace Plms.Api.Services
         /// Resolves variables in the canonical model using product data.
         /// </summary>
         CanonicalLabelModel ResolveVariables(CanonicalLabelModel model, Product product);
+
+        /// <summary>
+        /// Lists supported template placeholders for editor pickers.
+        /// </summary>
+        VariableCatalogResponseDto GetVariableCatalog();
     }
 }

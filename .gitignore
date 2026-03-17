@@ -19,13 +19,29 @@ build/
 # macOS
 .DS_Store
 
-# Logs
+# Logs and Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 logs/
 *.log
+backend_debug_log*.txt
+backend_hardening_log.txt
+build_error.txt
+test_build_error*.txt
+test_error_refinement.txt
+test_results.txt
+.tmp_templates_numbered.txt
+
+# AI and Tools
+.agents/
+stitch/
+.tmp/
 
 # Misc
 .idea/
 .vscode/
+*.cmd
+*.sql
+agent.md
+git_status_full.txt

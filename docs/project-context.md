@@ -26,3 +26,9 @@ PLMS is a web-based label management and printing system ensuring strict adheren
 - [Testing Strategy](operations/testing-strategy.md)
 - [Risk Register](operations/risk-register.md)
 - [Local Development](operations/local-development.md)
+
+## Current Implemented Modules
+- Unified operational shell with dashboard, products, templates, print intents, approvals, vendors, categories and audit logs.
+- Product CSV import now supports persisted import sessions, overwrite enablement and transactional commit.
+- Template governance includes archived library, restoration requests, reviewer approvals and version comparison.
+- Print intent lifecycle now follows `Pending -> ReadyForPrint -> SentToClient -> UserPrinted/Failed`, with user-confirmed outcome logging.

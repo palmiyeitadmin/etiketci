@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Plms.Api.Domain.Enums;
 
 namespace Plms.Api.Domain.Entities
 {
@@ -35,5 +36,20 @@ namespace Plms.Api.Domain.Entities
         
         [MaxLength(100)]
         public string? OperatorReviewedBy { get; set; }
+
+        public DateTime? DispatchedAt { get; set; }
+
+        [MaxLength(100)]
+        public string? DispatchedBy { get; set; }
+
+        public DateTime? CompletedAt { get; set; }
+
+        [MaxLength(100)]
+        public string? CompletedBy { get; set; }
+
+        [MaxLength(1000)]
+        public string? FailureReason { get; set; }
+
+        public TemplateStatus? SourceVersionStatus { get; set; }
     }
 }

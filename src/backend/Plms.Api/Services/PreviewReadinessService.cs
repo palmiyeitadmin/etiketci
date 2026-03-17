@@ -24,7 +24,7 @@ namespace Plms.Api.Services
             // 1. Lifecycle Check
             if (version.Status != TemplateStatus.Published && version.Status != TemplateStatus.Approved)
             {
-                readiness.Errors.Add($"Template version is in '{version.Status}' state. Only Published or Approved versions can be used for print intents.");
+                readiness.Errors.Add($"Template version is in '{version.Status}' state. Only Approved or Published versions can be used for print intents.");
             }
 
             // 2. Product Context Check

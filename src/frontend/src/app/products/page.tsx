@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { Product } from "@/types/product";
-import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FilterBar } from "@/components/ui/FilterBar";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -13,146 +18,115 @@ export default function ProductsPage() {
 
     useEffect(() => {
         async function load() {
-            try {
-                const res = await apiFetch<Product[]>("/api/Products");
-                if (res.success && res.data) {
-                    setProducts(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to load products", err);
-            } finally {
-                setLoading(false);
+            const res = await apiFetch<Product[]>("/api/Products");
+            if (res.success) {
+                setProducts(res.data);
             }
+            setLoading(false);
         }
+
         load();
     }, []);
 
-    const filteredProducts = products.filter(p =>
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.categoryName || "").toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredProducts = useMemo(
+        () =>
+            products.filter((product) =>
+                [product.sku, product.name, product.categoryName ?? "", product.vendorName ?? ""]
+                    .join(" ")
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+            ),
+        [products, searchTerm]
     );
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="p-8 max-w-7xl mx-auto">
-                {/* Action Header */}
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Product Catalog</h1>
-                        <p className="text-sm text-slate-500 mt-1">Manage industrial product data and variable mappings.</p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Link
-                            href="/products/import"
-                            className="bg-emerald-600 text-white px-4 py-2 rounded font-semibold hover:bg-emerald-700 shadow-sm transition-colors text-sm"
-                        >
-                            CSV Import
-                        </Link>
-                        <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                            <button className="bg-slate-800 text-white px-4 py-2 rounded font-semibold hover:bg-slate-900 shadow-sm transition-colors text-sm">
-                                New Product
-                            </button>
-                        </RoleGuard>
-                    </div>
-                </div>
+            <div className="mx-auto max-w-7xl space-y-6">
+                <PageHeader
+                    eyebrow="Product governance"
+                    title="Products"
+                    description="Industrial product catalog, category linkage and vendor readiness in a single operational registry."
+                    actions={
+                        <>
+                            <Link href="/products/import" className="plms-button-secondary">
+                                CSV Import
+                            </Link>
+                            <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                                <Link href="/products/new" className="plms-button-primary">
+                                    New Product
+                                </Link>
+                            </RoleGuard>
+                        </>
+                    }
+                />
 
-                {/* Filters & Tools */}
-                <div className="mb-6 flex justify-between items-center">
-                    <div className="relative w-full max-w-sm">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        </span>
+                <FilterBar
+                    left={
                         <input
-                            type="text"
-                            placeholder="Search by SKU, Name or Category..."
-                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="plms-input max-w-xl"
+                            placeholder="Search by SKU, product name, category or vendor"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(event) => setSearchTerm(event.target.value)}
                         />
-                    </div>
-                    <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                        Displaying {filteredProducts.length} Products
-                    </div>
-                </div>
+                    }
+                    right={
+                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                            {filteredProducts.length} visible
+                        </div>
+                    }
+                />
 
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-slate-500 font-medium">Loading Product Data...</span>
+                    <div className="flex items-center justify-center py-20">
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
                     </div>
+                ) : filteredProducts.length === 0 ? (
+                    <EmptyState
+                        title="No products matched this filter"
+                        description="Try a broader search or import product data from the CSV workflow."
+                        action={
+                            <Link href="/products/import" className="plms-button-primary">
+                                Open Import Workflow
+                            </Link>
+                        }
+                    />
                 ) : (
-                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                        <table className="min-w-full divide-y divide-slate-200">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">SKU</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Product Information</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Category</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Vendor</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Created</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-slate-200">
-                                {filteredProducts.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center">
-                                                <div className="text-slate-300 mb-2">
-                                                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                                                </div>
-                                                <p className="text-slate-500 font-medium">No products match your criteria.</p>
-                                                <p className="text-slate-400 text-xs mt-1">Try adjusting your search or use CSV Import.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredProducts.map((p) => (
-                                        <tr
-                                            key={p.id}
-                                            className="hover:bg-slate-50 cursor-pointer transition-colors group"
-                                            onClick={() => window.location.href = `/products/${p.id}`}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                                    {p.sku}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-semibold text-slate-900">{p.name}</div>
-                                                <div className="text-[11px] text-slate-400 truncate max-w-xs">{p.description || "No description provided."}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                                {p.categoryName ? (
-                                                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-medium">
-                                                        {p.categoryName}
-                                                    </span>
-                                                ) : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                                {p.vendorName || "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${p.isActive
-                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                        : 'bg-red-50 text-red-700 border-red-200'
-                                                    }`}>
-                                                    {p.isActive ? "Active" : "Inactive"}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right font-mono">
-                                                {new Date(p.createdAt).toLocaleDateString()}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable columns={["SKU", "Product", "Category", "Vendor", "Status", "Created", "Open"]}>
+                        {filteredProducts.map((product) => (
+                            <tr key={product.id} className="bg-transparent transition-colors hover:bg-white/5">
+                                <td className="px-6 py-4">
+                                    <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
+                                        {product.sku}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="text-sm font-bold text-white">{product.name}</div>
+                                    <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                        {product.description || "No description"}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                                    {product.categoryName || "-"}
+                                </td>
+                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                                    {product.vendorName || "-"}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <StatusBadge label={product.isActive ? "Active" : "Inactive"} tone={product.isActive ? "success" : "danger"} />
+                                </td>
+                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                                    {new Date(product.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4">
+                                    <Link href={`/products/${product.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200">
+                                        Open
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                    </DataTable>
                 )}
             </div>
         </RoleGuard>
     );
 }
-

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import Link from "next/link";
+import { normalizeTemplateStatus } from "@/lib/template-status";
+import { buildTemplatePreviewDownloadUrl, buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
+import { Product } from "@/types/product";
 
 interface VariableResolutionDetail {
     name: string;
@@ -36,56 +38,150 @@ export default function TemplatePreviewPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const versionId = searchParams.get("versionId");
-    const productId = searchParams.get("productId");
+    const initialProductId = searchParams.get("productId");
 
     const [metadata, setMetadata] = useState<TemplatePreviewMetadata | null>(null);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [selectedProductId, setSelectedProductId] = useState(initialProductId || "");
+    const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [actionMessage, setActionMessage] = useState<string | null>(null);
+    const [creatingIntent, setCreatingIntent] = useState(false);
+    const [pdfStatus, setPdfStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+    const [pdfErrorMessage, setPdfErrorMessage] = useState<string | null>(null);
+    const [pdfObjectUrl, setPdfObjectUrl] = useState<string | null>(null);
+    const [pdfReloadKey, setPdfReloadKey] = useState(0);
+
+    useEffect(() => {
+        setSelectedProductId(initialProductId || "");
+    }, [initialProductId]);
+
+    const previewFileUrl = useMemo(() => {
+        if (!id || !versionId) return null;
+        return buildTemplatePreviewFileUrl(String(id), versionId, selectedProductId || undefined);
+    }, [id, versionId, selectedProductId]);
+
+    const downloadPdfUrl = useMemo(() => {
+        if (!id || !versionId) return null;
+        return buildTemplatePreviewDownloadUrl(String(id), versionId, selectedProductId || undefined);
+    }, [id, versionId, selectedProductId]);
 
     useEffect(() => {
         if (!id || !versionId) return;
 
         const load = async () => {
             try {
-                const query = productId ? `?productId=${productId}` : "";
-                const res = await apiFetch<TemplatePreviewMetadata>(`/api/Templates/${id}/versions/${versionId}/preview-metadata${query}`);
-                if (res.success && res.data) {
-                    setMetadata(res.data);
+                setLoading(true);
+                const query = selectedProductId ? `?productId=${selectedProductId}` : "";
+                const [metadataRes, productsRes] = await Promise.all([
+                    apiFetch<TemplatePreviewMetadata>(`/api/Templates/${id}/versions/${versionId}/preview-metadata${query}`),
+                    apiFetch<Product[]>(`/api/Products`)
+                ]);
+
+                if (metadataRes.success && metadataRes.data) {
+                    setMetadata({
+                        ...metadataRes.data,
+                        status: normalizeTemplateStatus(metadataRes.data.status),
+                    });
+                } else {
+                    setMetadata(null);
+                    setActionMessage(metadataRes.success ? "Preview metadata could not be loaded." : metadataRes.error.message);
                 }
 
-                // Construct PDF URL
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5031";
-                setPdfUrl(`${baseUrl}/api/Templates/${id}/versions/${versionId}/preview${query}`);
+                if (productsRes.success && Array.isArray(productsRes.data)) {
+                    setProducts(productsRes.data.filter((product) => product.isActive));
+                }
             } catch (err) {
                 console.error("Failed to load preview metadata", err);
+                setActionMessage((err as Error).message || "Failed to load preview metadata.");
             } finally {
                 setLoading(false);
             }
         };
 
         load();
-    }, [id, versionId, productId]);
+    }, [id, versionId, selectedProductId]);
 
-    const handleCreateIntent = async () => {
-        if (!metadata || !productId) return;
+    useEffect(() => {
+        if (!previewFileUrl) return;
+        const previewUrl = previewFileUrl;
 
-        if (metadata.readinessStatus === 2) {
-            return; // UI should disable button anyway
+        const controller = new AbortController();
+        let nextObjectUrl: string | null = null;
+
+        async function loadPdf() {
+            setPdfStatus("loading");
+            setPdfErrorMessage(null);
+
+            try {
+                const response = await fetch(previewUrl, {
+                    method: "GET",
+                    cache: "no-store",
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    const body = await response.text();
+                    throw new Error(body || "PDF preview could not be rendered.");
+                }
+
+                const blob = await response.blob();
+                nextObjectUrl = URL.createObjectURL(blob);
+                setPdfObjectUrl((current) => {
+                    if (current) URL.revokeObjectURL(current);
+                    return nextObjectUrl;
+                });
+                setPdfStatus("ready");
+            } catch (error) {
+                if (controller.signal.aborted) return;
+                setPdfObjectUrl((current) => {
+                    if (current) URL.revokeObjectURL(current);
+                    return null;
+                });
+                setPdfStatus("error");
+                setPdfErrorMessage((error as Error).message || "PDF preview could not be rendered.");
+            }
         }
 
-        const qtyStr = prompt("Enter print quantity:", "1");
-        if (qtyStr === null) return;
-        const quantity = parseInt(qtyStr);
-        if (isNaN(quantity) || quantity <= 0) {
-            alert("Invalid quantity.");
+        loadPdf();
+
+        return () => {
+            controller.abort();
+            if (nextObjectUrl) {
+                URL.revokeObjectURL(nextObjectUrl);
+            }
+        };
+    }, [previewFileUrl, pdfReloadKey]);
+
+    const handleCreateIntent = async () => {
+        if (!metadata) return;
+
+        if (!selectedProductId) {
+            setActionMessage("Select a product to create a print intent.");
+            return;
+        }
+
+        if (metadata.status !== "Published" && metadata.status !== "Approved") {
+            setActionMessage("Only Approved or Published template versions can be used for printing.");
+            return;
+        }
+
+        if (metadata.readinessStatus === 2) {
+            setActionMessage("Resolve readiness blockers before creating a print intent.");
+            return;
+        }
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            setActionMessage("Quantity must be greater than zero.");
             return;
         }
 
         try {
-            const res = await apiFetch(`/api/PrintIntents`, {
+            setCreatingIntent(true);
+            const res = await apiFetch<{ id: string }>(`/api/PrintIntents`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    productId: productId,
+                    productId: selectedProductId,
                     templateId: id,
                     versionId: versionId,
                     quantity
@@ -93,14 +189,79 @@ export default function TemplatePreviewPage() {
                 headers: { 'Content-Type': 'application/json' }
             });
             if (res.success) {
-                router.push('/print-intents');
+                router.push(`/print-intents/${res.data.id}`);
             } else {
-                alert("Failed to create print intent: " + ((res as any).error || "Unknown error"));
+                setActionMessage(`Failed to create print intent: ${res.error.message}`);
             }
         } catch (err) {
             console.error("Error creating print intent", err);
+            setActionMessage((err as Error).message || "Error creating print intent.");
+        } finally {
+            setCreatingIntent(false);
         }
     };
+
+    function handleRetryPdf() {
+        setPdfReloadKey((current) => current + 1);
+    }
+
+    function handleDownloadPdf() {
+        if (!downloadPdfUrl) return;
+        window.open(downloadPdfUrl, "_blank");
+    }
+
+    function handlePrintPdf() {
+        const printSource = pdfObjectUrl || previewFileUrl;
+        if (!printSource) return;
+
+        const printWindow = window.open("", "plms-preview-print", "popup=yes,width=980,height=760");
+        if (!printWindow) {
+            setActionMessage("Allow popups to open the print dialog.");
+            return;
+        }
+
+        const escapedUrl = JSON.stringify(printSource);
+        printWindow.document.write(`
+          <!doctype html>
+          <html>
+            <head>
+              <title>PLMS Print Preview</title>
+              <style>
+                body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #fff; }
+                .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #111827; border-bottom: 1px solid rgba(255,255,255,0.08); }
+                .hint { font-size: 12px; color: rgba(255,255,255,0.72); }
+                button { border: 0; border-radius: 999px; padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: white; background: #2563eb; cursor: pointer; }
+                iframe { width: 100%; height: calc(100vh - 58px); border: 0; background: white; }
+              </style>
+            </head>
+            <body>
+              <div class="toolbar">
+                <div class="hint">PDF yuklendiginde print dialog otomatik acilmaya calisacak.</div>
+                <button onclick="triggerPrint()">Print</button>
+              </div>
+              <iframe id="pdf-frame" src=${escapedUrl} title="PLMS PDF Preview"></iframe>
+              <script>
+                const frame = document.getElementById('pdf-frame');
+                function triggerPrint() {
+                  try {
+                    if (frame && frame.contentWindow) {
+                      frame.contentWindow.focus();
+                      frame.contentWindow.print();
+                      return;
+                    }
+                  } catch (error) {}
+                  window.focus();
+                  window.print();
+                }
+                frame.addEventListener('load', function () {
+                  setTimeout(triggerPrint, 700);
+                });
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+    }
 
     if (loading) return (
         <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
@@ -115,6 +276,7 @@ export default function TemplatePreviewPage() {
 
     const isBlocked = metadata.readinessStatus === 2;
     const hasWarnings = metadata.readinessStatus === 1 || metadata.warnings.length > 0;
+    const canCreateIntent = (metadata.status === "Published" || metadata.status === "Approved") && !!selectedProductId && !isBlocked && quantity > 0;
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
@@ -146,27 +308,33 @@ export default function TemplatePreviewPage() {
                             <span className={`w-1.5 h-1.5 rounded-full ${isBlocked ? "bg-red-500" : hasWarnings ? "bg-amber-500" : "bg-emerald-500"}`}></span>
                             <span>{isBlocked ? "Production Blocked" : hasWarnings ? "Ready with Warnings" : "Readiness: PASS"}</span>
                         </div>
-                        
+
                         <div className="h-8 w-px bg-white/10 mx-2"></div>
 
-                        {productId && (
-                            <button
-                                onClick={handleCreateIntent}
-                                disabled={isBlocked}
-                                className={`px-6 py-2.5 rounded font-black text-[11px] uppercase tracking-widest transition-all shadow-lg ${
-                                    isBlocked 
-                                    ? "bg-slate-700 text-slate-500 cursor-not-allowed border border-white/5" 
-                                    : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/40"
-                                }`}
-                            >
-                                {isBlocked ? "System Lock: Check Errors" : "Confirm for Operator Handoff"}
-                            </button>
-                        )}
                         <button
-                            onClick={() => { if (pdfUrl) window.open(pdfUrl, '_blank'); }}
+                            onClick={handlePrintPdf}
+                            disabled={pdfStatus !== "ready"}
                             className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10"
                         >
-                            Export PDF
+                            Print
+                        </button>
+                        <button
+                            onClick={handleDownloadPdf}
+                            disabled={!downloadPdfUrl}
+                            className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Download PDF
+                        </button>
+                        <button
+                            onClick={handleCreateIntent}
+                            disabled={!canCreateIntent || creatingIntent}
+                            className={`px-6 py-2.5 rounded font-black text-[11px] uppercase tracking-widest transition-all shadow-lg ${
+                                !canCreateIntent || creatingIntent
+                                ? "bg-slate-700 text-slate-500 cursor-not-allowed border border-white/5" 
+                                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/40"
+                            }`}
+                        >
+                            {creatingIntent ? "Creating Intent..." : "Create Print Intent"}
                         </button>
                     </div>
                 </div>
@@ -220,6 +388,47 @@ export default function TemplatePreviewPage() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
                                     Operational Context
                                 </h4>
+                                <div className="space-y-3">
+                                    <select
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none"
+                                        value={selectedProductId}
+                                        onChange={(event) => {
+                                            setSelectedProductId(event.target.value);
+                                            setActionMessage(null);
+                                        }}
+                                    >
+                                        <option value="">Select product context</option>
+                                        {products.map((product) => (
+                                            <option key={product.id} value={product.id}>
+                                                {product.sku} - {product.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none"
+                                        type="number"
+                                        min={1}
+                                        value={quantity}
+                                        onChange={(event) => {
+                                            setQuantity(Math.max(1, Number(event.target.value) || 1));
+                                            setActionMessage(null);
+                                        }}
+                                        placeholder="Quantity"
+                                    />
+                                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] font-medium text-slate-500">
+                                        {(metadata.status === "Published" || metadata.status === "Approved")
+                                            ? selectedProductId
+                                                ? "Product context is active. Preview and print intent will use the selected product."
+                                                : "Select a product to validate readiness and enable print intent creation."
+                                            : `Version status is ${metadata.status}. Preview is allowed, but print intent creation requires an Approved or Published version.`}
+                                      </div>
+                                    {actionMessage ? (
+                                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] font-bold text-amber-900">
+                                            {actionMessage}
+                                        </div>
+                                    ) : null}
+                                </div>
+                                <div className="mt-4">
                                 {metadata.hasProductContext ? (
                                     <div className="bg-slate-900 rounded-xl p-5 shadow-lg relative overflow-hidden group">
                                         <div className="absolute right-[-10px] top-[-10px] font-black text-4xl text-white/5 italic select-none">DATA</div>
@@ -236,6 +445,7 @@ export default function TemplatePreviewPage() {
                                         <p className="text-[10px] text-slate-400 mt-1">Variables will remain in placeholder state.</p>
                                     </div>
                                 )}
+                                </div>
                             </section>
 
                             {/* Variable Resolution */}
@@ -289,8 +499,8 @@ export default function TemplatePreviewPage() {
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] font-bold text-slate-500 uppercase">Status</span>
                                         <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
-                                            metadata.status === 'Published' ? 'bg-emerald-900 text-white' : 'bg-slate-200 text-slate-600'
-                                        }`}>
+                                            metadata.status === 'Published' || metadata.status === 'Approved' ? 'bg-emerald-900 text-white' : 'bg-slate-200 text-slate-600'
+                                          }`}>
                                             {metadata.status}
                                         </span>
                                     </div>
@@ -310,21 +520,42 @@ export default function TemplatePreviewPage() {
                     {/* PDF Engine Canvas */}
                     <div className="flex-1 bg-slate-200 relative overflow-hidden flex items-center justify-center p-12">
                         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-                        
-                        {pdfUrl ? (
+
+                        {pdfStatus === "loading" ? (
+                            <div className="flex w-full max-w-5xl flex-col items-center justify-center rounded-sm border border-slate-300 bg-white/80 p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)]">
+                                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-slate-700" />
+                                <div className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Loading PDF preview</div>
+                            </div>
+                        ) : null}
+
+                        {pdfStatus === "error" ? (
+                            <div className="w-full max-w-3xl rounded-[2rem] border border-red-200 bg-white p-10 text-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)]">
+                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-500">Preview failure</div>
+                                <h3 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">PDF preview could not be rendered.</h3>
+                                <p className="mt-3 text-sm font-medium text-slate-500">{pdfErrorMessage || "The preview service did not return a usable PDF."}</p>
+                                <div className="mt-6 flex items-center justify-center gap-3">
+                                    <button className="plms-button-secondary" onClick={handleRetryPdf}>Retry</button>
+                                    <button className="plms-button-secondary" onClick={handleDownloadPdf} disabled={!downloadPdfUrl}>Download PDF</button>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {pdfStatus === "ready" && pdfObjectUrl ? (
                             <div className="w-full max-w-5xl h-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] bg-white rounded-sm overflow-hidden border border-slate-400">
                                 <iframe
-                                    src={pdfUrl}
+                                    src={pdfObjectUrl}
                                     className="w-full h-full"
                                     title="Production PDF Stream"
                                 />
                             </div>
-                        ) : (
+                        ) : null}
+
+                        {pdfStatus === "idle" ? (
                             <div className="flex flex-col items-center animate-pulse">
                                 <div className="w-64 h-80 bg-slate-300 rounded-lg mb-6 shadow-inner"></div>
                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Awaiting PDF stream response...</div>
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Zoom/Floating Controls could go here */}
                     </div>

@@ -12,6 +12,9 @@ RUN dotnet publish -c Release -o out
 
 # Final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libfontconfig1 libfreetype6 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/Plms.Api/out ./
 ENTRYPOINT ["dotnet", "Plms.Api.dll"]

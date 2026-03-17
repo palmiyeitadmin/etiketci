@@ -1,4 +1,10 @@
-import { TemplateStatus } from "./template";
+export type PrintIntentStatus =
+    | "Pending"
+    | "ReadyForPrint"
+    | "SentToClient"
+    | "UserPrinted"
+    | "Failed"
+    | "Cancelled";
 
 export interface ProductTemplateDto {
     id: string;
@@ -20,10 +26,17 @@ export interface PrintIntentDto {
     versionId: string;
     versionNumber: number;
     quantity: number;
-    status: string;
+    status: PrintIntentStatus;
     requestedBy: string;
     createdAt: string;
     readinessSnapshot?: string;
+    operatorReviewedAt?: string;
+    operatorReviewedBy?: string;
+    dispatchedAt?: string;
+    dispatchedBy?: string;
+    completedAt?: string;
+    completedBy?: string;
+    failureReason?: string;
 }
 
 export interface FinalSafetyCheckResult {
@@ -33,7 +46,5 @@ export interface FinalSafetyCheckResult {
 }
 
 export interface PrintIntentDetailDto extends PrintIntentDto {
-    operatorReviewedAt?: string;
-    operatorReviewedBy?: string;
     safetyCheck?: FinalSafetyCheckResult;
 }

@@ -1,0 +1,33 @@
+namespace Plms.Api.DTOs.Dashboard
+{
+    public class DashboardSummaryDto
+    {
+        public int TotalProducts { get; set; }
+        public int ActiveProducts { get; set; }
+        public int PublishedTemplates { get; set; }
+        public int DraftTemplates { get; set; }
+        public int PendingApprovals { get; set; }
+        public int PendingPrintIntents { get; set; }
+        public int RecentImportCount { get; set; }
+    }
+
+    public class DashboardFeedItemDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string? Subtitle { get; set; }
+        public string? Status { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string? Href { get; set; }
+        public Dictionary<string, string> Metadata { get; set; } = new();
+    }
+
+    public class DashboardActivityDto
+    {
+        public List<DashboardFeedItemDto> RecentApprovals { get; set; } = new();
+        public List<DashboardFeedItemDto> RecentPrintIntents { get; set; } = new();
+        public List<DashboardFeedItemDto> RecentAuditItems { get; set; } = new();
+        public List<DashboardFeedItemDto> RecentImportSummaries { get; set; } = new();
+    }
+}

@@ -1,0 +1,56 @@
+import { addElementToModel, duplicateElementInModel, fitViewportToContainer, nudgeElementInModel } from "@/components/Editor/editor-actions";
+import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
+
+describe("editor canonical helpers", () => {
+  it("normalizes legacy models with safe defaults", () => {
+    const model = normalizeCanonicalLabelModel({
+      name: "Legacy",
+      dimensions: { widthMm: 80, heightMm: 120 },
+      elements: [{ id: "text-1", type: "text", xMm: 1, yMm: 2, widthMm: 30, heightMm: 10, content: "Hello" }],
+    });
+
+    expect(model.elements[0]).toMatchObject({
+      name: "Text 1",
+      visible: true,
+      locked: false,
+      textAlign: "left",
+      fontWeight: "normal",
+      font: "Arial",
+    });
+  });
+
+  it("duplicates and nudges elements with persisted mm precision", () => {
+    const base = normalizeCanonicalLabelModel({
+      name: "Draft",
+      dimensions: { widthMm: 100, heightMm: 150 },
+      elements: [{ id: "rect-1", type: "rect", xMm: 10, yMm: 12, widthMm: 20, heightMm: 30, content: "" }],
+    });
+
+    const duplicated = duplicateElementInModel(base, "rect-1");
+    expect(duplicated.element).not.toBeNull();
+    expect(duplicated.model.elements).toHaveLength(2);
+
+    const nudged = nudgeElementInModel(duplicated.model, duplicated.element!.id, 1, -2);
+    const copy = nudged.elements.find((element) => element.id === duplicated.element!.id);
+
+    expect(copy?.xMm).toBe(14);
+    expect(copy?.yMm).toBe(13);
+  });
+
+  it("adds new elements and computes fit viewport bounds", () => {
+    const base = normalizeCanonicalLabelModel({
+      name: "Draft",
+      dimensions: { widthMm: 100, heightMm: 150 },
+      elements: [],
+    });
+
+    const result = addElementToModel(base, "barcode", { xMm: 8, yMm: 9 });
+    expect(result.element.type).toBe("barcode");
+    expect(result.element.name).toBe("Barcode 1");
+
+    const viewport = fitViewportToContainer(400, 600, 1200, 900, 48);
+    expect(viewport.zoom).toBeGreaterThan(0.2);
+    expect(viewport.offsetX).toBe(0);
+    expect(viewport.offsetY).toBe(0);
+  });
+});

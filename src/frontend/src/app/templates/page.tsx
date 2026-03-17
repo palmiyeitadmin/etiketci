@@ -1,140 +1,193 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { LabelTemplate } from "@/types/template";
-import Link from "next/link";
+import { normalizeLabelTemplate } from "@/lib/template-status";
+import { ensureEditableVersion } from "@/lib/template-versioning";
+import { LabelTemplate, TemplateVersion } from "@/types/template";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FilterBar } from "@/components/ui/FilterBar";
+import { DataTable } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SlideOver } from "@/components/ui/SlideOver";
+import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
 
 export default function TemplatesPage() {
+    const router = useRouter();
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(null);
+    const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(null);
 
     useEffect(() => {
         async function load() {
-            try {
-                const res = await apiFetch<LabelTemplate[]>("/api/Templates");
-                if (res.success && res.data) {
-                    setTemplates(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to load templates", err);
-            } finally {
-                setLoading(false);
+            const res = await apiFetch<LabelTemplate[]>("/api/Templates");
+            if (res.success) {
+                setTemplates(res.data.map(normalizeLabelTemplate));
             }
+            setLoading(false);
         }
-        load();
+
+        void load();
     }, []);
 
-    const filteredTemplates = templates.filter(t =>
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.code.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredTemplates = useMemo(
+        () =>
+            templates.filter((template) =>
+                [template.code, template.name, template.description ?? ""].join(" ").toLowerCase().includes(searchTerm.toLowerCase())
+            ),
+        [templates, searchTerm]
     );
+
+    const previewVersion: TemplateVersion | undefined = selectedTemplate?.currentActiveVersion || selectedTemplate?.latestVersion || selectedTemplate?.versions?.[0];
+
+    async function handleOpenEditor(templateId: string) {
+        setOpeningTemplateId(templateId);
+        try {
+            const res = await apiFetch<LabelTemplate>(`/api/Templates/${templateId}`);
+            if (!res.success) {
+                return;
+            }
+
+            const normalizedTemplate = normalizeLabelTemplate(res.data);
+            const draft = await ensureEditableVersion(normalizedTemplate);
+            router.push(`/templates/${templateId}/edit?versionId=${draft.id}`);
+        } finally {
+            setOpeningTemplateId(null);
+        }
+    }
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="p-8 max-w-7xl mx-auto">
-                {/* Action Header */}
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Label Templates</h1>
-                        <p className="text-sm text-slate-500 mt-1">Design and manage canonical label models and version governance.</p>
-                    </div>
-                    <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                        <button className="bg-slate-800 text-white px-4 py-2 rounded font-semibold hover:bg-slate-900 shadow-sm transition-colors text-sm">
-                            New Template
-                        </button>
-                    </RoleGuard>
-                </div>
+            <div className="mx-auto max-w-7xl space-y-6">
+                <PageHeader
+                    eyebrow="Template lifecycle"
+                    title="Templates"
+                    description="Canonical label models, governed revisions and published production-ready versions."
+                    actions={
+                        <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                            <Link href="/templates/new" className="plms-button-primary">
+                                New Template
+                            </Link>
+                        </RoleGuard>
+                    }
+                />
 
-                {/* Filters */}
-                <div className="mb-6 flex justify-between items-center">
-                    <div className="relative w-full max-w-sm">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        </span>
+                <FilterBar
+                    left={
                         <input
-                            type="text"
-                            placeholder="Search by Code or Name..."
-                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="plms-input max-w-xl"
+                            placeholder="Search by template code, name or description"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(event) => setSearchTerm(event.target.value)}
                         />
-                    </div>
-                </div>
+                    }
+                />
 
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-slate-500 font-medium">Loading Templates...</span>
+                    <div className="flex items-center justify-center py-20">
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
                     </div>
+                ) : filteredTemplates.length === 0 ? (
+                    <EmptyState
+                        title="No templates available"
+                        description="Create a new canonical template or adjust the active filter."
+                    />
                 ) : (
-                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                        <table className="min-w-full divide-y divide-slate-200">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Code</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Template Name</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Version</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Compliance</th>
-                                    <th className="px-6 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Last Update</th>
+                    <DataTable columns={["Code", "Template", "Active Version", "Lifecycle", "Updated", "Open"]}>
+                        {filteredTemplates.map((template) => {
+                            const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "In Review" : "Draft only";
+                            return (
+                                <tr key={template.id} className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
+                                    <td className="px-6 py-4">
+                                        <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
+                                            {template.code}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm font-bold text-white">{template.name}</div>
+                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                            {template.description || "No description"}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                                        {template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                                        {new Date(template.updatedAt).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <Link href={`/templates/${template.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200" onClick={(event) => event.stopPropagation()}>
+                                            Open
+                                        </Link>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-slate-200">
-                                {filteredTemplates.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">
-                                            No templates found matching your search.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredTemplates.map((t) => (
-                                        <tr
-                                            key={t.id}
-                                            className="hover:bg-slate-50 cursor-pointer transition-colors group"
-                                            onClick={() => window.location.href = `/templates/${t.id}`}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                                    {t.code}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-semibold text-slate-900">{t.name}</div>
-                                                <div className="text-[11px] text-slate-400 truncate max-w-xs">{t.description || "No description."}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {t.currentActiveVersion ? (
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                                        <span className="text-sm font-bold text-slate-700">V{t.currentActiveVersion.versionNumber}</span>
-                                                        <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Published</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                                                        <span className="text-xs text-slate-400 italic font-medium">No Active Version</span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-slate-200">
-                                                    PDF-ONLY
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right font-mono text-[11px]">
-                                                {new Date(t.updatedAt).toLocaleDateString()}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                            );
+                        })}
+                    </DataTable>
                 )}
             </div>
+
+            <SlideOver
+                open={selectedTemplate !== null}
+                title={selectedTemplate?.name || "Template"}
+                subtitle={selectedTemplate ? `${selectedTemplate.code} · ${selectedTemplate.lastUpdatedBy || "Unknown updater"}` : undefined}
+                onClose={() => setSelectedTemplate(null)}
+            >
+                {selectedTemplate ? (
+                    <div className="space-y-6">
+                        <TemplatePreviewCard template={selectedTemplate} version={previewVersion} />
+
+                        <section className="grid gap-4 md:grid-cols-2">
+                            <DetailMetric label="Active version" value={selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "None"} />
+                            <DetailMetric label="Latest version" value={selectedTemplate.latestVersion ? `v${selectedTemplate.latestVersion.versionNumber}` : "None"} />
+                            <DetailMetric label="Linked products" value={String(selectedTemplate.linkedProductCount ?? 0)} />
+                            <DetailMetric label="Published count" value={String(selectedTemplate.publishedCount ?? 0)} />
+                            <DetailMetric label="Drafts" value={String(selectedTemplate.draftCount ?? 0)} />
+                            <DetailMetric label="In review" value={String(selectedTemplate.inReviewCount ?? 0)} />
+                        </section>
+
+                        <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
+                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Lifecycle Snapshot</div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "In Review" : "Draft only"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
+                                {selectedTemplate.latestVersion ? <StatusBadge label={`Latest ${selectedTemplate.latestVersion.status}`} tone="neutral" /> : null}
+                            </div>
+                            <div className="mt-4 text-sm text-[color:var(--plms-text-subtle)]">{selectedTemplate.description || "No template description was provided for this label model."}</div>
+                        </section>
+
+                        <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
+                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Quick Actions</div>
+                            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                                <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">Open Detail</Link>
+                                <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                                    <button type="button" className="plms-button-compact" onClick={() => void handleOpenEditor(selectedTemplate.id)} disabled={openingTemplateId === selectedTemplate.id}>
+                                        {openingTemplateId === selectedTemplate.id ? "Opening..." : "Open Editor"}
+                                    </button>
+                                </RoleGuard>
+                                {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-compact">Preview PDF</Link> : null}
+                            </div>
+                        </section>
+                    </div>
+                ) : null}
+            </SlideOver>
         </RoleGuard>
     );
 }
 
+function DetailMetric({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{label}</div>
+            <div className="mt-2 text-xl font-black tracking-[-0.04em] text-white">{value}</div>
+        </div>
+    );
+}

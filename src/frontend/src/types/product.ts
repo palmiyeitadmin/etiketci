@@ -39,3 +39,37 @@ export interface RowValidationError {
     errorType: string;
     message: string;
 }
+
+export interface ImportSession {
+    id: string;
+    fileName: string;
+    status: string;
+    allowOverwrite: boolean;
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    createdBy: string;
+    createdAt: string;
+    completedAt?: string;
+    issues: RowValidationError[];
+}
+
+export interface ImportSessionSummary {
+    id: string;
+    fileName: string;
+    status: string;
+    allowOverwrite: boolean;
+    totalRows: number;
+    validRows: number;
+    errorRows: number;
+    createdBy: string;
+    createdAt: string;
+    completedAt?: string;
+}
+
+export interface ImportCommitResult {
+    sessionId: string;
+    importedCount: number;
+    updatedCount: number;
+    status: string;
+}

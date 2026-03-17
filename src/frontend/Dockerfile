@@ -14,9 +14,17 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
+
+ARG NEXT_PUBLIC_API_URL=http://localhost:5001
+ARG NEXT_PUBLIC_EDITOR_ENGINE=konva
+ARG NEXTAUTH_URL=http://localhost:3000
 
 # Next.js telemetry can be disabled during the build
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_EDITOR_ENGINE=$NEXT_PUBLIC_EDITOR_ENGINE
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
 RUN npm run build
 
@@ -26,6 +34,7 @@ WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_PUBLIC_EDITOR_ENGINE=konva
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

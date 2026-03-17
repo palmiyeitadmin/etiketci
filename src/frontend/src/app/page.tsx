@@ -1,60 +1,112 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { apiFetch } from "@/lib/api-client";
+import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { ActivityFeed } from "@/components/ui/ActivityFeed";
 
-export default function Home() {
+const emptyActivity: DashboardActivity = {
+    recentApprovals: [],
+    recentPrintIntents: [],
+    recentAuditItems: [],
+    recentImportSummaries: [],
+};
+
+export default function HomePage() {
     const { data: session, status } = useSession();
+    const [summary, setSummary] = useState<DashboardSummary | null>(null);
+    const [activity, setActivity] = useState<DashboardActivity>(emptyActivity);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!session) {
+            setLoading(false);
+            return;
+        }
+
+        async function load() {
+            try {
+                const [summaryRes, activityRes] = await Promise.all([
+                    apiFetch<DashboardSummary>("/api/dashboard/summary"),
+                    apiFetch<DashboardActivity>("/api/dashboard/activity"),
+                ]);
+
+                if (summaryRes.success) {
+                    setSummary(summaryRes.data);
+                }
+
+                if (activityRes.success) {
+                    setActivity(activityRes.data);
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        load();
+    }, [session]);
+
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center">
+                <div className="text-center">
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                        Loading operational dashboard
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!session) {
+        return (
+            <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center justify-center px-4">
+                <div className="w-full rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-10 text-center shadow-[0_25px_90px_rgba(15,23,42,0.3)]">
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--plms-text-subtle)]">
+                        Epson Operations Shell
+                    </div>
+                    <h1 className="mt-4 text-4xl font-black tracking-[-0.06em] text-white">
+                        Unified PLMS Dashboard
+                    </h1>
+                    <p className="mx-auto mt-4 max-w-2xl text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                        Govern products, templates, approvals, imports and print intents through a single operational
+                        control surface.
+                    </p>
+                    <button className="plms-button-primary mt-8" onClick={() => signIn()}>
+                        Sign In to Continue
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex items-center justify-center p-8 min-h-[calc(100vh-64px)]">
-            <div className="bg-white p-12 rounded-2xl shadow-xl max-w-2xl text-center space-y-6">
-                <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-                    Palmiye Label Management System <span className="text-blue-600">(PLMS)</span>
-                </h1>
+        <div className="mx-auto max-w-7xl space-y-8">
+            <PageHeader
+                eyebrow="Unified operations"
+                title="Operational Dashboard"
+                description="System-wide production posture across product governance, template lifecycle, print intents and audit activity."
+            />
 
-                {status === "loading" ? (
-                    <p className="text-gray-500 animate-pulse">Loading auth state...</p>
-                ) : session ? (
-                    <div className="space-y-4">
-                        <p className="text-lg text-green-700 font-medium">
-                            Signed in as {session.user?.name || session.user?.email}
-                        </p>
-                        <div className="inline-block bg-blue-50 text-blue-800 text-sm py-2 px-4 rounded-xl border border-blue-200">
-                            Active Roles: {(session.user as any).roles?.join(", ") || "None"}
-                        </div>
-                        <div>
-                            <button
-                                onClick={() => signOut()}
-                                className="mt-6 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                            >
-                                Sign out
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <p className="text-lg text-gray-600">
-                            You are currently signed out.
-                        </p>
-                        <div>
-                            <button
-                                onClick={() => signIn("azure-ad")}
-                                className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
-                            >
-                                Sign In with Microsoft Entra ID
-                            </button>
-                        </div>
-                    </div>
-                )}
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="Products" value={summary?.totalProducts ?? 0} hint={`${summary?.activeProducts ?? 0} active`} accent="primary" />
+                <MetricCard label="Published templates" value={summary?.publishedTemplates ?? 0} hint={`${summary?.draftTemplates ?? 0} drafts`} accent="success" />
+                <MetricCard label="Pending approvals" value={summary?.pendingApprovals ?? 0} hint="Reviewer workload" accent="warning" />
+                <MetricCard label="Pending print intents" value={summary?.pendingPrintIntents ?? 0} hint={`${summary?.recentImportCount ?? 0} import events / 7d`} accent="neutral" />
+            </div>
 
-                <div className="flex flex-col gap-3 max-w-sm mx-auto mt-8 opacity-75">
-                    <div className="bg-gray-100 text-gray-800 text-xs py-2 px-3 rounded-md font-mono shadow-inner">
-                        Epson CW-C4000e PDF Print Flow Ready
-                    </div>
-                    <div className="bg-gray-100 text-gray-800 text-xs py-2 px-3 rounded-md font-mono shadow-inner">
-                        NextAuth & MSAL Integrated Shell
-                    </div>
-                </div>
+            <div className="grid gap-6 xl:grid-cols-2">
+                <ActivityFeed title="Recent approvals" items={activity.recentApprovals} />
+                <ActivityFeed title="Recent print intents" items={activity.recentPrintIntents} />
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                <ActivityFeed title="Audit activity" items={activity.recentAuditItems} />
+                <ActivityFeed title="Recent import summaries" items={activity.recentImportSummaries} />
             </div>
         </div>
     );

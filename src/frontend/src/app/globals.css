@@ -3,44 +3,61 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 33, 37, 41;
-  --background-start-rgb: 248, 249, 250;
-  --background-end-rgb: 255, 255, 255;
-  
-  /* Industrial Enterprise Palette */
-  --navy-dark: #1e293b;
-  --navy-deep: #0f172a;
-  --graphite: #334155;
-  --industrial-blue: #3b82f6;
-  --industrial-blue-hover: #2563eb;
+  --plms-bg: #08111f;
+  --plms-panel: #101b2d;
+  --plms-panel-2: #13233b;
+  --plms-border: rgba(148, 163, 184, 0.14);
+  --plms-border-strong: rgba(148, 163, 184, 0.24);
+  --plms-primary: #2463eb;
+  --plms-success: #10b981;
+  --plms-danger: #ef4444;
+  --plms-warning: #f59e0b;
+  --plms-text: #e2e8f0;
+  --plms-text-muted: #cbd5e1;
+  --plms-text-subtle: #8da0bc;
+  --plms-muted-100: rgba(148, 163, 184, 0.08);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: var(--plms-text);
+  background:
+    radial-gradient(circle at top left, rgba(36, 99, 235, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 20%),
+    linear-gradient(180deg, #091221 0%, #070d18 100%);
   min-height: 100vh;
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition-colors shadow-sm;
+  .plms-button-primary {
+    @apply inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-blue-700;
   }
-  
-  .btn-secondary {
-    @apply bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded font-medium hover:bg-gray-50 transition-colors;
+
+  .plms-button-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-[0.22em] transition-colors;
+    border-color: var(--plms-border);
+    color: var(--plms-text-muted);
+    background: rgba(255, 255, 255, 0.02);
   }
-  
-  .table-container {
-    @apply bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm;
+
+  .plms-button-compact {
+    @apply inline-flex min-w-0 items-center justify-center rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors whitespace-nowrap;
+    border-color: var(--plms-border);
+    color: var(--plms-text-muted);
+    background: rgba(255, 255, 255, 0.02);
   }
-  
-  .status-badge {
-    @apply px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider;
+
+  .plms-input {
+    @apply w-full rounded-2xl border bg-transparent px-4 py-3 text-sm font-medium outline-none transition-colors placeholder:text-slate-500 focus:border-blue-400/40 focus:ring-2 focus:ring-blue-500/10;
+    border-color: var(--plms-border);
+    color: var(--plms-text);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .plms-select {
+    @apply rounded-2xl border px-4 py-3 text-sm font-medium outline-none transition-colors focus:border-blue-400/40 focus:ring-2 focus:ring-blue-500/10;
+    border-color: var(--plms-border);
+    color: var(--plms-text);
+    background: rgba(255, 255, 255, 0.02);
   }
 }
 
@@ -50,14 +67,14 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(148, 163, 184, 0.6);
 }

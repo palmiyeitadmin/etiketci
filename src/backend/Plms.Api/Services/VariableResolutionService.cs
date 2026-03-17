@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Plms.Api.Domain.Entities;
+using Plms.Api.DTOs.Template;
 using Plms.Api.Models.Canonical;
 
 namespace Plms.Api.Services
@@ -46,6 +47,48 @@ namespace Plms.Api.Services
             }
 
             return model;
+        }
+
+        public VariableCatalogResponseDto GetVariableCatalog()
+        {
+            return new VariableCatalogResponseDto
+            {
+                Items =
+                [
+                    new VariableCatalogItemDto
+                    {
+                        Key = "product.sku",
+                        Label = "Product SKU",
+                        Description = "Resolved from the linked product SKU.",
+                        SampleValue = "SKU-10001",
+                        SupportedElementTypes = ["text", "barcode", "qr"]
+                    },
+                    new VariableCatalogItemDto
+                    {
+                        Key = "product.name",
+                        Label = "Product Name",
+                        Description = "Resolved from the linked product name.",
+                        SampleValue = "Cold Brew Coffee",
+                        SupportedElementTypes = ["text", "barcode", "qr"]
+                    },
+                    new VariableCatalogItemDto
+                    {
+                        Key = "product.category",
+                        Label = "Product Category",
+                        Description = "Resolved from the linked product category.",
+                        SampleValue = "Beverages",
+                        SupportedElementTypes = ["text", "barcode", "qr"]
+                    },
+                    new VariableCatalogItemDto
+                    {
+                        Key = "product.vendor",
+                        Label = "Product Vendor",
+                        Description = "Resolved from the linked product vendor.",
+                        SampleValue = "Palmiye Foods",
+                        SupportedElementTypes = ["text", "barcode", "qr"]
+                    }
+                ]
+            };
         }
 
         private string ResolveValue(string path, Product product)

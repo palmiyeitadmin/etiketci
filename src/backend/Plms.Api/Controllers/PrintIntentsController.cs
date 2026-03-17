@@ -48,7 +48,15 @@ namespace Plms.Api.Controllers
                     Status = pi.Status,
                     RequestedBy = pi.RequestedBy,
                     CreatedAt = pi.CreatedAt,
-                    ReadinessSnapshot = pi.ReadinessSnapshot
+                    ReadinessSnapshot = pi.ReadinessSnapshot,
+                    OperatorReviewedAt = pi.OperatorReviewedAt,
+                    OperatorReviewedBy = pi.OperatorReviewedBy,
+                    DispatchedAt = pi.DispatchedAt,
+                    DispatchedBy = pi.DispatchedBy,
+                    CompletedAt = pi.CompletedAt,
+                    CompletedBy = pi.CompletedBy,
+                    FailureReason = pi.FailureReason,
+                    SourceVersionStatus = pi.SourceVersionStatus
                 })
                 .ToListAsync();
 
@@ -68,9 +76,9 @@ namespace Plms.Api.Controllers
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == dto.VersionId && v.TemplateId == dto.TemplateId);
             if (version == null) return NotFound(new { success = false, error = "Template version not found." });
 
-            if (version.Status != Domain.Enums.TemplateStatus.Published)
+            if (version.Status != Domain.Enums.TemplateStatus.Published && version.Status != Domain.Enums.TemplateStatus.Approved)
             {
-                return BadRequest(new { success = false, error = "Only Published template versions can be used for print intents." });
+                return BadRequest(new { success = false, error = "Only Approved or Published template versions can be used for print intents." });
             }
 
             // Validate Readiness
@@ -87,10 +95,11 @@ namespace Plms.Api.Controllers
                 TemplateId = dto.TemplateId,
                 VersionId = dto.VersionId,
                 Quantity = dto.Quantity,
-                Status = "Pending",
+                Status = PrintIntentStatuses.Pending,
                 RequestedBy = User.Identity?.Name ?? "System",
                 CreatedAt = DateTime.UtcNow,
-                ReadinessSnapshot = JsonSerializer.Serialize(readiness)
+                ReadinessSnapshot = JsonSerializer.Serialize(readiness),
+                SourceVersionStatus = version.Status
             };
 
             _context.PrintIntents.Add(pi);
@@ -126,24 +135,7 @@ namespace Plms.Api.Controllers
 
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
 
-            var dto = new PrintIntentDetailDto
-            {
-                Id = pi.Id,
-                ProductId = pi.ProductId,
-                ProductName = pi.Product!.Name,
-                TemplateId = pi.TemplateId,
-                TemplateName = pi.Template!.Name,
-                VersionId = pi.VersionId,
-                VersionNumber = pi.Version!.VersionNumber,
-                Quantity = pi.Quantity,
-                Status = pi.Status,
-                RequestedBy = pi.RequestedBy,
-                CreatedAt = pi.CreatedAt,
-                ReadinessSnapshot = pi.ReadinessSnapshot,
-                OperatorReviewedAt = pi.OperatorReviewedAt,
-                OperatorReviewedBy = pi.OperatorReviewedBy,
-                SafetyCheck = safetyCheck
-            };
+            var dto = MapPrintIntentDetail(pi, safetyCheck);
 
             return Ok(new { success = true, data = dto });
         }
@@ -160,7 +152,7 @@ namespace Plms.Api.Controllers
 
             if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
 
-            if (pi.Status != "Pending")
+            if (pi.Status != PrintIntentStatuses.Pending)
             {
                 return BadRequest(new { success = false, error = $"Intent cannot be confirmed because it is in '{pi.Status}' state." });
             }
@@ -183,7 +175,7 @@ namespace Plms.Api.Controllers
                 return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
             }
 
-            pi.Status = "ReadyForPrint";
+            pi.Status = PrintIntentStatuses.ReadyForPrint;
             pi.OperatorReviewedAt = DateTime.UtcNow;
             pi.OperatorReviewedBy = User.Identity?.Name ?? "System";
 
@@ -200,7 +192,123 @@ namespace Plms.Api.Controllers
             });
 
             await _context.SaveChangesAsync();
-            return Ok(new { success = true });
+            return Ok(new { success = true, data = MapPrintIntentDetail(pi, safetyCheck) });
+        }
+
+        [HttpPost("{id}/dispatch-pdf")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> DispatchPdf(Guid id)
+        {
+            var pi = await _context.PrintIntents
+                .Include(p => p.Product)
+                .Include(p => p.Template)
+                .Include(p => p.Version)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            if (pi.Status != PrintIntentStatuses.ReadyForPrint)
+            {
+                return BadRequest(new { success = false, error = $"Intent cannot be dispatched because it is in '{pi.Status}' state." });
+            }
+
+            pi.Status = PrintIntentStatuses.SentToClient;
+            pi.DispatchedAt = DateTime.UtcNow;
+            pi.DispatchedBy = User.Identity?.Name ?? "System";
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "PrintIntentPdfDispatched",
+                EntityId = pi.Id.ToString(),
+                EntityType = "PrintIntent",
+                UserId = pi.DispatchedBy,
+                Details = $"PDF dispatched to browser for Product {pi.Product?.Sku}, Template {pi.Template?.Code} V{pi.Version?.VersionNumber}.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
+            return Ok(new { success = true, data = MapPrintIntentDetail(pi, safetyCheck) });
+        }
+
+        [HttpPost("{id}/confirm-print")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> ConfirmPrint(Guid id)
+        {
+            var pi = await _context.PrintIntents
+                .Include(p => p.Product)
+                .Include(p => p.Template)
+                .Include(p => p.Version)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            if (pi.Status != PrintIntentStatuses.SentToClient)
+            {
+                return BadRequest(new { success = false, error = $"Intent cannot be confirmed because it is in '{pi.Status}' state." });
+            }
+
+            pi.Status = PrintIntentStatuses.UserPrinted;
+            pi.CompletedAt = DateTime.UtcNow;
+            pi.CompletedBy = User.Identity?.Name ?? "System";
+            pi.FailureReason = null;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "PrintIntentUserPrinted",
+                EntityId = pi.Id.ToString(),
+                EntityType = "PrintIntent",
+                UserId = pi.CompletedBy,
+                Details = $"User printed Product {pi.Product?.Sku} with Template {pi.Template?.Code} V{pi.Version?.VersionNumber}.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
+            return Ok(new { success = true, data = MapPrintIntentDetail(pi, safetyCheck) });
+        }
+
+        [HttpPost("{id}/mark-failed")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> MarkFailed(Guid id, MarkPrintIntentFailedDto dto)
+        {
+            var pi = await _context.PrintIntents
+                .Include(p => p.Product)
+                .Include(p => p.Template)
+                .Include(p => p.Version)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+
+            if (pi.Status != PrintIntentStatuses.SentToClient)
+            {
+                return BadRequest(new { success = false, error = $"Intent cannot be marked failed because it is in '{pi.Status}' state." });
+            }
+
+            pi.Status = PrintIntentStatuses.Failed;
+            pi.CompletedAt = DateTime.UtcNow;
+            pi.CompletedBy = User.Identity?.Name ?? "System";
+            pi.FailureReason = string.IsNullOrWhiteSpace(dto.Reason) ? "Print failed at client confirmation step." : dto.Reason.Trim();
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "PrintIntentFailed",
+                EntityId = pi.Id.ToString(),
+                EntityType = "PrintIntent",
+                UserId = pi.CompletedBy,
+                Details = $"Print failed for Product {pi.Product?.Sku} with Template {pi.Template?.Code} V{pi.Version?.VersionNumber}. Reason: {pi.FailureReason}",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
+            return Ok(new { success = true, data = MapPrintIntentDetail(pi, safetyCheck) });
         }
 
         [HttpPost("{id}/cancel")]
@@ -210,12 +318,12 @@ namespace Plms.Api.Controllers
             var pi = await _context.PrintIntents.FindAsync(id);
             if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
 
-            if (pi.Status != "Pending" && pi.Status != "ReadyForPrint")
+            if (pi.Status != PrintIntentStatuses.Pending && pi.Status != PrintIntentStatuses.ReadyForPrint)
             {
                 return BadRequest(new { success = false, error = $"Intent cannot be cancelled from '{pi.Status}' state." });
             }
 
-            pi.Status = "Cancelled";
+            pi.Status = PrintIntentStatuses.Cancelled;
 
             _context.AuditLogs.Add(new AuditLog
             {
@@ -254,6 +362,34 @@ namespace Plms.Api.Controllers
                 .ToListAsync();
 
             return Ok(new { success = true, data = logs });
+        }
+
+        private static PrintIntentDetailDto MapPrintIntentDetail(PrintIntent pi, FinalSafetyCheckResult? safetyCheck)
+        {
+            return new PrintIntentDetailDto
+            {
+                Id = pi.Id,
+                ProductId = pi.ProductId,
+                ProductName = pi.Product?.Name ?? string.Empty,
+                TemplateId = pi.TemplateId,
+                TemplateName = pi.Template?.Name ?? string.Empty,
+                VersionId = pi.VersionId,
+                VersionNumber = pi.Version?.VersionNumber ?? 0,
+                Quantity = pi.Quantity,
+                Status = pi.Status,
+                RequestedBy = pi.RequestedBy,
+                CreatedAt = pi.CreatedAt,
+                ReadinessSnapshot = pi.ReadinessSnapshot,
+                OperatorReviewedAt = pi.OperatorReviewedAt,
+                OperatorReviewedBy = pi.OperatorReviewedBy,
+                DispatchedAt = pi.DispatchedAt,
+                DispatchedBy = pi.DispatchedBy,
+                CompletedAt = pi.CompletedAt,
+                CompletedBy = pi.CompletedBy,
+                FailureReason = pi.FailureReason,
+                SourceVersionStatus = pi.SourceVersionStatus,
+                SafetyCheck = safetyCheck
+            };
         }
     }
 }

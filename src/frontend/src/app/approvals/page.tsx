@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import Link from "next/link";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TemplateRestorationRequest } from "@/types/template";
 
 interface ApprovalSummary {
     templateId: string;
@@ -14,99 +18,118 @@ interface ApprovalSummary {
     requestedAt: string;
     requestedBy: string;
     changeNotes?: string;
+    reviewCommentSummary?: string;
 }
 
 export default function ApprovalQueuePage() {
     const [approvals, setApprovals] = useState<ApprovalSummary[]>([]);
+    const [restorations, setRestorations] = useState<TemplateRestorationRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function load() {
-            try {
-                const res = await apiFetch<ApprovalSummary[]>("/api/Templates/approvals");
-                if (res.success && res.data) {
-                    setApprovals(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to load approval queue", err);
-            } finally {
-                setLoading(false);
+            const [approvalRes, restorationRes] = await Promise.all([
+                apiFetch<ApprovalSummary[]>("/api/Templates/approvals"),
+                apiFetch<TemplateRestorationRequest[]>("/api/Templates/restoration-approvals"),
+            ]);
+
+            if (approvalRes.success) {
+                setApprovals(approvalRes.data);
             }
+
+            if (restorationRes.success) {
+                setRestorations(restorationRes.data);
+            }
+
+            setLoading(false);
         }
+
         load();
     }, []);
 
     return (
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-            <div className="p-8 max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex justify-between items-end mb-8 border-b border-gray-200 pb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Approval Queue</h1>
-                        <p className="text-sm text-slate-500 mt-1">Review and govern pending label template revisions across the system.</p>
-                    </div>
-                    <div className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded border border-blue-100 uppercase tracking-widest">
-                        {approvals.length} Pending Actions
-                    </div>
-                </div>
+            <div className="mx-auto max-w-6xl space-y-6">
+                <PageHeader
+                    eyebrow="Reviewer workflow"
+                    title="Approval Queue"
+                    description="Pending template revisions and restoration requests waiting for reviewer action."
+                />
 
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-slate-500 font-medium">Fetching Pending Reviews...</span>
+                    <div className="flex items-center justify-center py-20">
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
                     </div>
+                ) : approvals.length === 0 && restorations.length === 0 ? (
+                    <EmptyState
+                        title="Queue is clear"
+                        description="There are no template revisions or restoration requests waiting for reviewer action."
+                    />
                 ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {approvals.length === 0 ? (
-                            <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
-                                <div className="text-slate-200 mb-4 flex justify-center">
-                                    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </div>
-                                <h3 className="text-lg font-bold text-slate-600">Queue is Clear</h3>
-                                <p className="text-slate-400 text-sm mt-1">All template revisions have been processed. No pending reviews.</p>
-                            </div>
-                        ) : (
-                            approvals.map((item) => (
-                                <div key={item.versionId} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex items-stretch shadow-sm hover:border-blue-300 transition-colors group">
-                                    <div className="w-2 bg-amber-400"></div>
-                                    <div className="p-6 flex-grow flex flex-col md:flex-row md:items-center justify-between">
-                                        <div className="flex-grow pr-8">
-                                            <div className="flex items-center space-x-2 mb-2">
-                                                <span className="font-mono text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">
+                    <div className="space-y-8">
+                        <section className="space-y-4">
+                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">Template Reviews</div>
+                            {approvals.length === 0 ? (
+                                <EmptyState title="No template reviews" description="No template versions are currently awaiting review." />
+                            ) : approvals.map((item) => (
+                                <div
+                                    key={item.versionId}
+                                    className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
+                                >
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
                                                     {item.templateCode}
                                                 </span>
-                                                <span className="text-slate-300">/</span>
-                                                <span className="text-sm font-black text-slate-900 uppercase tracking-tighter">
-                                                    Version {item.versionNumber}
-                                                </span>
+                                                <StatusBadge label={`v${item.versionNumber}`} tone="warning" />
                                             </div>
-                                            <h2 className="text-lg font-bold text-slate-800 mb-1">{item.templateName}</h2>
-                                            {item.changeNotes && (
-                                                <p className="text-xs text-slate-500 italic line-clamp-1 mb-2">"{item.changeNotes}"</p>
-                                            )}
-                                            <div className="flex items-center space-x-4 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                                                <div className="flex items-center">
-                                                    <span className="mr-1">Requested By:</span>
-                                                    <span className="text-slate-600 font-bold">{item.requestedBy}</span>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <span className="mr-1">On:</span>
-                                                    <span className="text-slate-600 font-bold">{new Date(item.requestedAt).toLocaleString()}</span>
+                                            <div>
+                                                <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
+                                                <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
+                                                    Requested by {item.requestedBy} on {new Date(item.requestedAt).toLocaleString()}
                                                 </div>
                                             </div>
+                                            {item.reviewCommentSummary || item.changeNotes ? (
+                                                <p className="max-w-3xl text-sm font-medium text-[color:var(--plms-text-muted)]">{item.reviewCommentSummary || item.changeNotes}</p>
+                                            ) : null}
                                         </div>
-                                        <div className="mt-4 md:mt-0 flex items-center space-x-3">
-                                            <Link
-                                                href={`/templates/${item.templateId}`}
-                                                className="bg-slate-800 text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-sm group-hover:bg-blue-600"
-                                            >
-                                                Open Review
-                                            </Link>
-                                        </div>
+                                        <Link href={`/approvals/templates/${item.versionId}`} className="plms-button-primary">
+                                            Open Review
+                                        </Link>
                                     </div>
                                 </div>
-                            ))
-                        )}
+                            ))}
+                        </section>
+
+                        <section className="space-y-4">
+                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">Restoration Requests</div>
+                            {restorations.length === 0 ? (
+                                <EmptyState title="No restoration requests" description="No archived versions are waiting for restoration review." />
+                            ) : restorations.map((item) => (
+                                <div key={item.id} className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{item.templateCode}</span>
+                                                <StatusBadge label={`v${item.templateVersionNumber}`} tone="danger" />
+                                                <StatusBadge label={item.status} tone={item.status === "Pending" ? "warning" : item.status === "Approved" ? "success" : "danger"} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
+                                                <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
+                                                    Requested by {item.requestedBy} on {new Date(item.requestedAt).toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <p className="max-w-3xl text-sm font-medium text-[color:var(--plms-text-muted)]">{item.businessJustification}</p>
+                                        </div>
+                                        <Link href={`/approvals/restorations/${item.id}`} className="plms-button-primary">
+                                            Open Request
+                                        </Link>
+                                    </div>
+                                </div>
+                            ))}
+                        </section>
                     </div>
                 )}
             </div>

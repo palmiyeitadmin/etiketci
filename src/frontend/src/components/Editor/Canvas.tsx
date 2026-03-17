@@ -100,10 +100,13 @@ export const Canvas: React.FC<CanvasProps> = ({ model, selectedId, onSelect, onU
                                 </div>
                             )}
                             {el.type === 'rect' && (
-                                <div className="w-full h-full" style={{ backgroundColor: el.fill || '#eee', border: `${el.strokeWidthMm ? UnitConverter.mmToProfile(el.strokeWidthMm, ScreenPreviewProfile, zoom) : 1}px solid ${el.stroke || '#000'}` }}></div>
+                                <div className="w-full h-full" style={{ backgroundColor: el.fill ?? 'transparent', border: el.stroke && (el.strokeWidthMm || 0) > 0 ? `${UnitConverter.mmToProfile(el.strokeWidthMm || 0.4, ScreenPreviewProfile, zoom)}px solid ${el.stroke}` : 'none' }}></div>
+                            )}
+                            {el.type === 'ellipse' && (
+                                <div className="w-full h-full rounded-full" style={{ backgroundColor: el.fill ?? 'transparent', border: el.stroke && (el.strokeWidthMm || 0) > 0 ? `${UnitConverter.mmToProfile(el.strokeWidthMm || 0.4, ScreenPreviewProfile, zoom)}px solid ${el.stroke}` : 'none' }}></div>
                             )}
                             {el.type === 'line' && (
-                                <div className="w-full bg-black" style={{ height: `${(el.strokeWidthMm || 0.5) * zoom}mm` }}></div>
+                                <div className="w-full" style={{ height: `${(el.strokeWidthMm || 0.5) * zoom}mm`, backgroundColor: el.stroke ?? 'transparent' }}></div>
                             )}
                             {(el.type === 'barcode' || el.type === 'qr') && (
                                 <BarcodeRenderer

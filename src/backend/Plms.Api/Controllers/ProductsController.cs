@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
 using Plms.Api.Domain.Entities;
+using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Product;
 
 using Plms.Api.Services;
@@ -104,6 +105,19 @@ namespace Plms.Api.Controllers
             };
 
             _context.Products.Add(p);
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "ProductCreated",
+                EntityId = p.Id.ToString(),
+                EntityType = "Product",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Product {p.Sku} created.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetProduct), new { id = p.Id }, new
@@ -130,6 +144,18 @@ namespace Plms.Api.Controllers
             p.IsActive = dto.IsActive;
             p.UpdatedAt = DateTime.UtcNow;
 
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "ProductUpdated",
+                EntityId = p.Id.ToString(),
+                EntityType = "Product",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Product {p.Sku} updated.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
             await _context.SaveChangesAsync();
 
             return Ok(new { success = true, data = p });
@@ -150,9 +176,63 @@ namespace Plms.Api.Controllers
             }
 
             using var stream = file.OpenReadStream();
-            var report = await _importService.ValidateCsvAsync(stream);
+            var session = await _importService.CreateImportSessionAsync(stream, file.FileName, User.Identity?.Name ?? "System");
 
-            return Ok(new { success = true, data = report });
+            return Ok(new { success = true, data = session });
+        }
+
+        [HttpGet("import/sessions")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> GetImportSessions()
+        {
+            var sessions = await _importService.GetImportSessionsAsync();
+            return Ok(new { success = true, data = sessions });
+        }
+
+        [HttpGet("import/sessions/{sessionId}")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> GetImportSession(Guid sessionId)
+        {
+            var session = await _importService.GetImportSessionAsync(sessionId);
+            if (session == null)
+            {
+                return NotFound(new { success = false, error = "Import session not found." });
+            }
+
+            return Ok(new { success = true, data = session });
+        }
+
+        [HttpPost("import/sessions/{sessionId}/overwrite")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> EnableOverwrite(Guid sessionId)
+        {
+            var session = await _importService.EnableOverwriteAsync(sessionId);
+            if (session == null)
+            {
+                return NotFound(new { success = false, error = "Import session not found." });
+            }
+
+            return Ok(new { success = true, data = session });
+        }
+
+        [HttpPost("import/sessions/{sessionId}/commit")]
+        [Authorize(Policy = "RequireOperator")]
+        public async Task<IActionResult> CommitImportSession(Guid sessionId)
+        {
+            try
+            {
+                var result = await _importService.CommitImportSessionAsync(sessionId, User.Identity?.Name ?? "System", HttpContext.TraceIdentifier);
+                if (result == null)
+                {
+                    return NotFound(new { success = false, error = "Import session not found." });
+                }
+
+                return Ok(new { success = true, data = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, error = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
@@ -163,7 +243,7 @@ namespace Plms.Api.Controllers
             if (p == null) return NotFound(new { success = false, error = "Product not found." });
 
             // Safety Guard: Check for non-cancelled print intents
-            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && pi.Status != "Cancelled");
+            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && PrintIntentStatuses.IsOpen(pi.Status));
             if (hasActiveIntents)
             {
                 return BadRequest(new { success = false, error = "Product cannot be deleted because it is referenced by active Print Intents." });

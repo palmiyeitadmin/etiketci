@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
+import { AppShell } from "@/components/AppShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -8,9 +10,6 @@ export const metadata: Metadata = {
     title: "Palmiye Label Management System (PLMS)",
     description: "Epson-centric Label Management System MVP",
 };
-
-import { Providers } from "@/components/Providers";
-import { GlobalNavigation } from "@/components/GlobalNavigation";
 
 export default function RootLayout({
     children,
@@ -21,10 +20,7 @@ export default function RootLayout({
         <html lang="en">
             <body className={inter.className}>
                 <Providers>
-                    <GlobalNavigation />
-                    <main className="min-h-screen bg-gray-50">
-                        {children}
-                    </main>
+                    <AppShell>{children}</AppShell>
                 </Providers>
             </body>
         </html>
