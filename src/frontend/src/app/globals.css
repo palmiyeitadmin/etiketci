@@ -27,6 +27,53 @@ body {
   min-height: 100vh;
 }
 
+@keyframes plms-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes plms-pulse-soft {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes plms-fade-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes plms-orbit-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(-16px, 14px, 0) rotate(8deg);
+  }
+}
+
 @layer components {
   .plms-button-primary {
     @apply inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-blue-700;
@@ -58,6 +105,33 @@ body {
     border-color: var(--plms-border);
     color: var(--plms-text);
     background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+@layer utilities {
+  .animate-plms-float {
+    animation: plms-float 8.6s ease-in-out infinite;
+  }
+
+  .animate-plms-pulse-soft {
+    animation: plms-pulse-soft 7s ease-in-out infinite;
+  }
+
+  .animate-plms-fade-up {
+    animation: plms-fade-up 0.8s ease-out both;
+  }
+
+  .animate-plms-orbit-drift {
+    animation: plms-orbit-drift 12s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-plms-float,
+  .animate-plms-pulse-soft,
+  .animate-plms-fade-up,
+  .animate-plms-orbit-drift {
+    animation: none !important;
   }
 }
 
