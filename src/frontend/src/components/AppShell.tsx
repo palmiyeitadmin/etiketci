@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
-import { MagnifyingGlass, Sparkle } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { apiFetch } from "@/lib/api-client";
@@ -163,21 +164,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity md:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMobileOpen(false)} />
                 <aside className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-5 py-5 transition-transform md:translate-x-0 xl:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
                     <div className="flex h-full min-h-0 flex-col gap-5 overflow-hidden">
-                        <div className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.22),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
-                            <div className="flex items-center justify-between gap-3">
-                                <Link href="/" className="flex items-center gap-3">
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-[1.2rem] bg-[linear-gradient(180deg,#2563eb,#1d4ed8)] text-sm font-black tracking-[-0.06em] text-white shadow-[0_12px_28px_rgba(37,99,235,0.35)]">PL</div>
-                                    <div>
-                                        <div className="text-xl font-black tracking-[-0.06em] text-white">{t("shell.title")}</div>
-                                        <div className="text-[10px] font-black uppercase tracking-[0.26em] text-blue-200/80">{t("shell.subtitle")}</div>
-                                    </div>
-                                </Link>
-                                <div className="hidden rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-blue-200 xl:inline-flex">{t("shell.live")}</div>
-                            </div>
-                            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/25 px-3 py-2 text-[11px] text-[color:var(--plms-text-subtle)]">
-                                <Sparkle size={16} weight="fill" className="text-amber-300" />
-                                <span>{t("shell.description")}</span>
-                            </div>
+                        <div className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.22),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
+                            <Link
+                                href="/"
+                                aria-label={t("shell.title")}
+                                className="block overflow-hidden rounded-[1.35rem] border border-white/10 bg-slate-950/20 px-3 py-2 transition-colors hover:bg-slate-950/28"
+                            >
+                                <div className="relative h-[76px] w-full">
+                                    <Image
+                                        src="/assets/palmiye_logo_white.png"
+                                        alt={t("shell.title")}
+                                        fill
+                                        priority
+                                        sizes="(max-width: 1279px) 240px, 272px"
+                                        className="object-contain object-center"
+                                    />
+                                </div>
+                            </Link>
                         </div>
 
                         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
