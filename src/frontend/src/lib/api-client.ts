@@ -59,7 +59,7 @@ export async function apiFetch<T>(
       ...options.headers,
     };
 
-    if (!isFormData && !(headers as any)["Content-Type"]) {
+    if (options.body !== undefined && !isFormData && !(headers as any)["Content-Type"]) {
       (headers as any)["Content-Type"] = "application/json";
     }
 

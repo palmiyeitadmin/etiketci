@@ -15,15 +15,39 @@ function buildProxyTarget(pathSegments: string[], search: string) {
   return `${getServerApiBaseUrl()}/${normalizedPath}${search}`;
 }
 
+function buildProxyHeaders(request: NextRequest) {
+  const headers = new Headers();
+
+  const authorization = request.headers.get("authorization");
+  const accept = request.headers.get("accept");
+  const contentType = request.headers.get("content-type");
+  const correlationId = request.headers.get("x-correlation-id");
+
+  if (authorization) {
+    headers.set("authorization", authorization);
+  }
+
+  if (accept) {
+    headers.set("accept", accept);
+  }
+
+  if (contentType) {
+    headers.set("content-type", contentType);
+  }
+
+  if (correlationId) {
+    headers.set("x-correlation-id", correlationId);
+  }
+
+  return headers;
+}
+
 async function proxyRequest(
   request: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
   const targetUrl = buildProxyTarget(params.path || [], request.nextUrl.search);
-  const headers = new Headers(request.headers);
-
-  headers.delete("host");
-  headers.delete("content-length");
+  const headers = buildProxyHeaders(request);
 
   const init: RequestInit = {
     method: request.method,
