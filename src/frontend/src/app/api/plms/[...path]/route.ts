@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 
-const DEFAULT_API_BASE_URL = "http://localhost:8080";
+const DEFAULT_API_BASE_URL = "http://192.168.0.99:8080";
 
 function getServerApiBaseUrl() {
   return (

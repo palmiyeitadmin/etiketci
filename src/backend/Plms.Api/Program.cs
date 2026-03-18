@@ -39,7 +39,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("StrictCorsPolicy", policy =>
     {
-        var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:3000";
+        var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://192.168.0.99:3000";
         policy.WithOrigins(frontendUrl)
               .AllowAnyHeader()
               .AllowAnyMethod()

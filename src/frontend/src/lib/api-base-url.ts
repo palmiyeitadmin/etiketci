@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = "http://localhost:8080";
+const DEFAULT_API_BASE_URL = "http://192.168.0.99:8080";
 const BROWSER_API_PROXY_BASE = "/api/plms";
 
 function trimTrailingSlash(value: string): string {
