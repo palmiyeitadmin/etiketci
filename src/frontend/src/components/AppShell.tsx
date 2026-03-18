@@ -4,8 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ForwardRefExoticComponent, type RefAttributes } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
+import { BlocksIcon } from "@/components/ui/blocks-icon";
+import { BookOpenCheckIcon } from "@/components/ui/book-open-check-icon";
+import { BookmarkIcon } from "@/components/ui/bookmark-icon";
+import { BoxesIcon } from "@/components/ui/boxes-icon";
+import { FolderOpenIcon } from "@/components/ui/folder-open-icon";
+import { HouseIcon } from "@/components/ui/house-icon";
+import { LayoutGridIcon } from "@/components/ui/layout-grid-icon";
+import { LayoutListIcon } from "@/components/ui/layout-list-icon";
+import { ShieldCheckIcon } from "@/components/ui/shield-check-icon";
+import { ShieldUserIcon } from "@/components/ui/shield-user-icon";
+import { UsersRoundIcon } from "@/components/ui/users-round-icon";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { apiFetch } from "@/lib/api-client";
@@ -17,6 +28,7 @@ import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 type NavItem = {
     labelKey: string;
     href: string;
+    icon: AnimatedNavIcon;
     permissions?: string[];
 };
 
@@ -25,29 +37,79 @@ type NavGroup = {
     items: NavItem[];
 };
 
+type AnimatedIconHandle = {
+    startAnimation: () => void;
+    stopAnimation: () => void;
+};
+
+type AnimatedNavIconProps = {
+    size?: number;
+    duration?: number;
+    isAnimated?: boolean;
+    className?: string;
+};
+
+type AnimatedNavIcon = ForwardRefExoticComponent<AnimatedNavIconProps & RefAttributes<AnimatedIconHandle>>;
+
 const navGroups: NavGroup[] = [
     {
         labelKey: "nav.operations",
         items: [
-            { labelKey: "nav.dashboard", href: "/", permissions: [permissions.dashboardView] },
-            { labelKey: "nav.products", href: "/products", permissions: [permissions.productsView] },
-            { labelKey: "nav.templates", href: "/templates", permissions: [permissions.templatesView] },
-            { labelKey: "nav.printIntents", href: "/print-intents", permissions: [permissions.printIntentsView] },
-            { labelKey: "nav.approvals", href: "/approvals", permissions: [permissions.templatesReview, permissions.templatesPublish] },
-            { labelKey: "nav.library", href: "/content-library", permissions: [permissions.assetsView] },
+            { labelKey: "nav.dashboard", href: "/", icon: HouseIcon as AnimatedNavIcon, permissions: [permissions.dashboardView] },
+            { labelKey: "nav.products", href: "/products", icon: BoxesIcon as AnimatedNavIcon, permissions: [permissions.productsView] },
+            { labelKey: "nav.templates", href: "/templates", icon: LayoutGridIcon as AnimatedNavIcon, permissions: [permissions.templatesView] },
+            { labelKey: "nav.printIntents", href: "/print-intents", icon: BookOpenCheckIcon as AnimatedNavIcon, permissions: [permissions.printIntentsView] },
+            { labelKey: "nav.approvals", href: "/approvals", icon: ShieldCheckIcon as AnimatedNavIcon, permissions: [permissions.templatesReview, permissions.templatesPublish] },
+            { labelKey: "nav.library", href: "/content-library", icon: FolderOpenIcon as AnimatedNavIcon, permissions: [permissions.assetsView] },
         ],
     },
     {
         labelKey: "nav.administration",
         items: [
-            { labelKey: "nav.vendors", href: "/vendors", permissions: [permissions.vendorsView] },
-            { labelKey: "nav.categories", href: "/categories", permissions: [permissions.categoriesView] },
-            { labelKey: "nav.auditLogs", href: "/audit-logs", permissions: [permissions.auditView] },
-            { labelKey: "nav.users", href: "/admin/users", permissions: [permissions.usersView] },
-            { labelKey: "nav.roles", href: "/admin/roles", permissions: [permissions.rolesView] },
+            { labelKey: "nav.vendors", href: "/vendors", icon: BlocksIcon as AnimatedNavIcon, permissions: [permissions.vendorsView] },
+            { labelKey: "nav.categories", href: "/categories", icon: BookmarkIcon as AnimatedNavIcon, permissions: [permissions.categoriesView] },
+            { labelKey: "nav.auditLogs", href: "/audit-logs", icon: LayoutListIcon as AnimatedNavIcon, permissions: [permissions.auditView] },
+            { labelKey: "nav.users", href: "/admin/users", icon: UsersRoundIcon as AnimatedNavIcon, permissions: [permissions.usersView] },
+            { labelKey: "nav.roles", href: "/admin/roles", icon: ShieldUserIcon as AnimatedNavIcon, permissions: [permissions.rolesView] },
         ],
     },
 ];
+
+function ShellNavLink({
+    active,
+    item,
+    label,
+    onClick,
+}: {
+    active: boolean;
+    item: NavItem;
+    label: string;
+    onClick: () => void;
+}) {
+    const Icon = item.icon;
+    const iconRef = useRef<AnimatedIconHandle>(null);
+
+    return (
+        <Link
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={`group relative flex items-center gap-3 rounded-[1.05rem] px-3 py-2.5 text-[13px] font-bold transition-all ${active
+                ? "bg-[linear-gradient(90deg,rgba(37,99,235,0.18),rgba(37,99,235,0.07))] text-white shadow-[inset_0_0_0_1px_rgba(96,165,250,0.22)]"
+                : "text-[color:var(--plms-text-subtle)] hover:bg-white/[0.04] hover:text-white"}`}
+            onMouseEnter={() => iconRef.current?.startAnimation()}
+            onMouseLeave={() => iconRef.current?.stopAnimation()}
+            onFocus={() => iconRef.current?.startAnimation()}
+            onBlur={() => iconRef.current?.stopAnimation()}
+            onClick={onClick}
+        >
+            <span className={`absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full transition-opacity ${active ? "bg-blue-400 opacity-100 shadow-[0_0_12px_rgba(96,165,250,0.6)]" : "bg-white/25 opacity-0 group-hover:opacity-60"}`} />
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] border transition-colors ${active ? "border-blue-400/30 bg-blue-500/10 text-blue-100" : "border-white/8 bg-white/[0.03] text-slate-300 group-hover:border-white/15 group-hover:text-white"}`}>
+                <Icon ref={iconRef} size={17} duration={0.9} />
+            </span>
+            <span className="min-w-0 truncate">{label}</span>
+        </Link>
+    );
+}
 
 function getPageTitleKey(pathname: string) {
     if (pathname === "/") return "pageTitle.dashboard";
@@ -195,29 +257,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         : "min-h-screen bg-[color:var(--plms-bg)] text-white";
     const shellFrameClassName = isEditorRoute ? "flex h-screen" : "flex min-h-screen";
     const contentColumnClassName = isEditorRoute
-        ? "flex h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-72 xl:pl-80"
-        : "flex min-h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-72 xl:pl-80";
+        ? "flex h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-64 xl:pl-72"
+        : "flex min-h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-64 xl:pl-72";
 
     return (
         <div className={shellRootClassName}>
             <GlobalSearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
             <div className={shellFrameClassName}>
                 <div className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity md:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMobileOpen(false)} />
-                <aside className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-5 py-5 transition-transform md:translate-x-0 xl:w-80 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                    <div className="flex h-full min-h-0 flex-col gap-5 overflow-hidden">
-                        <div className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.22),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
+                <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-4 py-4 transition-transform md:translate-x-0 xl:w-72 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+                        <div className="rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.2),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-2.5 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
                             <Link
                                 href="/"
                                 aria-label={t("shell.title")}
-                                className="block overflow-hidden rounded-[1.35rem] border border-white/10 bg-slate-950/20 px-3 py-2 transition-colors hover:bg-slate-950/28"
+                                className="block overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/20 px-2.5 py-2 transition-colors hover:bg-slate-950/28"
                             >
-                                <div className="relative h-[76px] w-full">
+                                <div className="relative h-[52px] w-full">
                                     <Image
                                         src="/assets/palmiye_logo_white.png"
                                         alt={t("shell.title")}
                                         fill
                                         priority
-                                        sizes="(max-width: 1279px) 240px, 272px"
+                                        sizes="(max-width: 1279px) 220px, 252px"
                                         className="object-contain object-center"
                                     />
                                 </div>
@@ -225,25 +287,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </div>
 
                         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
-                            <div className="space-y-6">
+                            <div className="space-y-5">
                                 {visibleGroups.map((group) => (
-                                    <section key={group.labelKey} className="space-y-2">
-                                        <div className="px-3 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>
-                                        <div className="space-y-1.5">
+                                    <section key={group.labelKey} className="space-y-1.5">
+                                        <div className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>
+                                        <div className="space-y-1">
                                             {group.items.map((item) => {
                                                 const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                                                 return (
-                                                    <Link
+                                                    <ShellNavLink
                                                         key={item.href}
-                                                        href={item.href}
-                                                        className={`group relative flex items-center rounded-[1.25rem] px-4 py-3 text-sm font-bold transition-all ${active
-                                                            ? "bg-[linear-gradient(90deg,rgba(37,99,235,0.18),rgba(37,99,235,0.06))] text-white shadow-[inset_0_0_0_1px_rgba(96,165,250,0.22)]"
-                                                            : "text-[color:var(--plms-text-subtle)] hover:bg-white/[0.04] hover:text-white"}`}
+                                                        item={item}
+                                                        active={active}
+                                                        label={t(item.labelKey)}
                                                         onClick={() => setMobileOpen(false)}
-                                                    >
-                                                        <span className={`absolute left-1 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full transition-opacity ${active ? "opacity-100 bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.6)]" : "opacity-0 group-hover:opacity-60 bg-white/25"}`} />
-                                                        <span className="pl-2">{t(item.labelKey)}</span>
-                                                    </Link>
+                                                    />
                                                 );
                                             })}
                                         </div>
@@ -252,16 +310,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
 
-                        <div className="mt-auto rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] p-4 shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
+                        <div className="mt-auto rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] p-3.5 shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
                             <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t("shell.session")}</div>
-                            <div className="mt-3 text-base font-black tracking-[-0.04em] text-white">{session.user?.name || session.user?.email}</div>
+                            <div className="mt-2.5 text-[15px] font-black tracking-[-0.04em] text-white">{session.user?.name || session.user?.email}</div>
                             <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300">
                                 {userRoles.length > 0 ? userRoles.join(" / ") : t("common.unknown")}
                             </div>
                             {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">{t("shell.passwordRotationRequired")}</div> : null}
                             <button
                                 onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                                className="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
+                                className="mt-3.5 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
                                 {t("shell.signOut")}
                             </button>
