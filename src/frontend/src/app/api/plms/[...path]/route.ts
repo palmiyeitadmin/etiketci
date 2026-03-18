@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8080";
 
@@ -48,6 +50,12 @@ async function proxyRequest(
 ) {
   const targetUrl = buildProxyTarget(params.path || [], request.nextUrl.search);
   const headers = buildProxyHeaders(request);
+  const session = await getServerSession(authOptions);
+  const accessToken = (session as { accessToken?: string } | null)?.accessToken;
+
+  if (accessToken) {
+    headers.set("authorization", `Bearer ${accessToken}`);
+  }
 
   const init: RequestInit = {
     method: request.method,

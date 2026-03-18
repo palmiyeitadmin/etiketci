@@ -1,5 +1,4 @@
 // src/lib/api-client.ts
-import { getSession } from "next-auth/react";
 import { v4 as uuidv4 } from "uuid";
 import { buildApiUrl } from "@/lib/api-base-url";
 
@@ -50,9 +49,6 @@ export async function apiFetch<T>(
   try {
     const url = buildApiUrl(endpoint);
 
-    const session: any = typeof window !== "undefined" ? await getSession() : null;
-    const token = session?.accessToken;
-
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
     const headers: HeadersInit = {
       'x-correlation-id': (options.headers as any)?.['x-correlation-id'] || uuidv4(),
@@ -61,10 +57,6 @@ export async function apiFetch<T>(
 
     if (options.body !== undefined && !isFormData && !(headers as any)["Content-Type"]) {
       (headers as any)["Content-Type"] = "application/json";
-    }
-
-    if (token) {
-      (headers as any)['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(url, { 
