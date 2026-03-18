@@ -103,7 +103,7 @@ function ShellNavLink({
             onClick={onClick}
         >
             <span className={`absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full transition-opacity ${active ? "bg-blue-400 opacity-100 shadow-[0_0_12px_rgba(96,165,250,0.6)]" : "bg-white/25 opacity-0 group-hover:opacity-60"}`} />
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.95rem] border transition-colors ${active ? "border-blue-400/30 bg-blue-500/10 text-blue-100" : "border-white/8 bg-white/[0.03] text-slate-300 group-hover:border-white/15 group-hover:text-white"}`}>
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors ${active ? "text-blue-100" : "text-slate-300 group-hover:text-white"}`}>
                 <Icon ref={iconRef} size={17} duration={0.9} />
             </span>
             <span className="min-w-0 truncate">{label}</span>
