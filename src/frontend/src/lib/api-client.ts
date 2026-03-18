@@ -42,6 +42,35 @@ function normalizeApiError(error: unknown, status: number) {
   return { code: "HTTP_ERROR", message: `HTTP ${status}` };
 }
 
+function extractErrorFromResponse(json: Record<string, unknown>, status: number) {
+  // Format 1: { success: false, error: "..." } or { success: false, error: { message: "..." } }
+  if (json.error !== undefined) {
+    return normalizeApiError(json.error, status);
+  }
+
+  // Format 2: { success: false, errors: ["desc1", "desc2"] } (Identity errors)
+  if (Array.isArray(json.errors)) {
+    const messages = (json.errors as unknown[])
+      .map((item) => (typeof item === "string" ? item : (item as Record<string, unknown>)?.description ?? String(item)))
+      .filter(Boolean);
+    return { code: "VALIDATION_ERROR", message: messages.join(" ") || `HTTP ${status}` };
+  }
+
+  // Format 3: { title: "...", status: 400, errors: { field: ["msg"] } } (ApiController model validation)
+  if (json.errors && typeof json.errors === "object" && !Array.isArray(json.errors)) {
+    const errorEntries = Object.entries(json.errors as Record<string, string[]>);
+    const messages = errorEntries.flatMap(([, msgs]) => msgs);
+    return { code: "MODEL_VALIDATION_ERROR", message: messages.join(" ") || (typeof json.title === "string" ? json.title : `HTTP ${status}`) };
+  }
+
+  // Fallback: try top-level message
+  if (typeof json.message === "string" && json.message.trim()) {
+    return { code: "API_ERROR", message: json.message };
+  }
+
+  return { code: "HTTP_ERROR", message: `HTTP ${status}` };
+}
+
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -69,7 +98,7 @@ export async function apiFetch<T>(
     if (!response.ok) {
       return {
         success: false,
-        error: normalizeApiError(json.error, response.status),
+        error: extractErrorFromResponse(json, response.status),
         correlationId: json.correlationId,
       };
     }
