@@ -85,6 +85,12 @@ namespace Plms.Api.DTOs.Template
         public TemplateStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
+        public DateTime? SubmittedForReviewAt { get; set; }
+        public string? SubmittedForReviewBy { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+        public string? ReviewedBy { get; set; }
+        public DateTime? PublishedAt { get; set; }
+        public string? PublishedBy { get; set; }
         public List<string> Warnings { get; set; } = new();
         public List<string> RequiredVariables { get; set; } = new();
         public bool HasProductContext { get; set; }
