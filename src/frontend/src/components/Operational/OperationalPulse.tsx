@@ -15,6 +15,7 @@ import {
   ClockCounterClockwise,
 } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n";
+import { localizeDashboardFeedItem } from "@/lib/dashboard-feed";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 import { Portal } from "@/components/ui/Portal";
 
@@ -30,8 +31,12 @@ export function OperationalPulse({
   onToggle: () => void;
 }) {
   const { formatTime, t, locale } = useI18n();
-  const latestAudit = activity?.recentAuditItems?.[0];
-  const latestImport = activity?.recentImportSummaries?.[0];
+  const latestAudit = activity?.recentAuditItems?.[0]
+    ? localizeDashboardFeedItem(locale, activity.recentAuditItems[0])
+    : null;
+  const latestImport = activity?.recentImportSummaries?.[0]
+    ? localizeDashboardFeedItem(locale, activity.recentImportSummaries[0])
+    : null;
 
   const text =
     locale === "tr"

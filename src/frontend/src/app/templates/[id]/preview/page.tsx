@@ -24,6 +24,12 @@ interface TemplatePreviewMetadata {
     status: string;
     createdAt: string;
     createdBy: string;
+    submittedForReviewAt?: string;
+    submittedForReviewBy?: string;
+    reviewedAt?: string;
+    reviewedBy?: string;
+    publishedAt?: string;
+    publishedBy?: string;
     warnings: string[];
     requiredVariables: string[];
     hasProductContext: boolean;
@@ -35,7 +41,7 @@ interface TemplatePreviewMetadata {
 }
 
 export default function TemplatePreviewPage() {
-    const { locale, formatDate } = useI18n();
+    const { locale, formatDateTime, translateLabel } = useI18n();
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -60,11 +66,11 @@ export default function TemplatePreviewPage() {
             loadPreviewFailed: "Onizleme metadata bilgisi yuklenemedi.",
             pdfRenderError: "PDF onizlemesi olusturulamadi.",
             selectProduct: "Print intent olusturmak icin bir urun secin.",
-            statusNotAllowed: "Yalnizca Approved veya Published sablon surumleri baski icin kullanilabilir.",
-            readinessBlocked: "Print intent olusturmadan once hazirlik engellerini giderin.",
+            statusNotAllowed: "Yalnizca onayli veya yayindaki sablon surumleri baski talebi icin kullanilabilir.",
+            readinessBlocked: "Baski talebi olusturmadan once hazirlik engellerini giderin.",
             quantityInvalid: "Miktar sifirdan buyuk olmalidir.",
-            createIntentFailed: "Print intent olusturulamadi: {message}",
-            createIntentError: "Print intent olusturulurken hata olustu.",
+            createIntentFailed: "Baski talebi olusturulamadi: {message}",
+            createIntentError: "Baski talebi olusturulurken hata olustu.",
             allowPopups: "Yazdirma penceresini acmak icin popup izni verin.",
             printHint: "PDF yuklendiginde yazdirma penceresi otomatik acilmaya calisacak.",
             print: "Yazdir",
@@ -72,11 +78,11 @@ export default function TemplatePreviewPage() {
             metadataContextLoss: "Metadata baglami kayboldu.",
             version: "Surum",
             productionBlocked: "Uretim Engelli",
-            readyWithWarnings: "Uyarilarla Hazir",
-            readinessPass: "Hazirlik: GECTI",
+            readyWithWarnings: "Uyarilar Var",
+            readinessPass: "Uretime Hazir",
             downloadPdf: "PDF Indir",
-            creatingIntent: "Intent Olusturuluyor...",
-            createPrintIntent: "Print Intent Olustur",
+            creatingIntent: "Baski Talebi Olusturuluyor...",
+            createPrintIntent: "Baski Talebi Olustur",
             masterDiagnostic: "Ana Teshis",
             critical: "KRITIK",
             caution: "DIKKAT",
@@ -86,22 +92,27 @@ export default function TemplatePreviewPage() {
             operationalContext: "Operasyonel Baglam",
             selectProductContext: "Urun baglami secin",
             quantity: "Miktar",
-            productContextActive: "Urun baglami aktif. Onizleme ve print intent secilen urunu kullanacak.",
-            selectProductToValidate: "Hazirlik durumunu dogrulamak ve print intent acmak icin bir urun secin.",
-            previewAllowed: "Surum durumu {status}. Onizlemeye izin verilir, ancak print intent icin Approved veya Published surum gerekir.",
+            productContextActive: "Urun baglami aktif. Onizleme ve baski talebi secilen urunu kullanacak.",
+            selectProductToValidate: "Hazirlik durumunu dogrulamak ve baski talebi acmak icin bir urun secin.",
+            previewAllowed: "Surum durumu {status}. Onizlemeye izin verilir, ancak baski talebi icin onayli veya yayindaki surum gerekir.",
             targetProduct: "Hedef Urun",
             noProductContext: "Aktif urun baglami yok",
             placeholdersRemain: "Degiskenler placeholder durumunda kalacak.",
             variableResolution: "Degisken Cozumleme",
-            found: "BULUNDU",
+            variablesFound: "{count} degisken",
+            noVariables: "DEGISKEN YOK",
             staticLayout: "Statik yerlesim - Tanimli degisken yok.",
             resolved: "Cozuldu",
             missing: "Eksik",
-            resolutionFailure: "Cozumleme Hatasi",
+            unsupported: "Desteklenmiyor",
             governanceSnapshot: "Yonetişim Ozeti",
             status: "Durum",
-            publisher: "Yayinlayan",
-            timestamp: "Zaman Damgasi",
+            actor: "Kaydi Olusturan",
+            timestamp: "Kayit Zamani",
+            draftOwner: "Taslagi olusturan",
+            submittedBy: "Incelemeye gonderen",
+            reviewedBy: "Inceleyen",
+            publishedBy: "Yayina alan",
             loadingPdfPreview: "PDF onizlemesi yukleniyor",
             previewFailure: "Onizleme hatasi",
             pdfCouldNotRender: "PDF onizlemesi olusturulamadi.",
@@ -109,13 +120,19 @@ export default function TemplatePreviewPage() {
             unusablePdf: "Onizleme servisi kullanilabilir bir PDF donmedi.",
             productionPdfStream: "Uretim PDF Akisi",
             awaitingPdf: "PDF akis yaniti bekleniyor...",
+            missingProductContext: "Urun baglami eksik. Baski talebi icin belirli bir urun secilmesi gerekir.",
+            versionStateBlocked: "Surum durumu {status}. Baski talebi icin yalnizca onayli veya yayindaki surumler kullanilabilir.",
+            missingVariable: "Gerekli veri eksik: {name}",
+            unsupportedVariable: "Desteklenmeyen degisken yer tutucusu: {name}",
+            unlinkedProduct: "Secilen urun katalogda bu sablona acikca bagli degil.",
+            barcodeWarning: "{name} barkod tipi PDF cikisinda tam desteklenmeyebilir.",
         }
         : {
             metadataLoadError: "Preview metadata could not be loaded.",
             loadPreviewFailed: "Failed to load preview metadata.",
             pdfRenderError: "PDF preview could not be rendered.",
             selectProduct: "Select a product to create a print intent.",
-            statusNotAllowed: "Only Approved or Published template versions can be used for printing.",
+            statusNotAllowed: "Only approved or published template versions can be used for print intent creation.",
             readinessBlocked: "Resolve readiness blockers before creating a print intent.",
             quantityInvalid: "Quantity must be greater than zero.",
             createIntentFailed: "Failed to create print intent: {message}",
@@ -127,8 +144,8 @@ export default function TemplatePreviewPage() {
             metadataContextLoss: "Metadata context loss.",
             version: "Version",
             productionBlocked: "Production Blocked",
-            readyWithWarnings: "Ready with Warnings",
-            readinessPass: "Readiness: PASS",
+            readyWithWarnings: "Warnings Present",
+            readinessPass: "Ready for Production",
             downloadPdf: "Download PDF",
             creatingIntent: "Creating Intent...",
             createPrintIntent: "Create Print Intent",
@@ -148,15 +165,20 @@ export default function TemplatePreviewPage() {
             noProductContext: "No Active Product Context",
             placeholdersRemain: "Variables will remain in placeholder state.",
             variableResolution: "Variable Resolution",
-            found: "FOUND",
+            variablesFound: "{count} variables",
+            noVariables: "NO VARIABLES",
             staticLayout: "Static layout - No variables defined.",
             resolved: "Resolved",
             missing: "Missing",
-            resolutionFailure: "Resolution Failure",
+            unsupported: "Unsupported",
             governanceSnapshot: "Governance Snapshot",
             status: "Status",
-            publisher: "Publisher",
-            timestamp: "Timestamp",
+            actor: "Created By",
+            timestamp: "Recorded At",
+            draftOwner: "Draft Owner",
+            submittedBy: "Submitted By",
+            reviewedBy: "Reviewed By",
+            publishedBy: "Published By",
             loadingPdfPreview: "Loading PDF preview",
             previewFailure: "Preview failure",
             pdfCouldNotRender: "PDF preview could not be rendered.",
@@ -164,7 +186,45 @@ export default function TemplatePreviewPage() {
             unusablePdf: "The preview service did not return a usable PDF.",
             productionPdfStream: "Production PDF Stream",
             awaitingPdf: "Awaiting PDF stream response...",
+            missingProductContext: "Product context is missing. A specific product is required for print intent creation.",
+            versionStateBlocked: "Version status is {status}. Only approved or published versions can be used for print intent creation.",
+            missingVariable: "Required data is missing for: {name}",
+            unsupportedVariable: "Unsupported variable placeholder: {name}",
+            unlinkedProduct: "The selected product is not explicitly linked to this template in the catalog.",
+            barcodeWarning: "Barcode type {name} may not render correctly in PDF output.",
         };
+
+    function localizeReadinessMessage(message: string) {
+        const statusMatch = message.match(/^Template version is in '([^']+)' state\. Only Approved or Published versions can be used for print intents\.$/i);
+        if (statusMatch) {
+            return text.versionStateBlocked.replace("{status}", translateLabel(normalizeTemplateStatus(statusMatch[1])));
+        }
+
+        if (/^Product context is missing\. Print intents require a specific product\.$/i.test(message)) {
+            return text.missingProductContext;
+        }
+
+        const missingVariableMatch = message.match(/^Missing required data for variable: (.+)$/i);
+        if (missingVariableMatch) {
+            return text.missingVariable.replace("{name}", missingVariableMatch[1]);
+        }
+
+        const unsupportedVariableMatch = message.match(/^Unsupported variable placeholder: (.+)$/i);
+        if (unsupportedVariableMatch) {
+            return text.unsupportedVariable.replace("{name}", unsupportedVariableMatch[1]);
+        }
+
+        if (/^Product is not explicitly linked to this template in the catalog\.$/i.test(message)) {
+            return text.unlinkedProduct;
+        }
+
+        const barcodeWarningMatch = message.match(/^Barcode type '([^']+)' may not render correctly in PDF \(only CODE_128 is fully supported\)\.$/i);
+        if (barcodeWarningMatch) {
+            return text.barcodeWarning.replace("{name}", barcodeWarningMatch[1]);
+        }
+
+        return message;
+    }
 
     useEffect(() => {
         setSelectedProductId(initialProductId || "");
@@ -391,6 +451,41 @@ export default function TemplatePreviewPage() {
     const isBlocked = metadata.readinessStatus === 2;
     const hasWarnings = metadata.readinessStatus === 1 || metadata.warnings.length > 0;
     const canCreateIntent = (metadata.status === "Published" || metadata.status === "Approved") && !!selectedProductId && !isBlocked && quantity > 0;
+    const localizedStatus = translateLabel(metadata.status);
+    const localizedErrors = metadata.readinessErrors.map(localizeReadinessMessage);
+    const localizedWarnings = metadata.warnings.map(localizeReadinessMessage);
+
+    const governanceSnapshot = (() => {
+        if (metadata.status === "Published" && metadata.publishedBy && metadata.publishedAt) {
+            return {
+                actorLabel: text.publishedBy,
+                actor: metadata.publishedBy,
+                timestamp: metadata.publishedAt,
+            };
+        }
+
+        if (metadata.status === "Approved" && metadata.reviewedBy && metadata.reviewedAt) {
+            return {
+                actorLabel: text.reviewedBy,
+                actor: metadata.reviewedBy,
+                timestamp: metadata.reviewedAt,
+            };
+        }
+
+        if (metadata.status === "InReview" && metadata.submittedForReviewBy && metadata.submittedForReviewAt) {
+            return {
+                actorLabel: text.submittedBy,
+                actor: metadata.submittedForReviewBy,
+                timestamp: metadata.submittedForReviewAt,
+            };
+        }
+
+        return {
+            actorLabel: text.draftOwner,
+            actor: metadata.createdBy,
+            timestamp: metadata.createdAt,
+        };
+    })();
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
@@ -475,17 +570,24 @@ export default function TemplatePreviewPage() {
                             </div>
 
                             <div className="space-y-3">
-                                {isBlocked && metadata.readinessErrors.map((err, i) => (
+                                {isBlocked && localizedErrors.map((err, i) => (
                                     <div key={i} className="flex space-x-3 items-start p-3 bg-red-100/50 rounded-lg border border-red-100">
                                         <span className="text-red-600 text-xs">✕</span>
                                         <p className="text-[11px] font-bold text-red-900 leading-tight">{err}</p>
                                     </div>
                                 ))}
                                 {!isBlocked && hasWarnings && (
-                                    <div className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
-                                        <span className="text-amber-600 text-xs">!</span>
-                                        <p className="text-[11px] font-bold text-amber-900 leading-tight">{text.visualArtifacts}</p>
-                                    </div>
+                                    localizedWarnings.length > 0 ? localizedWarnings.map((warning, i) => (
+                                        <div key={i} className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
+                                            <span className="text-amber-600 text-xs">!</span>
+                                            <p className="text-[11px] font-bold text-amber-900 leading-tight">{warning}</p>
+                                        </div>
+                                    )) : (
+                                        <div className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
+                                            <span className="text-amber-600 text-xs">!</span>
+                                            <p className="text-[11px] font-bold text-amber-900 leading-tight">{text.visualArtifacts}</p>
+                                        </div>
+                                    )
                                 )}
                                 {!isBlocked && !hasWarnings && (
                                     <p className="text-[11px] font-medium text-emerald-800 italic">{text.layoutPass}</p>
@@ -534,7 +636,7 @@ export default function TemplatePreviewPage() {
                                             ? selectedProductId
                                                 ? text.productContextActive
                                                 : text.selectProductToValidate
-                                            : text.previewAllowed.replace("{status}", metadata.status)}
+                                            : text.previewAllowed.replace("{status}", localizedStatus)}
                                       </div>
                                     {actionMessage ? (
                                         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] font-bold text-amber-900">
@@ -570,7 +672,9 @@ export default function TemplatePreviewPage() {
                                         {text.variableResolution}
                                     </h4>
                                     <span className="text-[9px] font-black text-slate-300">
-                                        {metadata.variableDetails.length} {text.found}
+                                        {metadata.variableDetails.length > 0
+                                            ? text.variablesFound.replace("{count}", String(metadata.variableDetails.length))
+                                            : text.noVariables}
                                     </span>
                                 </div>
                                 <div className="space-y-3">
@@ -588,7 +692,7 @@ export default function TemplatePreviewPage() {
                                                         varDetail.status === 0 ? "text-emerald-700 border-emerald-100 bg-emerald-50" :
                                                         "text-red-700 border-red-100 bg-red-100"
                                                     }`}>
-                                                        {varDetail.status === 0 ? text.resolved : text.missing}
+                                                        {varDetail.status === 0 ? text.resolved : varDetail.status === 2 ? text.unsupported : text.missing}
                                                     </span>
                                                 </div>
                                                 {varDetail.status === 0 ? (
@@ -597,7 +701,7 @@ export default function TemplatePreviewPage() {
                                                     </div>
                                                 ) : (
                                                     <div className="text-[9px] font-black text-red-600 uppercase tracking-widest italic decoration-red-300 decoration-wavy underline">
-                                                        {text.resolutionFailure}
+                                                        {varDetail.status === 2 ? text.unsupported : text.missing}
                                                     </div>
                                                 )}
                                             </div>
@@ -615,16 +719,16 @@ export default function TemplatePreviewPage() {
                                         <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
                                             metadata.status === 'Published' || metadata.status === 'Approved' ? 'bg-emerald-900 text-white' : 'bg-slate-200 text-slate-600'
                                           }`}>
-                                            {metadata.status}
+                                            {localizedStatus}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-slate-500 uppercase">{text.publisher}</span>
-                                        <span className="font-black text-slate-900">{metadata.createdBy}</span>
+                                        <span className="font-bold text-slate-500 uppercase">{governanceSnapshot.actorLabel}</span>
+                                        <span className="font-black text-slate-900">{governanceSnapshot.actor}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px]">
                                         <span className="font-bold text-slate-500 uppercase">{text.timestamp}</span>
-                                        <span className="font-black text-slate-900">{formatDate(metadata.createdAt)}</span>
+                                        <span className="font-black text-slate-900">{formatDateTime(governanceSnapshot.timestamp)}</span>
                                     </div>
                                 </div>
                             </section>

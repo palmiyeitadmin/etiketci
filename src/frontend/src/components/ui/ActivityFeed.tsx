@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { DashboardFeedItem } from "@/types/dashboard";
 import { useI18n } from "@/lib/i18n";
+import { localizeDashboardFeedItem } from "@/lib/dashboard-feed";
 import { StatusBadge } from "./StatusBadge";
 
 function toTone(status?: string) {
@@ -20,7 +21,8 @@ export function ActivityFeed({
     title: string;
     items: DashboardFeedItem[];
 }) {
-    const { formatDateTime, t } = useI18n();
+    const { formatDateTime, t, locale } = useI18n();
+    const localizedItems = items.map((item) => localizeDashboardFeedItem(locale, item));
 
     return (
         <section className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
@@ -36,7 +38,7 @@ export function ActivityFeed({
                         {t("activity.empty")}
                     </div>
                 ) : (
-                    items.map((item) => {
+                    localizedItems.map((item) => {
                         const content = (
                             <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-4 transition-colors hover:border-blue-400/30 hover:bg-white/5">
                                 <div className="flex items-start justify-between gap-3">
