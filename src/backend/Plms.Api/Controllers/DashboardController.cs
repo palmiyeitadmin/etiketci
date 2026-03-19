@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Dashboard;
+using Plms.Api.Models;
 
 namespace Plms.Api.Controllers
 {
@@ -13,10 +15,12 @@ namespace Plms.Api.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public DashboardController(ApplicationDbContext context)
+        public DashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet("summary")]
@@ -38,7 +42,11 @@ namespace Plms.Api.Controllers
                 DraftTemplates = await _context.TemplateVersions.CountAsync(v => v.Status == TemplateStatus.Draft),
                 PendingApprovals = await _context.TemplateVersions.CountAsync(v => v.Status == TemplateStatus.InReview),
                 PendingPrintIntents = await _context.PrintIntents.CountAsync(pi => openStatuses.Contains(pi.Status)),
-                RecentImportCount = await _context.AuditLogs.CountAsync(a => a.Timestamp >= sevenDaysAgo && EF.Functions.ILike(a.Action, "%Import%"))
+                RecentImportCount = await _context.AuditLogs.CountAsync(a => a.Timestamp >= sevenDaysAgo && EF.Functions.ILike(a.Action, "%Import%")),
+                TotalTemplates = await _context.Templates.CountAsync(),
+                TotalUsers = _userManager.Users.Count(),
+                LatestUserName = await _userManager.Users.OrderByDescending(u => u.CreatedAt).Select(u => u.FullName ?? u.UserName).FirstOrDefaultAsync(),
+                TotalAssets = await _context.ContentAssets.CountAsync()
             };
 
             return Ok(new { success = true, data = summary });

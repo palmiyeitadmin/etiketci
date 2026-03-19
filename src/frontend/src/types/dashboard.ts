@@ -6,6 +6,10 @@ export interface DashboardSummary {
     pendingApprovals: number;
     pendingPrintIntents: number;
     recentImportCount: number;
+    totalTemplates: number;
+    totalUsers: number;
+    latestUserName: string | null;
+    totalAssets: number;
 }
 
 export interface DashboardFeedItem {

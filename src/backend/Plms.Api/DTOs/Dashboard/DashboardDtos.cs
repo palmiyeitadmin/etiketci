@@ -9,6 +9,10 @@ namespace Plms.Api.DTOs.Dashboard
         public int PendingApprovals { get; set; }
         public int PendingPrintIntents { get; set; }
         public int RecentImportCount { get; set; }
+        public int TotalTemplates { get; set; }
+        public int TotalUsers { get; set; }
+        public string? LatestUserName { get; set; }
+        public int TotalAssets { get; set; }
     }
 
     public class DashboardFeedItemDto
