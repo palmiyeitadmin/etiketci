@@ -116,7 +116,7 @@ export function OperationalPulse({
             onClick={onToggle}
           />
           <div
-            className="fixed inset-x-4 top-20 z-[56] mx-auto max-w-lg md:absolute md:inset-x-auto md:top-auto md:right-0 md:mx-0 md:mt-2 md:w-[460px] md:max-w-none"
+            className="fixed inset-x-4 top-20 z-[56] mx-auto max-w-lg md:fixed md:inset-x-auto md:top-[76px] md:right-6 md:mx-0 md:w-[460px] md:max-w-none"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[linear-gradient(160deg,rgba(14,25,43,0.99),rgba(8,17,31,0.99))] p-5 shadow-[0_24px_80px_rgba(2,6,23,0.6)]">
