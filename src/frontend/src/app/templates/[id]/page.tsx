@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Portal } from "@/components/ui/Portal";
 
 function getTemplateTone(status: string): "neutral" | "info" | "success" | "warning" | "danger" {
   switch (status) {
@@ -313,6 +314,7 @@ export default function TemplateDetailPage() {
         </div>
 
         {reviewModal ? (
+          <Portal>
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
             <div className="w-full max-w-xl rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.45)]">
               <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.reviewerDecision")}</div>
@@ -330,6 +332,7 @@ export default function TemplateDetailPage() {
               </div>
             </div>
           </div>
+          </Portal>
         ) : null}
       </div>
     </RoleGuard>
