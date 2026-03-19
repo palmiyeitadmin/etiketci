@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Dashboard;
-using Plms.Api.Models;
 
 namespace Plms.Api.Controllers
 {
@@ -44,7 +44,7 @@ namespace Plms.Api.Controllers
                 PendingPrintIntents = await _context.PrintIntents.CountAsync(pi => openStatuses.Contains(pi.Status)),
                 RecentImportCount = await _context.AuditLogs.CountAsync(a => a.Timestamp >= sevenDaysAgo && EF.Functions.ILike(a.Action, "%Import%")),
                 TotalTemplates = await _context.Templates.CountAsync(),
-                TotalUsers = _userManager.Users.Count(),
+                TotalUsers = await _userManager.Users.CountAsync(),
                 LatestUserName = await _userManager.Users.OrderByDescending(u => u.CreatedAt).Select(u => u.FullName ?? u.UserName).FirstOrDefaultAsync(),
                 TotalAssets = await _context.ContentAssets.CountAsync()
             };
