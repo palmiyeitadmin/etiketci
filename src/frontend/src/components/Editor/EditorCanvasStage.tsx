@@ -45,8 +45,52 @@ function useContainerSize<T extends HTMLElement>() {
     return { ref, size };
 }
 
+const imageCache = new Map<string, HTMLImageElement>();
+const imagePromiseCache = new Map<string, Promise<HTMLImageElement>>();
+const generatedCodeCache = new Map<string, string>();
+
+function loadImageFromSource(source: string) {
+    const cached = imageCache.get(source);
+    if (cached) {
+        return Promise.resolve(cached);
+    }
+
+    const pending = imagePromiseCache.get(source);
+    if (pending) {
+        return pending;
+    }
+
+    const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+        const preview = new window.Image();
+        preview.onload = () => {
+            imageCache.set(source, preview);
+            imagePromiseCache.delete(source);
+            resolve(preview);
+        };
+        preview.onerror = () => {
+            imagePromiseCache.delete(source);
+            reject(new Error("Image load failed"));
+        };
+        preview.src = source;
+    });
+
+    imagePromiseCache.set(source, promise);
+    return promise;
+}
+
 function useElementImage(element: LabelElement) {
     const [image, setImage] = useState<HTMLImageElement | null>(null);
+    const sourceKey = useMemo(() => {
+        if (element.type === "image") {
+            return element.content || "";
+        }
+
+        if ((element.type === "barcode" || element.type === "qr") && element.content) {
+            return `${element.type}:${element.barcodeType || ""}:${element.content}`;
+        }
+
+        return "";
+    }, [element.barcodeType, element.content, element.type]);
 
     useEffect(() => {
         let disposed = false;
@@ -54,20 +98,23 @@ function useElementImage(element: LabelElement) {
         async function load() {
             if (typeof window === "undefined") return;
             if ((element.type === "barcode" || element.type === "qr") && element.content) {
-                const canvas = document.createElement("canvas");
                 try {
-                    await bwipjs.toCanvas(canvas, {
-                        bcid: element.type === "qr" ? "qrcode" : getBwipBarcodeType(element.barcodeType),
-                        text: element.content,
-                        scale: 3,
-                        includetext: element.type === "barcode",
-                        backgroundcolor: "FFFFFF",
-                    });
-                    const preview = new window.Image();
-                    preview.onload = () => {
-                        if (!disposed) setImage(preview);
-                    };
-                    preview.src = canvas.toDataURL("image/png");
+                    let source = generatedCodeCache.get(sourceKey);
+                    if (!source) {
+                        const canvas = document.createElement("canvas");
+                        await bwipjs.toCanvas(canvas, {
+                            bcid: element.type === "qr" ? "qrcode" : getBwipBarcodeType(element.barcodeType),
+                            text: element.content,
+                            scale: 3,
+                            includetext: element.type === "barcode",
+                            backgroundcolor: "FFFFFF",
+                        });
+                        source = canvas.toDataURL("image/png");
+                        generatedCodeCache.set(sourceKey, source);
+                    }
+
+                    const preview = await loadImageFromSource(source);
+                    if (!disposed) setImage(preview);
                 } catch {
                     if (!disposed) setImage(null);
                 }
@@ -75,14 +122,12 @@ function useElementImage(element: LabelElement) {
             }
 
             if (element.type === "image" && element.content) {
-                const preview = new window.Image();
-                preview.onload = () => {
+                try {
+                    const preview = await loadImageFromSource(element.content);
                     if (!disposed) setImage(preview);
-                };
-                preview.onerror = () => {
+                } catch {
                     if (!disposed) setImage(null);
-                };
-                preview.src = element.content;
+                }
                 return;
             }
 
@@ -93,7 +138,7 @@ function useElementImage(element: LabelElement) {
         return () => {
             disposed = true;
         };
-    }, [element]);
+    }, [element.barcodeType, element.content, element.type, sourceKey]);
 
     return image;
 }

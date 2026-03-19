@@ -1,6 +1,8 @@
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Plms.Api.Data;
 using Plms.Api.Models.Canonical;
 using SkiaSharp;
 using System.Text;
@@ -17,8 +19,11 @@ namespace Plms.Api.Services
 
     public class LabelRenderService : ILabelRenderService
     {
-        public LabelRenderService()
+        private readonly ApplicationDbContext _dbContext;
+
+        public LabelRenderService(ApplicationDbContext dbContext)
         {
+            _dbContext = dbContext;
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
@@ -187,6 +192,20 @@ namespace Plms.Api.Services
 
         private void RenderImage(IContainer container, LabelElement element)
         {
+            if (TryResolveAssetImage(element, out var assetMediaType, out var assetBytes))
+            {
+                if (string.Equals(assetMediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    var svg = container.Svg(Encoding.UTF8.GetString(assetBytes));
+                    ApplyImageFit(svg, element.ImageFit);
+                    return;
+                }
+
+                var assetImage = container.Image(assetBytes);
+                ApplyImageFit(assetImage, element.ImageFit);
+                return;
+            }
+
             if (TryDecodeDataUri(element.Content, out var mediaType, out var bytes))
             {
                 if (string.Equals(mediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase))
@@ -202,6 +221,30 @@ namespace Plms.Api.Services
             }
 
             RenderFallback(container, "IMAGE", Colors.Blue.Medium);
+        }
+
+        private bool TryResolveAssetImage(LabelElement element, out string mediaType, out byte[] bytes)
+        {
+            mediaType = string.Empty;
+            bytes = [];
+
+            if (string.IsNullOrWhiteSpace(element.AssetId) || !Guid.TryParse(element.AssetId, out var assetId))
+            {
+                return false;
+            }
+
+            var asset = _dbContext.ContentAssets
+                .AsNoTracking()
+                .FirstOrDefault(item => item.Id == assetId && item.IsActive);
+
+            if (asset == null || asset.StorageData.Length == 0)
+            {
+                return false;
+            }
+
+            mediaType = asset.MimeType;
+            bytes = asset.StorageData;
+            return true;
         }
 
         private static IContainer ApplyHorizontalAlignment(IContainer container, string? textAlign)

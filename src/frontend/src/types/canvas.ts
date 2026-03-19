@@ -10,6 +10,8 @@ export interface BaseLabelElement {
     id: string;
     type: ElementType;
     name?: string;
+    groupId?: string;
+    groupName?: string;
     xMm: number;
     yMm: number;
     widthMm: number;

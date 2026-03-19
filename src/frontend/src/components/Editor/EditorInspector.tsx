@@ -4,6 +4,7 @@ import { ChangeEvent, useMemo } from "react";
 import { EditorVariablePicker } from "@/components/Editor/EditorVariablePicker";
 import { useSelectedElement } from "@/components/Editor/editor-selectors";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
+import { buildAssetContentUrl, uploadAsset } from "@/lib/assets";
 import { ElementType } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 
@@ -118,17 +119,19 @@ export function EditorInspector({ className = "" }: { className?: string }) {
             return;
         }
 
-        if (file.size > 500 * 1024) {
-            setInspectorMessage(text.imageSizeError);
+        const response = await uploadAsset(file);
+        if (!response.success) {
+            setInspectorMessage(response.error.message);
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            updateElement(selectedElement.id, { content: String(reader.result), assetId: undefined, assetSource: undefined, assetKey: undefined });
-            setInspectorMessage(null);
-        };
-        reader.readAsDataURL(file);
+        updateElement(selectedElement.id, {
+            content: buildAssetContentUrl(response.data.asset.id),
+            assetId: response.data.asset.id,
+            assetSource: "upload",
+            assetKey: undefined,
+        });
+        setInspectorMessage(null);
     }
 
     function appendVariable(placeholder: string) {

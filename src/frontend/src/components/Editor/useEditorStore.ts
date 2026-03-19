@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { cloneCanonicalModel, normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EditorHistoryState, EditorSelectionState, EditorTool, EditorViewport, CanonicalLabelModel, LabelElement } from "@/types/canvas";
-import { addElementToModel, duplicateElementInModel, insertElementIntoModel, nudgeElementInModel, removeElementFromModel, reorderElementInModel, updateElementInModel } from "@/components/Editor/editor-actions";
+import { addElementToModel, duplicateElementInModel, findNextSelectionId, insertElementIntoModel, nudgeElementInModel, removeElementFromModel, reorderElementInModel, updateElementInModel } from "@/components/Editor/editor-actions";
 
 interface EditorUiState {
     activeTool: EditorTool;
@@ -32,6 +32,9 @@ interface EditorStoreState {
     addElement: (type: EditorTool, position?: { xMm: number; yMm: number }) => string | null;
     insertElement: (element: LabelElement) => string;
     updateElement: (id: string, updates: Partial<LabelElement>, options?: { recordHistory?: boolean }) => void;
+    removeElement: (id: string) => void;
+    duplicateElement: (id: string) => void;
+    reorderElement: (id: string, mode: "forward" | "backward" | "front" | "back") => void;
     removeSelected: () => void;
     duplicateSelected: () => void;
     reorderSelected: (mode: "forward" | "backward" | "front" | "back") => void;
@@ -107,6 +110,37 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
         history: options?.recordHistory === false ? state.history : { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
         isDirty: true,
     })),
+    removeElement: (id) => {
+        const state = get();
+        if (!state.model.elements.some((element) => element.id === id)) return;
+        const nextModel = removeElementFromModel(state.model, id);
+        set({
+            model: nextModel,
+            selection: { selectedElementId: state.selection.selectedElementId === id ? findNextSelectionId(state.model, id) : state.selection.selectedElementId },
+            history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+            isDirty: true,
+        });
+    },
+    duplicateElement: (id) => {
+        const state = get();
+        const result = duplicateElementInModel(state.model, id);
+        if (!result.element) return;
+        set({
+            model: result.model,
+            selection: { selectedElementId: result.element.id },
+            history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+            isDirty: true,
+        });
+    },
+    reorderElement: (id, mode) => {
+        const state = get();
+        if (!state.model.elements.some((element) => element.id === id)) return;
+        set({
+            model: reorderElementInModel(state.model, id, mode),
+            history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+            isDirty: true,
+        });
+    },
     removeSelected: () => {
         const state = get();
         const selectedId = state.selection.selectedElementId;
@@ -114,7 +148,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
         const nextModel = removeElementFromModel(state.model, selectedId);
         set({
             model: nextModel,
-            selection: { selectedElementId: nextModel.elements.at(-1)?.id ?? null },
+            selection: { selectedElementId: findNextSelectionId(state.model, selectedId) },
             history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
             isDirty: true,
         });

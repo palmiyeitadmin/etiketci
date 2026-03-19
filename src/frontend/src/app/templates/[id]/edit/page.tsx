@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
@@ -26,6 +26,16 @@ export default function TemplateEditorPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const initialModel = useMemo(() => {
+        if (!template || !editableVersion) {
+            return null;
+        }
+
+        return normalizeCanonicalLabelModel(
+            JSON.parse(editableVersion.layoutJson || "{}"),
+            template.name
+        );
+    }, [editableVersion, template]);
 
     const text = locale === "tr"
         ? {
@@ -113,6 +123,8 @@ export default function TemplateEditorPage() {
             });
 
             if (res.success) {
+                const serializedModel = JSON.stringify(model);
+                setEditableVersion((current) => current ? { ...current, layoutJson: serializedModel } : current);
                 const message = text.saved.replace("{version}", String(editableVersion.versionNumber));
                 setSaveMessage(message);
                 return {
@@ -151,12 +163,7 @@ export default function TemplateEditorPage() {
             <Link href={`/templates/${id}`} className="text-blue-600 underline">{text.backToDetail}</Link>
         </div>
     );
-    if (!template || !editableVersion) return <div className="p-8">{text.notFound}</div>;
-
-    const initialModel: CanonicalLabelModel = normalizeCanonicalLabelModel(
-        JSON.parse(editableVersion.layoutJson || "{}"),
-        template.name
-    );
+    if (!template || !editableVersion || !initialModel) return <div className="p-8">{text.notFound}</div>;
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>

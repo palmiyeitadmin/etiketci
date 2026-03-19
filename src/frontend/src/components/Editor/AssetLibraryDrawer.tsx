@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { uploadAsset, listAssets, deleteAsset, buildAssetContentUrl, fetchAssetAsDataUri } from "@/lib/assets";
+import { uploadAsset, listAssets, deleteAsset, buildAssetContentUrl } from "@/lib/assets";
 import { useI18n } from "@/lib/i18n";
 import { phosphorIconToDataUri, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { hasPermission, permissions } from "@/lib/permissions";
@@ -186,8 +186,7 @@ export function AssetLibraryDrawer({
                           onClick={async () => {
                             try {
                               setInsertingAssetId(asset.id);
-                              const content = await fetchAssetAsDataUri(asset.id);
-                              onInsertImage({ name: asset.name, content, assetId: asset.id, assetSource: "upload" });
+                              onInsertImage({ name: asset.name, content: buildAssetContentUrl(asset.id), assetId: asset.id, assetSource: "upload" });
                             } catch (error) {
                               setMessage(error instanceof Error ? error.message : text.insertFailed);
                             } finally {

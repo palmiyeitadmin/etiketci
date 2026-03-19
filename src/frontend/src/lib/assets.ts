@@ -25,18 +25,3 @@ export async function deleteAsset(id: string) {
 export function buildAssetContentUrl(id: string) {
   return `/api/assets/${id}/content`;
 }
-
-export async function fetchAssetAsDataUri(id: string) {
-  const response = await fetch(buildAssetContentUrl(id), { credentials: "include", cache: "no-store" });
-  if (!response.ok) {
-    throw new Error("Asset content could not be loaded.");
-  }
-
-  const blob = await response.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Asset could not be converted for canvas insertion."));
-    reader.readAsDataURL(blob);
-  });
-}

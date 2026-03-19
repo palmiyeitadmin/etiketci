@@ -44,6 +44,17 @@ export function duplicateElementInModel(model: CanonicalLabelModel, id: string):
     return { model: next, element: duplicate };
 }
 
+export function findNextSelectionId(model: CanonicalLabelModel, removedId: string): string | null {
+    const removedIndex = model.elements.findIndex((element) => element.id === removedId);
+    if (removedIndex === -1) {
+        return model.elements.at(-1)?.id ?? null;
+    }
+
+    const nextIndex = Math.min(removedIndex, Math.max(0, model.elements.length - 2));
+    const remaining = model.elements.filter((element) => element.id !== removedId);
+    return remaining[nextIndex]?.id ?? remaining.at(-1)?.id ?? null;
+}
+
 export function reorderElementInModel(model: CanonicalLabelModel, id: string, mode: "forward" | "backward" | "front" | "back"): CanonicalLabelModel {
     const next = cloneCanonicalModel(model);
     const index = next.elements.findIndex((element) => element.id === id);

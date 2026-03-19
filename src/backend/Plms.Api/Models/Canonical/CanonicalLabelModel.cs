@@ -21,6 +21,8 @@ namespace Plms.Api.Models.Canonical
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty; // 'text', 'rect', 'ellipse', 'line', 'image', 'barcode', 'qr'
         public string? Name { get; set; }
+        public string? GroupId { get; set; }
+        public string? GroupName { get; set; }
         public float XMm { get; set; }
         public float YMm { get; set; }
         public float WidthMm { get; set; }
