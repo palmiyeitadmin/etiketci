@@ -108,6 +108,32 @@ body {
   }
 }
 
+@keyframes plms-stagger-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes plms-slide-title {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+    filter: blur(3px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
 @layer utilities {
   .animate-plms-float {
     animation: plms-float 8.6s ease-in-out infinite;
@@ -124,16 +150,27 @@ body {
   .animate-plms-orbit-drift {
     animation: plms-orbit-drift 12s ease-in-out infinite;
   }
+
+  .animate-plms-stagger-in {
+    animation: plms-stagger-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+
+  .animate-plms-slide-title {
+    animation: plms-slide-title 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-plms-float,
   .animate-plms-pulse-soft,
   .animate-plms-fade-up,
-  .animate-plms-orbit-drift {
+  .animate-plms-orbit-drift,
+  .animate-plms-stagger-in,
+  .animate-plms-slide-title {
     animation: none !important;
   }
 }
+
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

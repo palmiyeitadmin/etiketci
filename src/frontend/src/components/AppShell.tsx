@@ -19,6 +19,7 @@ import { ShieldUserIcon } from "@/components/ui/shield-user-icon";
 import { UsersRoundIcon } from "@/components/ui/users-round-icon";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
+import { PageTransition } from "@/components/PageTransition";
 import { apiFetch } from "@/lib/api-client";
 import { buildLoginRedirectPath, isProtectedAppPath } from "@/lib/auth-routing";
 import { localeLabels, type Locale, useI18n } from "@/lib/i18n";
@@ -336,7 +337,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </button>
                                 <div>
                                     <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.suite")}</div>
-                                    <div className="text-xl font-black tracking-[-0.04em] text-white">{t(getPageTitleKey(pathname))}</div>
+                                    <div className="text-xl font-black tracking-[-0.04em] text-white animate-plms-slide-title" key={pathname}>{t(getPageTitleKey(pathname))}</div>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
@@ -378,7 +379,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
                     </header>
-                    <main className={`min-h-0 min-w-0 flex-1 ${isEditorRoute ? "overflow-hidden overscroll-none p-0" : "overflow-y-auto px-4 py-6 md:px-8 md:py-8"}`}>{children}</main>
+                    <main className={`min-h-0 min-w-0 flex-1 ${isEditorRoute ? "overflow-hidden overscroll-none p-0" : "overflow-y-auto px-4 py-6 md:px-8 md:py-8"}`}>
+                        {isEditorRoute ? children : <PageTransition>{children}</PageTransition>}
+                    </main>
                 </div>
             </div>
         </div>
