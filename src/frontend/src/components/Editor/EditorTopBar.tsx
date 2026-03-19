@@ -101,7 +101,7 @@ export function EditorTopBar({
                     ) : null}
                     <button className="inline-flex min-w-0 items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-blue-700" type="button" onClick={onSave}>
                         <FloppyDisk size={16} weight="bold" />
-                        <span className="hidden xl:inline">{isDirty ? "Save Draft" : text.saved}</span>
+                        <span className="hidden xl:inline">{isDirty ? (locale === "tr" ? "Taslak Kaydet" : "Save Draft") : text.saved}</span>
                     </button>
                 </div>
             </div>

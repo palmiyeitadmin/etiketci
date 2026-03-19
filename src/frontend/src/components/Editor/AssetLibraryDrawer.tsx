@@ -42,6 +42,7 @@ export function AssetLibraryDrawer({
       insertFailed: "Varlik eklenemedi.",
       add: "Ekle",
       adding: "Ekleniyor",
+      delete: "Sil",
     }
     : {
       title: "Shared Content Library",
@@ -64,6 +65,7 @@ export function AssetLibraryDrawer({
       insertFailed: "Asset could not be inserted.",
       add: "Add",
       adding: "Adding",
+      delete: "Delete",
     };
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = hasPermission(userPermissions, permissions.assetsUpload) || (session?.user as any)?.roles?.includes?.("Admin");
@@ -209,7 +211,7 @@ export function AssetLibraryDrawer({
                               }
                             }}
                           >
-                            Delete
+                            {text.delete}
                           </button>
                         ) : null}
                       </div>

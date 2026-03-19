@@ -14,6 +14,7 @@ import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
+import { useI18n } from "@/lib/i18n";
 
 const CanvasStage = dynamic(
   () => import("@/components/Editor/EditorCanvasStage").then((module) => module.EditorCanvasStage),
@@ -35,6 +36,7 @@ function isInteractiveTarget(target: EventTarget | null) {
 }
 
 export function EditorShell({ initialModel, onSave, previewHref }: EditorShellProps) {
+  const { locale } = useI18n();
   const initialize = useEditorStore((state) => state.initialize);
   const model = useEditorStore((state) => state.model);
   const selection = useEditorStore((state) => state.selection);
@@ -253,7 +255,11 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--plms-border)] px-4 py-3 xl:px-6">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                {ui.isSpacePanning || ui.activeTool === "pan" ? "Pan mode" : ui.activeTool === "select" ? "Select mode" : `Click canvas to place ${ui.activeTool}`}
+                {ui.isSpacePanning || ui.activeTool === "pan"
+                  ? (locale === "tr" ? "Kaydirma modu" : "Pan mode")
+                  : ui.activeTool === "select"
+                    ? (locale === "tr" ? "Secim modu" : "Select mode")
+                    : (locale === "tr" ? `Tuvale ${ui.activeTool} yerlestirmek icin tiklayin` : `Click canvas to place ${ui.activeTool}`)}
               </div>
               {selectedLabel ? (
                 <div className="mt-2 max-w-full truncate rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
@@ -270,7 +276,7 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
                   setRightPanelTab("layers");
                 }}
               >
-                Layers
+                {locale === "tr" ? "Katmanlar" : "Layers"}
               </button>
               <button
                 type="button"
@@ -280,14 +286,14 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
                   setRightPanelTab("properties");
                 }}
               >
-                Properties
+                {locale === "tr" ? "Ozellikler" : "Properties"}
               </button>
               <button
                 type="button"
                 className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)] transition-colors hover:bg-white/5 hover:text-white"
                 onClick={() => setPanelsCollapsed((current) => !current)}
               >
-                {panelsCollapsed ? "Show Panels" : "Hide Panels"}
+                {panelsCollapsed ? (locale === "tr" ? "Panelleri Goster" : "Show Panels") : (locale === "tr" ? "Panelleri Gizle" : "Hide Panels")}
               </button>
             </div>
           </div>
