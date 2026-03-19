@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
+import { hasAnyPermission, permissions } from "@/lib/permissions";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
@@ -15,33 +17,88 @@ import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
 
 export default function TemplatesPage() {
-    const { formatDate, t } = useI18n();
+    const { data: session } = useSession();
+    const { formatDate, t, locale } = useI18n();
     const router = useRouter();
+    const roles = ((session?.user as any)?.roles || []) as string[];
+    const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
+    const canCreate = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesCreate]);
+    const canEdit = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesEdit]);
+    const canArchive = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesArchive]);
+    const canDelete = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesDelete]);
+
+    const text = locale === "tr"
+        ? {
+            category: "Kategori",
+            actions: "Aksiyonlar",
+            manageCategories: "Sablon Kategorileri",
+            open: "Ac",
+            archive: "Arsivle",
+            delete: "Sil",
+            archiveTitle: "Sablonu arsivle",
+            archiveDescription: (name: string) => `${name} ana listeden cikacak, gecmis surumleri korunacak ve arsiv ekranindan geri alinabilecek.`,
+            archiveConfirm: "Sablonu Arsivle",
+            deleteTitle: "Sablonu sil",
+            deleteDescription: (name: string) => `${name} kalici olarak silinecek. Bu islem yalnizca guvenli taslak kayitlarinda desteklenir.`,
+            deleteConfirm: "Kalici Olarak Sil",
+            uncategorized: "Kategori yok",
+        }
+        : {
+            category: "Category",
+            actions: "Actions",
+            manageCategories: "Template Categories",
+            open: "Open",
+            archive: "Archive",
+            delete: "Delete",
+            archiveTitle: "Archive template",
+            archiveDescription: (name: string) => `${name} will leave the active list, keep its history and remain restorable from the archive view.`,
+            archiveConfirm: "Archive Template",
+            deleteTitle: "Delete template",
+            deleteDescription: (name: string) => `${name} will be permanently deleted. This is only supported for safe draft-only records.`,
+            deleteConfirm: "Delete Permanently",
+            uncategorized: "Uncategorized",
+        };
+
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(null);
     const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
+    const [archiveTarget, setArchiveTarget] = useState<LabelTemplate | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<LabelTemplate | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    async function load() {
+        setLoading(true);
+        const res = await apiFetch<LabelTemplate[]>("/api/Templates");
+        if (res.success) {
+            setTemplates(res.data.map(normalizeLabelTemplate));
+            setMessage(null);
+        } else {
+            setMessage(res.error.message);
+        }
+        setLoading(false);
+    }
 
     useEffect(() => {
-        async function load() {
-            const res = await apiFetch<LabelTemplate[]>("/api/Templates");
-            if (res.success) {
-                setTemplates(res.data.map(normalizeLabelTemplate));
-            }
-            setLoading(false);
-        }
-
         void load();
     }, []);
 
     const filteredTemplates = useMemo(
         () =>
             templates.filter((template) =>
-                [template.code, template.name, template.description ?? ""].join(" ").toLowerCase().includes(searchTerm.toLowerCase())
+                [
+                    template.code,
+                    template.name,
+                    template.description ?? "",
+                    template.templateCategoryCode ?? "",
+                    template.templateCategoryName ?? "",
+                ].join(" ").toLowerCase().includes(searchTerm.toLowerCase())
             ),
         [templates, searchTerm]
     );
@@ -53,6 +110,7 @@ export default function TemplatesPage() {
         try {
             const res = await apiFetch<LabelTemplate>(`/api/Templates/${templateId}`);
             if (!res.success) {
+                setMessage(res.error.message);
                 return;
             }
 
@@ -64,6 +122,40 @@ export default function TemplatesPage() {
         }
     }
 
+    async function handleArchiveConfirm() {
+        if (!archiveTarget) return;
+        setSubmitting(true);
+        const res = await apiFetch(`/api/Templates/${archiveTarget.id}/archive`, { method: "POST" });
+        setSubmitting(false);
+        if (!res.success) {
+            setMessage(res.error.message);
+            return;
+        }
+
+        if (selectedTemplate?.id === archiveTarget.id) {
+            setSelectedTemplate(null);
+        }
+        setArchiveTarget(null);
+        await load();
+    }
+
+    async function handleDeleteConfirm() {
+        if (!deleteTarget) return;
+        setSubmitting(true);
+        const res = await apiFetch(`/api/Templates/${deleteTarget.id}`, { method: "DELETE" });
+        setSubmitting(false);
+        if (!res.success) {
+            setMessage(res.error.message);
+            return;
+        }
+
+        if (selectedTemplate?.id === deleteTarget.id) {
+            setSelectedTemplate(null);
+        }
+        setDeleteTarget(null);
+        await load();
+    }
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto max-w-7xl space-y-6">
@@ -72,13 +164,26 @@ export default function TemplatesPage() {
                     title={t("templates.title")}
                     description={t("templates.description")}
                     actions={
-                        <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                            <Link href="/templates/new" className="plms-button-primary">
-                                {t("templates.newTemplate")}
-                            </Link>
-                        </RoleGuard>
+                        <>
+                            {canCreate ? (
+                                <Link href="/templates/categories" className="plms-button-secondary">
+                                    {text.manageCategories}
+                                </Link>
+                            ) : null}
+                            {canCreate ? (
+                                <Link href="/templates/new" className="plms-button-primary">
+                                    {t("templates.newTemplate")}
+                                </Link>
+                            ) : null}
+                        </>
                     }
                 />
+
+                {message ? (
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
+                        {message}
+                    </div>
+                ) : null}
 
                 <FilterBar
                     left={
@@ -101,15 +206,21 @@ export default function TemplatesPage() {
                         description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={[t("templates.table.code"), t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), t("templates.table.updated"), t("templates.table.open")]}>
+                    <DataTable columns={[t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), t("templates.table.updated"), text.actions]}>
                         {filteredTemplates.map((template) => {
-                            const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "In Review" : "Draft only";
+                            const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
                             return (
                                 <tr key={template.id} className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
                                     <td className="px-6 py-4">
                                         <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
                                             {template.code}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                            <div className="text-sm font-bold text-white">{template.templateCategoryCode || "-"}</div>
+                                            <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                            {template.templateCategoryName || text.uncategorized}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-bold text-white">{template.name}</div>
@@ -127,9 +238,25 @@ export default function TemplatesPage() {
                                         {formatDate(template.updatedAt)}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <Link href={`/templates/${template.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200" onClick={(event) => event.stopPropagation()}>
-                                            {t("common.open")}
-                                        </Link>
+                                        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                                            <Link href={`/templates/${template.id}`} className="plms-button-compact">
+                                                {text.open}
+                                            </Link>
+                                            {canArchive ? (
+                                                <button type="button" className="plms-button-compact" onClick={() => setArchiveTarget(template)}>
+                                                    {text.archive}
+                                                </button>
+                                            ) : null}
+                                            {canDelete ? (
+                                                <button
+                                                    type="button"
+                                                    className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-200 transition-colors hover:bg-red-500/20"
+                                                    onClick={() => setDeleteTarget(template)}
+                                                >
+                                                    {text.delete}
+                                                </button>
+                                            ) : null}
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -149,6 +276,7 @@ export default function TemplatesPage() {
                         <TemplatePreviewCard template={selectedTemplate} version={previewVersion} />
 
                         <section className="grid gap-4 md:grid-cols-2">
+                            <DetailMetric label={text.category} value={selectedTemplate.templateCategoryCode ? `${selectedTemplate.templateCategoryCode} · ${selectedTemplate.templateCategoryName}` : "-"} />
                             <DetailMetric label={t("templates.detail.activeVersion")} value={selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "-"} />
                             <DetailMetric label={t("templates.detail.latestVersion")} value={selectedTemplate.latestVersion ? `v${selectedTemplate.latestVersion.versionNumber}` : "-"} />
                             <DetailMetric label={t("templates.detail.linkedProducts")} value={String(selectedTemplate.linkedProductCount ?? 0)} />
@@ -160,7 +288,7 @@ export default function TemplatesPage() {
                         <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
                             <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.lifecycleSnapshot")}</div>
                             <div className="mt-4 flex flex-wrap gap-2">
-                                <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "In Review" : "Draft only"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
+                                <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "InReview" : "DraftOnly"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
                                 {selectedTemplate.latestVersion ? <StatusBadge label={`Latest ${selectedTemplate.latestVersion.status}`} tone="neutral" /> : null}
                             </div>
                             <div className="mt-4 text-sm text-[color:var(--plms-text-subtle)]">{selectedTemplate.description || t("templates.detail.noLifecycleDescription")}</div>
@@ -170,17 +298,38 @@ export default function TemplatesPage() {
                             <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.quickActions")}</div>
                             <div className="mt-4 grid gap-2 sm:grid-cols-3">
                                 <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">{t("templates.detail.openDetail")}</Link>
-                                <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                                {canEdit ? (
                                     <button type="button" className="plms-button-compact" onClick={() => void handleOpenEditor(selectedTemplate.id)} disabled={openingTemplateId === selectedTemplate.id}>
                                         {openingTemplateId === selectedTemplate.id ? t("templates.detail.opening") : t("templates.detail.openEditor")}
                                     </button>
-                                </RoleGuard>
+                                ) : null}
                                 {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-compact">{t("templates.detail.previewPdf")}</Link> : null}
                             </div>
                         </section>
                     </div>
                 ) : null}
             </SlideOver>
+
+            <ConfirmModal
+                open={Boolean(archiveTarget)}
+                title={text.archiveTitle}
+                description={text.archiveDescription(archiveTarget?.name || "")}
+                confirmLabel={text.archiveConfirm}
+                tone="primary"
+                onCancel={() => setArchiveTarget(null)}
+                onConfirm={() => void handleArchiveConfirm()}
+                loading={submitting}
+            />
+
+            <ConfirmModal
+                open={Boolean(deleteTarget)}
+                title={text.deleteTitle}
+                description={text.deleteDescription(deleteTarget?.name || "")}
+                confirmLabel={text.deleteConfirm}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={() => void handleDeleteConfirm()}
+                loading={submitting}
+            />
         </RoleGuard>
     );
 }

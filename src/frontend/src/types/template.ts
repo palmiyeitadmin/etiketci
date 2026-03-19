@@ -25,6 +25,12 @@ export interface LabelTemplate {
     code: string;
     description?: string;
     isActive: boolean;
+    isArchived?: boolean;
+    archivedAt?: string;
+    archivedBy?: string;
+    templateCategoryId?: string;
+    templateCategoryCode?: string;
+    templateCategoryName?: string;
     currentActiveVersionId?: string;
     currentActiveVersion?: TemplateVersion;
     latestVersion?: TemplateVersion;
@@ -36,6 +42,14 @@ export interface LabelTemplate {
     createdAt: string;
     updatedAt: string;
     versions?: TemplateVersion[];
+}
+
+export interface TemplateCategory {
+    id: string;
+    code: string;
+    name: string;
+    isActive: boolean;
+    nextTemplateSequence: number;
 }
 
 export interface TemplateComparisonElementChange {

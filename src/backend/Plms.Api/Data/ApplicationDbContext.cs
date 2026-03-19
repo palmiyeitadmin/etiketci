@@ -19,6 +19,7 @@ namespace Plms.Api.Data
         public DbSet<ImportSessionRowIssue> ImportSessionRowIssues { get; set; }
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
+        public DbSet<TemplateCategory> TemplateCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<LabelTemplate> Templates { get; set; }
         public DbSet<LabelTemplateVersion> TemplateVersions { get; set; }
@@ -129,6 +130,10 @@ namespace Plms.Api.Data
                 .HasIndex(c => c.Code)
                 .IsUnique();
 
+            modelBuilder.Entity<TemplateCategory>()
+                .HasIndex(c => c.Code)
+                .IsUnique();
+
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.Sku)
                 .IsUnique();
@@ -136,6 +141,16 @@ namespace Plms.Api.Data
             modelBuilder.Entity<LabelTemplate>()
                 .HasIndex(t => t.Code)
                 .IsUnique();
+
+            modelBuilder.Entity<LabelTemplate>()
+                .Property(t => t.ArchivedBy)
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<LabelTemplate>()
+                .HasOne(t => t.TemplateCategory)
+                .WithMany(c => c.Templates)
+                .HasForeignKey(t => t.TemplateCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<LabelTemplate>()
                 .HasMany(t => t.Versions)

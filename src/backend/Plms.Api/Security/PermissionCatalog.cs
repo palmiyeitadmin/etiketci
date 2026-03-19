@@ -99,7 +99,8 @@ namespace Plms.Api.Security
                     new PermissionCatalogItemDto { Key = Permissions.TemplatesReview, Label = "Review templates", Description = "Approve or reject in-review versions." },
                     new PermissionCatalogItemDto { Key = Permissions.TemplatesPublish, Label = "Publish templates", Description = "Publish approved template versions." },
                     new PermissionCatalogItemDto { Key = Permissions.TemplatesArchive, Label = "Archive templates", Description = "Archive or deprecate template versions." },
-                    new PermissionCatalogItemDto { Key = Permissions.TemplatesRestore, Label = "Restore templates", Description = "Request or review restoration of deprecated or archived versions." }
+                    new PermissionCatalogItemDto { Key = Permissions.TemplatesRestore, Label = "Restore templates", Description = "Request or review restoration of deprecated or archived versions." },
+                    new PermissionCatalogItemDto { Key = Permissions.TemplatesDelete, Label = "Delete templates", Description = "Permanently delete eligible draft-only templates." }
                 }
             },
             new()

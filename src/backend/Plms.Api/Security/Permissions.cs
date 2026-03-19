@@ -40,6 +40,7 @@ namespace Plms.Api.Security
         public const string TemplatesPublish = "templates.publish";
         public const string TemplatesArchive = "templates.archive";
         public const string TemplatesRestore = "templates.restore";
+        public const string TemplatesDelete = "templates.delete";
 
         public const string AssetsView = "assets.view";
         public const string AssetsUpload = "assets.upload";

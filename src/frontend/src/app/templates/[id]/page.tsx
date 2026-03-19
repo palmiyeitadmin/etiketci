@@ -34,7 +34,7 @@ function getTemplateTone(status: string): "neutral" | "info" | "success" | "warn
 }
 
 export default function TemplateDetailPage() {
-  const { formatDateTime, t } = useI18n();
+  const { formatDateTime, t, locale } = useI18n();
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
@@ -45,6 +45,9 @@ export default function TemplateDetailPage() {
   const [reviewComments, setReviewComments] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const archivedMessage = locale === "tr"
+    ? "Bu sablon arsivde. Duzenleme ve yeni taslak olusturma islemleri geri yuklenene kadar kapatildi."
+    : "This template is archived. Editing and new draft creation are disabled until it is restored.";
 
   async function load() {
     setLoading(true);
@@ -84,7 +87,7 @@ export default function TemplateDetailPage() {
   }, [template]);
 
   async function handleEdit(sourceVersion?: TemplateVersion) {
-    if (!template) return;
+    if (!template || template.isArchived) return;
 
     try {
       setBusy(true);
@@ -143,7 +146,7 @@ export default function TemplateDetailPage() {
               <Link href="/templates/archived" className="plms-button-secondary">{t("templates.detailPage.archiveLibrary")}</Link>
               <Link href={`/templates/${template.id}/compare`} className="plms-button-secondary">{t("templates.detailPage.compareVersions")}</Link>
               <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                <button className="plms-button-primary" onClick={() => handleEdit()} disabled={busy}>{t("templates.detailPage.openEditor")}</button>
+                <button className="plms-button-primary" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.openEditor")}</button>
               </RoleGuard>
             </>
           }
@@ -151,6 +154,9 @@ export default function TemplateDetailPage() {
 
         {message ? (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">{message}</div>
+        ) : null}
+        {template.isArchived ? (
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-200">{archivedMessage}</div>
         ) : null}
 
         <div className="grid gap-5 md:grid-cols-4">
@@ -200,7 +206,7 @@ export default function TemplateDetailPage() {
                   <div className="mt-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.timelineDescription")}</div>
                 </div>
                 <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                  <button className="plms-button-secondary" onClick={() => handleEdit()} disabled={busy}>{t("templates.detailPage.createOrOpenDraft")}</button>
+                  <button className="plms-button-secondary" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createOrOpenDraft")}</button>
                 </RoleGuard>
               </div>
 
@@ -226,24 +232,24 @@ export default function TemplateDetailPage() {
                             {(version.status === "Draft" || version.status === "Rejected") ? (
                               <RoleGuard allowedRoles={["Admin", "Operator"]}>
                                 <>
-                                  <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy}>{t("templates.detailPage.edit")}</button>
-                                  <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "request-approval")} disabled={busy}>{t("templates.detailPage.submitReview")}</button>
+                                  <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.edit")}</button>
+                                  <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "request-approval")} disabled={busy || template.isArchived}>{t("templates.detailPage.submitReview")}</button>
                                 </>
                               </RoleGuard>
                             ) : null}
                             {(version.status === "Rejected" || version.status === "Approved" || version.status === "Published" || version.status === "Deprecated" || version.status === "Archived") ? (
                               <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy}>{t("templates.detailPage.createRevision")}</button>
+                                <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.createRevision")}</button>
                               </RoleGuard>
                             ) : null}
                             {version.status === "InReview" ? (
                               <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className="plms-button-primary" onClick={() => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber })}>{t("templates.detailPage.review")}</button>
+                                <button className="plms-button-primary" onClick={() => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber })} disabled={template.isArchived}>{t("templates.detailPage.review")}</button>
                               </RoleGuard>
                             ) : null}
                             {version.status === "Approved" ? (
                               <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "publish")} disabled={busy}>{t("templates.detailPage.publish")}</button>
+                                <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "publish")} disabled={busy || template.isArchived}>{t("templates.detailPage.publish")}</button>
                               </RoleGuard>
                             ) : null}
                           </div>
@@ -271,7 +277,7 @@ export default function TemplateDetailPage() {
                   </div>
                   <div className="grid gap-2 sm:grid-cols-3">
                     <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                      <button className="plms-button-primary" onClick={() => handleEdit(editableDraft)} disabled={busy}>{t("templates.detailPage.openDraft")}</button>
+                      <button className="plms-button-primary" onClick={() => handleEdit(editableDraft)} disabled={busy || template.isArchived}>{t("templates.detailPage.openDraft")}</button>
                     </RoleGuard>
                     <Link href={`/templates/${template.id}/preview?versionId=${editableDraft.id}`} className="plms-button-secondary">{t("templates.detailPage.previewDraft")}</Link>
                     {activeVersion ? <Link href={`/templates/${template.id}/compare?leftVersionId=${editableDraft.id}&rightVersionId=${activeVersion.id}`} className="plms-button-secondary">{t("templates.detailPage.compareToPublished")}</Link> : null}
@@ -281,7 +287,7 @@ export default function TemplateDetailPage() {
                 <div className="mt-4 space-y-4">
                   <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.noEditableDraft")}</div>
                   <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                    <button className="plms-button-primary w-full" onClick={() => handleEdit()} disabled={busy}>{t("templates.detailPage.createDraft")}</button>
+                    <button className="plms-button-primary w-full" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createDraft")}</button>
                   </RoleGuard>
                 </div>
               )}

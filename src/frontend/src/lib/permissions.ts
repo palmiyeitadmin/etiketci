@@ -33,6 +33,7 @@ export const permissions = {
   templatesPublish: "templates.publish",
   templatesArchive: "templates.archive",
   templatesRestore: "templates.restore",
+  templatesDelete: "templates.delete",
   assetsView: "assets.view",
   assetsUpload: "assets.upload",
   assetsDelete: "assets.delete",

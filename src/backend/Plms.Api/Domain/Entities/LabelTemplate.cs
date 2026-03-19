@@ -17,6 +17,13 @@ namespace Plms.Api.Domain.Entities
         public string? Description { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsArchived { get; set; }
+        public DateTime? ArchivedAt { get; set; }
+        [MaxLength(150)]
+        public string? ArchivedBy { get; set; }
+
+        public Guid TemplateCategoryId { get; set; }
+        public TemplateCategory? TemplateCategory { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

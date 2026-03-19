@@ -34,8 +34,10 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetTemplates()
         {
             var items = await _context.Templates
+                .Include(t => t.TemplateCategory)
                 .Include(t => t.CurrentActiveVersion)
                 .Include(t => t.Versions)
+                .Where(t => !t.IsArchived)
                 .Select(t => new TemplateDto
                 {
                     Id = t.Id,
@@ -43,6 +45,12 @@ namespace Plms.Api.Controllers
                     Code = t.Code,
                     Description = t.Description,
                     IsActive = t.IsActive,
+                    IsArchived = t.IsArchived,
+                    ArchivedAt = t.ArchivedAt,
+                    ArchivedBy = t.ArchivedBy,
+                    TemplateCategoryId = t.TemplateCategoryId,
+                    TemplateCategoryCode = t.TemplateCategory != null ? t.TemplateCategory.Code : string.Empty,
+                    TemplateCategoryName = t.TemplateCategory != null ? t.TemplateCategory.Name : string.Empty,
                     CurrentActiveVersionId = t.CurrentActiveVersionId,
                     LinkedProductCount = _context.ProductTemplates.Count(pt => pt.TemplateId == t.Id),
                     DraftCount = t.Versions.Count(v => v.Status == TemplateStatus.Draft),
@@ -105,6 +113,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetTemplate(Guid id)
         {
             var t = await _context.Templates
+                .Include(t => t.TemplateCategory)
                 .Include(t => t.Versions.OrderByDescending(v => v.VersionNumber))
                 .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -142,6 +151,12 @@ namespace Plms.Api.Controllers
                     Code = t.Code,
                     Description = t.Description,
                     IsActive = t.IsActive,
+                    IsArchived = t.IsArchived,
+                    ArchivedAt = t.ArchivedAt,
+                    ArchivedBy = t.ArchivedBy,
+                    TemplateCategoryId = t.TemplateCategoryId,
+                    TemplateCategoryCode = t.TemplateCategory?.Code ?? string.Empty,
+                    TemplateCategoryName = t.TemplateCategory?.Name ?? string.Empty,
                     CurrentActiveVersionId = t.CurrentActiveVersionId,
                     CurrentActiveVersion = currentActiveVersion,
                     LatestVersion = versions.OrderByDescending(v => v.VersionNumber).FirstOrDefault(),
@@ -170,8 +185,9 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetArchivedTemplates()
         {
             var items = await _context.Templates
+                .Include(t => t.TemplateCategory)
                 .Include(t => t.Versions)
-                .Where(t => t.Versions.Any(v => v.Status == TemplateStatus.Archived || v.Status == TemplateStatus.Deprecated))
+                .Where(t => t.IsArchived || t.Versions.Any(v => v.Status == TemplateStatus.Archived || v.Status == TemplateStatus.Deprecated))
                 .Select(t => new TemplateDto
                 {
                     Id = t.Id,
@@ -179,6 +195,12 @@ namespace Plms.Api.Controllers
                     Code = t.Code,
                     Description = t.Description,
                     IsActive = t.IsActive,
+                    IsArchived = t.IsArchived,
+                    ArchivedAt = t.ArchivedAt,
+                    ArchivedBy = t.ArchivedBy,
+                    TemplateCategoryId = t.TemplateCategoryId,
+                    TemplateCategoryCode = t.TemplateCategory != null ? t.TemplateCategory.Code : string.Empty,
+                    TemplateCategoryName = t.TemplateCategory != null ? t.TemplateCategory.Name : string.Empty,
                     CurrentActiveVersionId = t.CurrentActiveVersionId,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
@@ -272,16 +294,33 @@ namespace Plms.Api.Controllers
         [Authorize(Policy = "RequireOperator")]
         public async Task<IActionResult> CreateTemplate(CreateTemplateDto dto)
         {
-            if (await _context.Templates.AnyAsync(t => t.Code == dto.Code))
+            var category = await _context.TemplateCategories.FirstOrDefaultAsync(c => c.Id == dto.TemplateCategoryId);
+            if (category == null)
             {
-                return BadRequest(new { success = false, error = "Template code already exists." });
+                return BadRequest(new { success = false, error = "Template category not found." });
+            }
+
+            if (!category.IsActive)
+            {
+                return BadRequest(new { success = false, error = "Inactive template categories cannot be used for new templates." });
+            }
+
+            await using var transaction = _context.Database.IsRelational()
+                ? await _context.Database.BeginTransactionAsync()
+                : null;
+
+            var generatedCode = $"PLM-{category.Code}-{category.NextTemplateSequence:D3}";
+            if (await _context.Templates.AnyAsync(t => t.Code == generatedCode))
+            {
+                return BadRequest(new { success = false, error = "Generated template code already exists. Refresh and try again." });
             }
 
             var template = new LabelTemplate
             {
                 Name = dto.Name,
-                Code = dto.Code,
+                Code = generatedCode,
                 Description = dto.Description,
+                TemplateCategoryId = category.Id,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsActive = true
@@ -300,9 +339,96 @@ namespace Plms.Api.Controllers
 
             _context.Templates.Add(template);
             _context.TemplateVersions.Add(version);
+            category.NextTemplateSequence += 1;
             await _context.SaveChangesAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
 
             return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, new { success = true, data = new { id = template.Id } });
+        }
+
+        [HttpPost("{id}/archive")]
+        [Authorize(Policy = "Permission:templates.archive")]
+        public async Task<IActionResult> ArchiveTemplate(Guid id)
+        {
+            var template = await _context.Templates
+                .Include(t => t.Versions)
+                .FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            if (template.IsArchived)
+            {
+                return BadRequest(new { success = false, error = "Template is already archived." });
+            }
+
+            var hasOpenPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && PrintIntentStatuses.IsOpen(pi.Status));
+            if (hasOpenPrintIntents)
+            {
+                return BadRequest(new { success = false, error = "Template cannot be archived because open print intents still reference it." });
+            }
+
+            template.IsArchived = true;
+            template.IsActive = false;
+            template.ArchivedAt = DateTime.UtcNow;
+            template.ArchivedBy = User.Identity?.Name ?? "System";
+            template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateArchived",
+                EntityId = id.ToString(),
+                EntityType = "LabelTemplate",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template {template.Code} archived.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Policy = "Permission:templates.archive")]
+        public async Task<IActionResult> RestoreTemplate(Guid id)
+        {
+            var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            if (!template.IsArchived)
+            {
+                return BadRequest(new { success = false, error = "Template is not archived." });
+            }
+
+            template.IsArchived = false;
+            template.IsActive = true;
+            template.ArchivedAt = null;
+            template.ArchivedBy = null;
+            template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateRestored",
+                EntityId = id.ToString(),
+                EntityType = "LabelTemplate",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template {template.Code} restored from archive.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
         }
 
         [HttpPost("{id}/versions/{versionId}/request-approval")]
@@ -824,17 +950,28 @@ namespace Plms.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [Authorize(Policy = "Permission:templates.delete")]
         public async Task<IActionResult> DeleteTemplate(Guid id)
         {
-            var t = await _context.Templates.FindAsync(id);
+            var t = await _context.Templates.Include(template => template.Versions).FirstOrDefaultAsync(template => template.Id == id);
             if (t == null) return NotFound(new { success = false, error = "Template not found." });
 
-            // Safety Guard: Check for non-cancelled print intents
-            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && PrintIntentStatuses.IsOpen(pi.Status));
-            if (hasActiveIntents)
+            var hasPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id);
+            if (hasPrintIntents)
             {
-                return BadRequest(new { success = false, error = "Template cannot be deleted because it is referenced by active Print Intents." });
+                return BadRequest(new { success = false, error = "Template cannot be deleted because one or more print intents reference it. Archive it instead." });
+            }
+
+            var hasLinkedProducts = await _context.ProductTemplates.AnyAsync(productTemplate => productTemplate.TemplateId == id);
+            if (hasLinkedProducts)
+            {
+                return BadRequest(new { success = false, error = "Template cannot be deleted because one or more products are linked to it. Archive it instead." });
+            }
+
+            var hasNonDraftHistory = t.Versions.Any(version => version.Status != TemplateStatus.Draft);
+            if (hasNonDraftHistory)
+            {
+                return BadRequest(new { success = false, error = "Template cannot be deleted because it already has governed version history. Archive it instead." });
             }
 
             _context.Templates.Remove(t);

@@ -42,6 +42,12 @@ namespace Plms.Api.DTOs.Template
         public string Code { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool IsActive { get; set; }
+        public bool IsArchived { get; set; }
+        public DateTime? ArchivedAt { get; set; }
+        public string? ArchivedBy { get; set; }
+        public Guid TemplateCategoryId { get; set; }
+        public string TemplateCategoryCode { get; set; } = string.Empty;
+        public string TemplateCategoryName { get; set; } = string.Empty;
         public Guid? CurrentActiveVersionId { get; set; }
         public TemplateVersionDto? CurrentActiveVersion { get; set; }
         public TemplateVersionDto? LatestVersion { get; set; }
@@ -58,7 +64,7 @@ namespace Plms.Api.DTOs.Template
     public class CreateTemplateDto
     {
         public string Name { get; set; } = string.Empty;
-        public string Code { get; set; } = string.Empty;
+        public Guid TemplateCategoryId { get; set; }
         public string? Description { get; set; }
         public string InitialLayoutJson { get; set; } = "{}";
     }

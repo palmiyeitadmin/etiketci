@@ -157,6 +157,7 @@ using (var scope = app.Services.CreateScope())
     await MigrateLegacyRolesAsync(roleManager, userManager, dbContext);
     await EnsureSeedAdminAsync(userManager, seedAdminEmail, seedAdminPassword, forceResetPassword);
     await EnsureSeedProductCategoriesAsync(dbContext);
+    await EnsureSeedTemplateCategoriesAsync(dbContext);
 }
 
 app.Run();
@@ -370,4 +371,22 @@ static async Task EnsureSeedProductCategoriesAsync(ApplicationDbContext dbContex
     });
     await dbContext.SaveChangesAsync();
     Console.WriteLine("[SEED_DEBUG] Product Categories seeded.");
+}
+
+static async Task EnsureSeedTemplateCategoriesAsync(ApplicationDbContext dbContext)
+{
+    if (await dbContext.TemplateCategories.AnyAsync())
+    {
+        return;
+    }
+
+    Console.WriteLine("[SEED_DEBUG] Seeding initial Template Categories...");
+    dbContext.TemplateCategories.AddRange(new List<TemplateCategory>
+    {
+        new() { Id = Guid.NewGuid(), Code = "GEN", Name = "General Templates", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        new() { Id = Guid.NewGuid(), Code = "ETK", Name = "Etiketler", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        new() { Id = Guid.NewGuid(), Code = "KOLI", Name = "Koli Etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+    });
+    await dbContext.SaveChangesAsync();
+    Console.WriteLine("[SEED_DEBUG] Template Categories seeded.");
 }

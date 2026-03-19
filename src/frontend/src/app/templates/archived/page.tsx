@@ -2,8 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { hasAnyPermission, permissions } from "@/lib/permissions";
 import { LabelTemplate, TemplateRestorationRequest, TemplateVersion } from "@/types/template";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -15,9 +17,14 @@ import { useI18n } from "@/lib/i18n";
 
 export default function ArchivedTemplatesPage() {
     const { locale } = useI18n();
+    const { data: session } = useSession();
+    const roles = ((session?.user as any)?.roles || []) as string[];
+    const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
+    const canRestoreMaster = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesArchive]);
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
+    const [restoringTemplateId, setRestoringTemplateId] = useState<string | null>(null);
     const [form, setForm] = useState({ businessJustification: "", targetEnvironment: "", requestedUntil: "" });
     const [submitting, setSubmitting] = useState(false);
 
@@ -28,10 +35,14 @@ export default function ArchivedTemplatesPage() {
             description: "Yonetisim, denetim ve kurtarma akislarinda tutulan gecmis sablon surumleri.",
             emptyTitle: "Arsiv bos",
             emptyDescription: "Henuz arsivlenmis veya kullanimi kaldirilmis surum yok.",
-            columns: ["Kod", "Sablon", "Arsivlenmis Surumler", "Aksiyonlar"],
+            columns: ["Kod", "Sablon", "Master Arsiv", "Arsivlenmis Surumler", "Aksiyonlar"],
             noDescription: "Aciklama yok",
             requestRestore: "Geri Yukleme Talep Et",
             openDetail: "Detayi Ac",
+            restoreTemplate: "Sablonu Geri Al",
+            archivedTemplate: "Arsivli Sablon",
+            archivedVersion: "Arsivli Surum",
+            deprecatedVersion: "Kullanimi Kaldirilmis Surum",
             requestRestoration: "Geri Yukleme Talebi",
             restoreWarning: "Arsivlenmis sablonlari geri yuklemek denetlenebilir bir islemdir. Yeni bir taslak olusmadan once reviewer onayi gerekir.",
             businessJustification: "Is Gerekcesi",
@@ -48,10 +59,14 @@ export default function ArchivedTemplatesPage() {
             description: "Historical template versions retained for governance, audit and recovery workflows.",
             emptyTitle: "Archive is empty",
             emptyDescription: "There are no archived or deprecated versions available yet.",
-            columns: ["Code", "Template", "Archived Versions", "Actions"],
+            columns: ["Code", "Template", "Master Archive", "Archived Versions", "Actions"],
             noDescription: "No description",
             requestRestore: "Request Restore",
             openDetail: "Open Detail",
+            restoreTemplate: "Restore Template",
+            archivedTemplate: "Archived Template",
+            archivedVersion: "Archived Version",
+            deprecatedVersion: "Deprecated Version",
             requestRestoration: "Request Restoration",
             restoreWarning: "Restoring archived templates is an auditable action. Approval from a reviewer is required before a new draft is created.",
             businessJustification: "Business Justification",
@@ -74,6 +89,18 @@ export default function ArchivedTemplatesPage() {
     useEffect(() => {
         load();
     }, []);
+
+    const restoreTemplate = async (templateId: string) => {
+        setRestoringTemplateId(templateId);
+        const res = await apiFetch(`/api/Templates/${templateId}/restore`, { method: "POST" });
+        setRestoringTemplateId(null);
+        if (res.success) {
+            await load();
+            return;
+        }
+
+        alert(res.error.message);
+    };
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
@@ -123,10 +150,24 @@ export default function ArchivedTemplatesPage() {
                                     <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">{template.description || text.noDescription}</div>
                                 </td>
                                 <td className="px-6 py-4">
+                                    {template.isArchived ? (
+                                        <div className="space-y-2">
+                                            <StatusBadge label={text.archivedTemplate} tone="danger" />
+                                            {canRestoreMaster ? (
+                                                <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => void restoreTemplate(template.id)} disabled={restoringTemplateId === template.id}>
+                                                    {restoringTemplateId === template.id ? "..." : text.restoreTemplate}
+                                                </button>
+                                            ) : null}
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs font-medium text-[color:var(--plms-text-subtle)]">-</span>
+                                    )}
+                                </td>
+                                <td className="px-6 py-4">
                                     <div className="space-y-2">
                                         {(template.versions || []).map((version) => (
                                             <div key={version.id} className="flex flex-wrap items-center gap-2">
-                                                <StatusBadge label={`v${version.versionNumber} ${version.status}`} tone={version.status === "Archived" ? "danger" : "warning"} />
+                                                <StatusBadge label={version.status === "Archived" ? `${text.archivedVersion} v${version.versionNumber}` : `${text.deprecatedVersion} v${version.versionNumber}`} tone={version.status === "Archived" ? "danger" : "warning"} />
                                                 <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => setSelected({ template, version })}>
                                                     {text.requestRestore}
                                                 </button>
