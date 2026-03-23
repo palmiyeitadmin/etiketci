@@ -49,14 +49,12 @@ namespace Plms.Api.Services
                         foreach (var element in model.Elements.Where(element => element.Visible != false))
                         {
                             layers.Layer()
-                                .Width(pageWidthMm, Unit.Millimetre)
-                                .Height(pageHeightMm, Unit.Millimetre)
-                                .Element(pageLayer => pageLayer
-                                    .TranslateX(element.XMm, Unit.Millimetre)
-                                    .TranslateY(element.YMm, Unit.Millimetre)
-                                    .Width(element.WidthMm, Unit.Millimetre)
-                                    .Height(element.HeightMm, Unit.Millimetre)
-                                    .Element(container => RenderRotatedElement(container, element)));
+                                .Unconstrained()
+                                .TranslateX(element.XMm, Unit.Millimetre)
+                                .TranslateY(element.YMm, Unit.Millimetre)
+                                .Width(element.WidthMm, Unit.Millimetre)
+                                .Height(element.HeightMm, Unit.Millimetre)
+                                .Element(container => RenderRotatedElement(container, element));
                         }
                     });
                 });
