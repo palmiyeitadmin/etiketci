@@ -60,6 +60,13 @@ services:
       backend:
         condition: service_started
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
+
 volumes:
   db-data:
     name: ${DB_VOLUME_NAME:-plms-db-data}
