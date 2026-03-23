@@ -9,7 +9,6 @@ import {
   Users,
   Images,
   Stamp,
-  Printer,
   Package,
   UserPlus,
   ClockCounterClockwise,
@@ -41,39 +40,31 @@ export function OperationalPulse({
           templates: "Şablon",
           users: "Kullanıcı",
           assets: "Varlık",
-          products: "Ürün",
+          roles: "Roller",
           pending: "Onay Bekleyen",
           categories: "Kategoriler",
-          roles: "Roller",
-          todayAudits: "Bugunku Hareket",
+          todayAudits: "Günlük İşlem",
           latestUser: "Son Kullanıcı",
           shortcuts: "Kısayollar",
-          newTemplate: "Yeni Şablon",
-          newProduct: "Yeni Ürün İçe Aktar",
-          approvals: "Onaylar",
-          printQueue: "Baskı Kuyruğu",
           library: "Kütüphane",
           userMgmt: "Kullanıcılar",
-          latestSignal: "Son Sinyal",
+          latestSignal: "Son İşlem",
+          auditLogs: "Denetim Kayıtları",
         }
       : {
           templates: "Templates",
           users: "Users",
           assets: "Assets",
-          products: "Products",
+          roles: "Roles",
           pending: "Pending Approval",
           categories: "Categories",
-          roles: "Roles",
-          todayAudits: "Today's Activity",
+          todayAudits: "Daily Activity",
           latestUser: "Latest User",
           shortcuts: "Shortcuts",
-          newTemplate: "New Template",
-          newProduct: "Import Products",
-          approvals: "Approvals",
-          printQueue: "Print Queue",
           library: "Library",
           userMgmt: "Users",
-          latestSignal: "Latest Signal",
+          latestSignal: "Latest Activity",
+          auditLogs: "Audit Logs",
         };
 
   return (
@@ -261,7 +252,7 @@ export function OperationalPulse({
                   <ShortcutLink
                     href="/admin/audit-logs"
                     icon={ClockCounterClockwise}
-                    label={t("nav.auditLogs")}
+                    label={text.auditLogs}
                   />
                   <ShortcutLink
                     href="/library"
