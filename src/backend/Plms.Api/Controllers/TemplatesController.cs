@@ -366,7 +366,8 @@ namespace Plms.Api.Controllers
                 return BadRequest(new { success = false, error = "Template is already archived." });
             }
 
-            var hasOpenPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && PrintIntentStatuses.IsOpen(pi.Status));
+            var openStatuses = new[] { PrintIntentStatuses.Pending, PrintIntentStatuses.ReadyForPrint, PrintIntentStatuses.SentToClient };
+            var hasOpenPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && openStatuses.Contains(pi.Status));
             if (hasOpenPrintIntents)
             {
                 return BadRequest(new { success = false, error = "Template cannot be archived because open print intents still reference it." });
