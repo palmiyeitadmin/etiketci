@@ -105,7 +105,26 @@ namespace Plms.Api.Controllers
                             PublishedBy = v.PublishedBy,
                             SourceVersionId = v.SourceVersionId
                         })
-                        .FirstOrDefault()
+                        .FirstOrDefault(),
+                    Versions = t.Versions.Select(v => new TemplateVersionDto
+                    {
+                        Id = v.Id,
+                        VersionNumber = v.VersionNumber,
+                        Status = v.Status,
+                        LayoutJson = v.LayoutJson,
+                        ChangeNotes = v.ChangeNotes,
+                        CreatedAt = v.CreatedAt,
+                        CreatedBy = v.CreatedBy,
+                        SubmittedForReviewAt = v.SubmittedForReviewAt,
+                        SubmittedForReviewBy = v.SubmittedForReviewBy,
+                        ReviewedAt = v.ReviewedAt,
+                        ReviewedBy = v.ReviewedBy,
+                        ReviewDecision = v.ReviewDecision,
+                        ReviewComment = v.ReviewComment,
+                        PublishedAt = v.PublishedAt,
+                        PublishedBy = v.PublishedBy,
+                        SourceVersionId = v.SourceVersionId
+                    }).ToList()
                 })
                 .ToListAsync();
 
