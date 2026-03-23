@@ -60,6 +60,10 @@ namespace Plms.Api.Controllers
                         .OrderByDescending(v => v.CreatedAt)
                         .Select(v => v.CreatedBy)
                         .FirstOrDefault(),
+                    CreatedBy = t.Versions
+                        .OrderBy(v => v.VersionNumber)
+                        .Select(v => v.CreatedBy)
+                        .FirstOrDefault(),
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
                     CurrentActiveVersion = t.CurrentActiveVersion != null ? new TemplateVersionDto
@@ -165,6 +169,7 @@ namespace Plms.Api.Controllers
                     InReviewCount = versions.Count(v => v.Status == TemplateStatus.InReview),
                     PublishedCount = versions.Count(v => v.Status == TemplateStatus.Published),
                     LastUpdatedBy = versions.OrderByDescending(v => v.CreatedAt).FirstOrDefault()?.CreatedBy,
+                    CreatedBy = versions.OrderBy(v => v.VersionNumber).FirstOrDefault()?.CreatedBy,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
                     Versions = versions

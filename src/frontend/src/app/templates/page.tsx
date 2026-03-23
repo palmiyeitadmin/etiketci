@@ -46,6 +46,8 @@ export default function TemplatesPage() {
             deleteDescription: (name: string) => `${name} kalici olarak silinecek. Bu islem yalnizca guvenli taslak kayitlarinda desteklenir.`,
             deleteConfirm: "Kalici Olarak Sil",
             uncategorized: "Kategori yok",
+            createdBy: "Olusturan",
+            lastEditedBy: "Son Duzenleyen",
         }
         : {
             category: "Category",
@@ -61,6 +63,8 @@ export default function TemplatesPage() {
             deleteDescription: (name: string) => `${name} will be permanently deleted. This is only supported for safe draft-only records.`,
             deleteConfirm: "Delete Permanently",
             uncategorized: "Uncategorized",
+            createdBy: "Created By",
+            lastEditedBy: "Last Edited By",
         };
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -206,7 +210,7 @@ export default function TemplatesPage() {
                         description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={[t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), t("templates.table.updated"), text.actions]}>
+                    <DataTable columns={[t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), text.createdBy, text.lastEditedBy, text.actions]}>
                         {filteredTemplates.map((template) => {
                             const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
                             return (
@@ -234,11 +238,20 @@ export default function TemplatesPage() {
                                     <td className="px-6 py-4">
                                         <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                                        {formatDate(template.updatedAt)}
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm font-medium text-white">{template.createdBy || "-"}</div>
+                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                            {formatDate(template.createdAt)}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                                        <div className="text-sm font-medium text-white">{template.lastUpdatedBy || "-"}</div>
+                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                            {formatDate(template.updatedAt)}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
                                             <Link href={`/templates/${template.id}`} className="plms-button-compact">
                                                 {text.open}
                                             </Link>

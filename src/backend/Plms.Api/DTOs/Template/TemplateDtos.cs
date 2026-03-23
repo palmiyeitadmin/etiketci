@@ -56,6 +56,7 @@ namespace Plms.Api.DTOs.Template
         public int InReviewCount { get; set; }
         public int PublishedCount { get; set; }
         public string? LastUpdatedBy { get; set; }
+        public string? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<TemplateVersionDto> Versions { get; set; } = new();

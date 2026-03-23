@@ -39,6 +39,7 @@ export interface LabelTemplate {
     inReviewCount?: number;
     publishedCount?: number;
     lastUpdatedBy?: string;
+    createdBy?: string;
     createdAt: string;
     updatedAt: string;
     versions?: TemplateVersion[];
