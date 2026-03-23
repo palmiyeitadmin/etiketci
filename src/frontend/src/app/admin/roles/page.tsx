@@ -143,7 +143,7 @@ export default function RolesPage() {
 
   return (
     <PermissionGuard permissions={[permissions.rolesView]}>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:px-8 space-y-6">
         <PageHeader
           eyebrow={text.eyebrow}
           title={text.title}
@@ -180,7 +180,7 @@ export default function RolesPage() {
                 <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
               ) : null}
 
-              <div className="mt-6 space-y-5">
+              <div className="mt-6 grid items-start gap-5 md:grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3">
                 {catalog.map((group) => (
                   <div key={group.key} className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
                     <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{group.label}</div>
