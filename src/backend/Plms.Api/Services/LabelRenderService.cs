@@ -115,7 +115,8 @@ namespace Plms.Api.Services
                 var span = text.Span(element.Content ?? string.Empty)
                     .FontSize(element.FontSizePt ?? 12)
                     .FontFamily(string.IsNullOrWhiteSpace(element.Font) ? Fonts.Arial : element.Font)
-                    .FontColor(string.IsNullOrWhiteSpace(element.Fill) ? "#000000" : element.Fill);
+                    .FontColor(string.IsNullOrWhiteSpace(element.Fill) ? "#000000" : element.Fill)
+                    .LineHeight(1f);
 
                 if (string.Equals(element.FontWeight, "bold", StringComparison.OrdinalIgnoreCase))
                 {
@@ -194,28 +195,32 @@ namespace Plms.Api.Services
         {
             if (TryResolveAssetImage(element, out var assetMediaType, out var assetBytes))
             {
+                var aligned = container.AlignCenter().AlignMiddle();
+
                 if (string.Equals(assetMediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase))
                 {
-                    var svg = container.Svg(Encoding.UTF8.GetString(assetBytes));
+                    var svg = aligned.Svg(Encoding.UTF8.GetString(assetBytes));
                     ApplyImageFit(svg, element.ImageFit);
                     return;
                 }
 
-                var assetImage = container.Image(assetBytes);
+                var assetImage = aligned.Image(assetBytes);
                 ApplyImageFit(assetImage, element.ImageFit);
                 return;
             }
 
             if (TryDecodeDataUri(element.Content, out var mediaType, out var bytes))
             {
+                var aligned = container.AlignCenter().AlignMiddle();
+
                 if (string.Equals(mediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase))
                 {
-                    var svg = container.Svg(Encoding.UTF8.GetString(bytes));
+                    var svg = aligned.Svg(Encoding.UTF8.GetString(bytes));
                     ApplyImageFit(svg, element.ImageFit);
                     return;
                 }
 
-                var image = container.Image(bytes);
+                var image = aligned.Image(bytes);
                 ApplyImageFit(image, element.ImageFit);
                 return;
             }
