@@ -13,6 +13,17 @@ namespace Plms.Api.DTOs.Dashboard
         public int TotalUsers { get; set; }
         public string? LatestUserName { get; set; }
         public int TotalAssets { get; set; }
+        public int TotalTemplateCategories { get; set; }
+        public int TotalRoles { get; set; }
+        public int TodayAuditLogsCount { get; set; }
+        public List<WeeklyActivityChartItemDto> WeeklyActivity { get; set; } = new();
+    }
+
+    public class WeeklyActivityChartItemDto
+    {
+        public string DateString { get; set; } = string.Empty;
+        public int AuditCount { get; set; }
+        public int TemplateCount { get; set; }
     }
 
     public class DashboardFeedItemDto
@@ -29,9 +40,8 @@ namespace Plms.Api.DTOs.Dashboard
 
     public class DashboardActivityDto
     {
-        public List<DashboardFeedItemDto> RecentApprovals { get; set; } = new();
-        public List<DashboardFeedItemDto> RecentPrintIntents { get; set; } = new();
+        public List<DashboardFeedItemDto> RecentTemplates { get; set; } = new();
+        public List<DashboardFeedItemDto> RecentUsers { get; set; } = new();
         public List<DashboardFeedItemDto> RecentAuditItems { get; set; } = new();
-        public List<DashboardFeedItemDto> RecentImportSummaries { get; set; } = new();
     }
 }

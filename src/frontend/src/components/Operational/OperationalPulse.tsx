@@ -34,9 +34,6 @@ export function OperationalPulse({
   const latestAudit = activity?.recentAuditItems?.[0]
     ? localizeDashboardFeedItem(locale, activity.recentAuditItems[0])
     : null;
-  const latestImport = activity?.recentImportSummaries?.[0]
-    ? localizeDashboardFeedItem(locale, activity.recentImportSummaries[0])
-    : null;
 
   const text =
     locale === "tr"
@@ -46,8 +43,9 @@ export function OperationalPulse({
           assets: "Varlık",
           products: "Ürün",
           pending: "Onay Bekleyen",
-          queue: "Baskı Kuyruğu",
-          imports: "İçe Aktarım",
+          categories: "Kategoriler",
+          roles: "Roller",
+          todayAudits: "Bugunku Hareket",
           latestUser: "Son Kullanıcı",
           shortcuts: "Kısayollar",
           newTemplate: "Yeni Şablon",
@@ -64,8 +62,9 @@ export function OperationalPulse({
           assets: "Assets",
           products: "Products",
           pending: "Pending Approval",
-          queue: "Print Queue",
-          imports: "Imports",
+          categories: "Categories",
+          roles: "Roles",
+          todayAudits: "Today's Activity",
           latestUser: "Latest User",
           shortcuts: "Shortcuts",
           newTemplate: "New Template",
@@ -95,13 +94,11 @@ export function OperationalPulse({
             </span>
           </div>
           <div className="mt-1 truncate text-xs text-white/80">
-            A:{summary?.pendingApprovals ?? 0} Q:
-            {summary?.pendingPrintIntents ?? 0} I:
-            {summary?.recentImportCount ?? 0}
+            A:{summary?.pendingApprovals ?? 0} R:
+            {summary?.totalRoles ?? 0} H:
+            {summary?.todayAuditLogsCount ?? 0}
             <span className="ml-2 text-[color:var(--plms-text-subtle)]">
-              {latestAudit?.title ||
-                latestImport?.title ||
-                t("pulse.noRecentActivity")}
+              {latestAudit?.title || t("pulse.noRecentActivity")}
             </span>
           </div>
         </div>
@@ -170,9 +167,9 @@ export function OperationalPulse({
                   iconColor="text-cyan-300"
                 />
                 <MetricCard
-                  icon={Package}
-                  label={text.products}
-                  value={summary?.totalProducts ?? 0}
+                  icon={Stamp}
+                  label={text.roles}
+                  value={summary?.totalRoles ?? 0}
                   gradient="from-emerald-500/20 to-emerald-600/5"
                   borderColor="border-emerald-400/20"
                   textColor="text-emerald-100"
@@ -188,13 +185,13 @@ export function OperationalPulse({
                   tone="warning"
                 />
                 <StatusPill
-                  label={text.queue}
-                  value={summary?.pendingPrintIntents ?? 0}
+                  label={text.categories}
+                  value={summary?.totalTemplateCategories ?? 0}
                   tone="primary"
                 />
                 <StatusPill
-                  label={text.imports}
-                  value={summary?.recentImportCount ?? 0}
+                  label={text.todayAudits}
+                  value={summary?.todayAuditLogsCount ?? 0}
                   tone="success"
                 />
               </div>
@@ -238,14 +235,10 @@ export function OperationalPulse({
                   ) : null}
                 </div>
                 <div className="mt-1.5 truncate text-sm font-semibold text-white">
-                  {latestAudit?.title ||
-                    latestImport?.title ||
-                    t("pulse.noRecentActivity")}
+                  {latestAudit?.title || t("pulse.noRecentActivity")}
                 </div>
                 <div className="mt-0.5 truncate text-xs text-[color:var(--plms-text-subtle)]">
-                  {latestAudit?.subtitle ||
-                    latestImport?.subtitle ||
-                    t("pulse.emptySubtitle")}
+                  {latestAudit?.subtitle || t("pulse.emptySubtitle")}
                 </div>
               </div>
 
@@ -256,24 +249,19 @@ export function OperationalPulse({
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <ShortcutLink
-                    href="/templates/new"
+                    href="/templates"
                     icon={Files}
-                    label={text.newTemplate}
+                    label={t("nav.templates")}
                   />
                   <ShortcutLink
-                    href="/products/import"
+                    href="/admin/categories"
                     icon={Package}
-                    label={text.newProduct}
+                    label={text.categories}
                   />
                   <ShortcutLink
-                    href="/approvals"
-                    icon={Stamp}
-                    label={text.approvals}
-                  />
-                  <ShortcutLink
-                    href="/print-intents"
-                    icon={Printer}
-                    label={text.printQueue}
+                    href="/admin/audit-logs"
+                    icon={ClockCounterClockwise}
+                    label={t("nav.auditLogs")}
                   />
                   <ShortcutLink
                     href="/library"
@@ -281,9 +269,14 @@ export function OperationalPulse({
                     label={text.library}
                   />
                   <ShortcutLink
-                    href="/users"
+                    href="/admin/users"
                     icon={Users}
                     label={text.userMgmt}
+                  />
+                  <ShortcutLink
+                    href="/admin/roles"
+                    icon={Stamp}
+                    label={text.roles}
                   />
                 </div>
               </div>

@@ -1,15 +1,21 @@
 export interface DashboardSummary {
-    totalProducts: number;
-    activeProducts: number;
     publishedTemplates: number;
     draftTemplates: number;
     pendingApprovals: number;
-    pendingPrintIntents: number;
-    recentImportCount: number;
     totalTemplates: number;
     totalUsers: number;
     latestUserName: string | null;
     totalAssets: number;
+    totalTemplateCategories: number;
+    totalRoles: number;
+    todayAuditLogsCount: number;
+    weeklyActivity: WeeklyActivityChartItem[];
+}
+
+export interface WeeklyActivityChartItem {
+    dateString: string;
+    auditCount: number;
+    templateCount: number;
 }
 
 export interface DashboardFeedItem {
@@ -24,8 +30,7 @@ export interface DashboardFeedItem {
 }
 
 export interface DashboardActivity {
-    recentApprovals: DashboardFeedItem[];
-    recentPrintIntents: DashboardFeedItem[];
+    recentTemplates: DashboardFeedItem[];
+    recentUsers: DashboardFeedItem[];
     recentAuditItems: DashboardFeedItem[];
-    recentImportSummaries: DashboardFeedItem[];
 }
