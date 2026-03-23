@@ -19,9 +19,9 @@ namespace Plms.Api.Services
 
     public class LabelRenderService : ILabelRenderService
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly ApplicationDbContext? _dbContext;
 
-        public LabelRenderService(ApplicationDbContext dbContext)
+        public LabelRenderService(ApplicationDbContext? dbContext = null)
         {
             _dbContext = dbContext;
             QuestPDF.Settings.License = LicenseType.Community;
@@ -233,7 +233,7 @@ namespace Plms.Api.Services
             mediaType = string.Empty;
             bytes = [];
 
-            if (string.IsNullOrWhiteSpace(element.AssetId) || !Guid.TryParse(element.AssetId, out var assetId))
+            if (_dbContext == null || string.IsNullOrWhiteSpace(element.AssetId) || !Guid.TryParse(element.AssetId, out var assetId))
             {
                 return false;
             }

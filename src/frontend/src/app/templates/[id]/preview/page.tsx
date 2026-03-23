@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
+import { openPdfDocument } from "@/lib/pdf-print";
 import { normalizeTemplateStatus } from "@/lib/template-status";
 import { buildTemplatePreviewDownloadUrl, buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { Product } from "@/types/product";
@@ -35,6 +36,9 @@ interface TemplatePreviewMetadata {
     hasProductContext: boolean;
     productName?: string;
     productSku?: string;
+    pageWidthMm: number;
+    pageHeightMm: number;
+    orientation: "portrait" | "landscape";
     readinessStatus: number; // 0=Ready, 1=Warning, 2=Blocked
     readinessErrors: string[];
     variableDetails: VariableResolutionDetail[];
@@ -71,8 +75,7 @@ export default function TemplatePreviewPage() {
             quantityInvalid: "Miktar sifirdan buyuk olmalidir.",
             createIntentFailed: "Baski talebi olusturulamadi: {message}",
             createIntentError: "Baski talebi olusturulurken hata olustu.",
-            allowPopups: "Yazdirma penceresini acmak icin popup izni verin.",
-            printHint: "PDF yuklendiginde yazdirma penceresi otomatik acilmaya calisacak.",
+            allowPopups: "PDF sekmesini acmak icin popup izni verin.",
             print: "Yazdir",
             loadingEngine: "PDF Motoru Hazirlaniyor",
             metadataContextLoss: "Metadata baglami kayboldu.",
@@ -120,6 +123,15 @@ export default function TemplatePreviewPage() {
             unusablePdf: "Onizleme servisi kullanilabilir bir PDF donmedi.",
             productionPdfStream: "Uretim PDF Akisi",
             awaitingPdf: "PDF akis yaniti bekleniyor...",
+            printSetup: "Yazdirma Kurulumu",
+            stockSize: "Etiket Boyutu",
+            orientation: "Yon",
+            landscape: "Yatay",
+            portrait: "Dikey",
+            printGuideTitle: "Yazdirma Notlari",
+            printGuideScale: "Yazdirirken olcek 100% / Gercek boyut olmali.",
+            printGuidePaper: "Kagit boyutu sablon boyutuyla ayni olmali.",
+            printGuideViewer: "Yazdirma dogrudan PDF sekmesinden yapilir; iframe wrapper kullanilmaz.",
             missingProductContext: "Urun baglami eksik. Baski talebi icin belirli bir urun secilmesi gerekir.",
             versionStateBlocked: "Surum durumu {status}. Baski talebi icin yalnizca onayli veya yayindaki surumler kullanilabilir.",
             missingVariable: "Gerekli veri eksik: {name}",
@@ -137,8 +149,7 @@ export default function TemplatePreviewPage() {
             quantityInvalid: "Quantity must be greater than zero.",
             createIntentFailed: "Failed to create print intent: {message}",
             createIntentError: "Error creating print intent.",
-            allowPopups: "Allow popups to open the print dialog.",
-            printHint: "When the PDF loads, the print dialog will try to open automatically.",
+            allowPopups: "Allow popups to open the PDF tab.",
             print: "Print",
             loadingEngine: "Rendering PDF Engine",
             metadataContextLoss: "Metadata context loss.",
@@ -186,6 +197,15 @@ export default function TemplatePreviewPage() {
             unusablePdf: "The preview service did not return a usable PDF.",
             productionPdfStream: "Production PDF Stream",
             awaitingPdf: "Awaiting PDF stream response...",
+            printSetup: "Print Setup",
+            stockSize: "Label Stock",
+            orientation: "Orientation",
+            landscape: "Landscape",
+            portrait: "Portrait",
+            printGuideTitle: "Print Notes",
+            printGuideScale: "Use 100% / Actual size when printing.",
+            printGuidePaper: "Paper size must match the template stock exactly.",
+            printGuideViewer: "Printing now opens the real PDF document instead of an iframe wrapper.",
             missingProductContext: "Product context is missing. A specific product is required for print intent creation.",
             versionStateBlocked: "Version status is {status}. Only approved or published versions can be used for print intent creation.",
             missingVariable: "Required data is missing for: {name}",
@@ -385,56 +405,9 @@ export default function TemplatePreviewPage() {
     }
 
     function handlePrintPdf() {
-        const printSource = pdfObjectUrl || previewFileUrl;
-        if (!printSource) return;
-
-        const printWindow = window.open("", "plms-preview-print", "popup=yes,width=980,height=760");
-        if (!printWindow) {
+        if (!openPdfDocument(previewFileUrl)) {
             setActionMessage(text.allowPopups);
-            return;
         }
-
-        const escapedUrl = JSON.stringify(printSource);
-        printWindow.document.write(`
-          <!doctype html>
-          <html>
-            <head>
-              <title>PLMS Print Preview</title>
-              <style>
-                body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #fff; }
-                .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #111827; border-bottom: 1px solid rgba(255,255,255,0.08); }
-                .hint { font-size: 12px; color: rgba(255,255,255,0.72); }
-                button { border: 0; border-radius: 999px; padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: white; background: #2563eb; cursor: pointer; }
-                iframe { width: 100%; height: calc(100vh - 58px); border: 0; background: white; }
-              </style>
-            </head>
-            <body>
-              <div class="toolbar">
-                <div class="hint">${text.printHint}</div>
-                <button onclick="triggerPrint()">${text.print}</button>
-              </div>
-              <iframe id="pdf-frame" src=${escapedUrl} title="PLMS PDF Preview"></iframe>
-              <script>
-                const frame = document.getElementById('pdf-frame');
-                function triggerPrint() {
-                  try {
-                    if (frame && frame.contentWindow) {
-                      frame.contentWindow.focus();
-                      frame.contentWindow.print();
-                      return;
-                    }
-                  } catch (error) {}
-                  window.focus();
-                  window.print();
-                }
-                frame.addEventListener('load', function () {
-                  setTimeout(triggerPrint, 700);
-                });
-              </script>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
     }
 
     if (loading) return (
@@ -454,6 +427,7 @@ export default function TemplatePreviewPage() {
     const localizedStatus = translateLabel(metadata.status);
     const localizedErrors = metadata.readinessErrors.map(localizeReadinessMessage);
     const localizedWarnings = metadata.warnings.map(localizeReadinessMessage);
+    const localizedOrientation = metadata.orientation === "landscape" ? text.landscape : text.portrait;
 
     const governanceSnapshot = (() => {
         if (metadata.status === "Published" && metadata.publishedBy && metadata.publishedAt) {
@@ -631,7 +605,7 @@ export default function TemplatePreviewPage() {
                                         }}
                                         placeholder={text.quantity}
                                     />
-                                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] font-medium text-slate-500">
+                            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] font-medium text-slate-500">
                                         {(metadata.status === "Published" || metadata.status === "Approved")
                                             ? selectedProductId
                                                 ? text.productContextActive
@@ -661,6 +635,35 @@ export default function TemplatePreviewPage() {
                                         <p className="text-[10px] text-slate-400 mt-1">{text.placeholdersRemain}</p>
                                     </div>
                                 )}
+                                </div>
+                            </section>
+
+                            <section>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2"></span>
+                                    {text.printSetup}
+                                </h4>
+                                <div className="space-y-3">
+                                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                                        <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-500">
+                                            <span>{text.stockSize}</span>
+                                            <span className="font-mono text-slate-900">
+                                                {metadata.pageWidthMm} x {metadata.pageHeightMm} mm
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase text-slate-500">
+                                            <span>{text.orientation}</span>
+                                            <span className="font-black text-slate-900">{localizedOrientation}</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-[11px] font-medium text-blue-900">
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-blue-700">{text.printGuideTitle}</div>
+                                        <ul className="mt-3 space-y-2 list-disc pl-4">
+                                            <li>{text.printGuideScale}</li>
+                                            <li>{text.printGuidePaper}</li>
+                                            <li>{text.printGuideViewer}</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </section>
 

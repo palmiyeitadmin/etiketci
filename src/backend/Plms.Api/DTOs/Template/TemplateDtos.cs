@@ -102,6 +102,9 @@ namespace Plms.Api.DTOs.Template
         public bool HasProductContext { get; set; }
         public string? ProductName { get; set; }
         public string? ProductSku { get; set; }
+        public float PageWidthMm { get; set; }
+        public float PageHeightMm { get; set; }
+        public string Orientation { get; set; } = "portrait";
         
         // Sprint 10 additions
         public Plms.Api.Models.Operational.ReadinessStatus ReadinessStatus { get; set; }

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
+import { openPdfDocument } from "@/lib/pdf-print";
 import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { getPrintIntentStatusLabel, getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
 import { PrintIntentDetailDto } from "@/types/operational";
@@ -35,7 +36,7 @@ export default function PrintIntentDetailPage() {
       noAudit: "Bu niyet icin denetim kaydi bulunamadi.", lifecycleActions: "Yasam Dongusu Islemleri", confirmReadiness: "Hazirligi Onayla", dispatchPdf: "PDF'yi Tarayiciya Gonder",
       failureReason: "Basarisiz baski icin istege bagli neden...", markFailed: "Basarisiz Olarak Isle", confirmPrinted: "Yazdirildi Olarak Onayla", cancelIntent: "Niyeti Iptal Et",
       printConfirmed: "Baski operator tarafindan onaylandi.", noFailureReason: "Neden kaydedilmedi.", cancelled: "Niyet gonderimden once iptal edildi.", recordContext: "Kayit Baglami",
-      template: "Sablon", version: "Surum", product: "Urun",
+      template: "Sablon", version: "Surum", product: "Urun", popupBlocked: "PDF sekmesi acilamadi. Popup iznini acin veya Proof PDF baglantisini kullanin.",
     }
     : {
       back: "Back to Queue", proof: "Open Proof PDF", notFound: "Print intent not found", notFoundDescription: "The requested print intent could not be loaded.",
@@ -47,7 +48,7 @@ export default function PrintIntentDetailPage() {
       noAudit: "No audit records found for this intent.", lifecycleActions: "Lifecycle Actions", confirmReadiness: "Confirm Readiness", dispatchPdf: "Dispatch PDF To Browser",
       failureReason: "Optional failure reason for a failed print...", markFailed: "Mark Failed", confirmPrinted: "Confirm Printed", cancelIntent: "Cancel Intent",
       printConfirmed: "Print confirmed by operator.", noFailureReason: "No reason recorded.", cancelled: "Intent cancelled before dispatch.", recordContext: "Record Context",
-      template: "Template", version: "Version", product: "Product",
+      template: "Template", version: "Version", product: "Product", popupBlocked: "The PDF tab could not be opened. Allow popups or use the Proof PDF action.",
     };
 
   const [intent, setIntent] = useState<PrintIntentDetailDto | null>(null);
@@ -122,12 +123,9 @@ export default function PrintIntentDetailPage() {
   async function dispatchPdf() {
     if (!intent) return;
 
-    const proofWindow = window.open("about:blank", "_blank");
     const dispatched = await runAction("dispatch-pdf");
-    if (proofWindow && dispatched) {
-      proofWindow.location.href = buildTemplatePreviewFileUrl(intent.templateId, intent.versionId, intent.productId);
-    } else if (proofWindow && !dispatched) {
-      proofWindow.close();
+    if (dispatched && !openPdfDocument(buildTemplatePreviewFileUrl(intent.templateId, intent.versionId, intent.productId))) {
+      setMessage(text.popupBlocked);
     }
   }
 
@@ -156,7 +154,11 @@ export default function PrintIntentDetailPage() {
           actions={
             <>
               <Link href="/print-intents" className="plms-button-secondary">Back to Queue</Link>
-              <button className="plms-button-secondary" onClick={() => window.open(buildTemplatePreviewFileUrl(intent.templateId, intent.versionId, intent.productId), "_blank")}>{text.proof}</button>
+              <button className="plms-button-secondary" onClick={() => {
+                if (!openPdfDocument(buildTemplatePreviewFileUrl(intent.templateId, intent.versionId, intent.productId))) {
+                  setMessage(text.popupBlocked);
+                }
+              }}>{text.proof}</button>
             </>
           }
         />

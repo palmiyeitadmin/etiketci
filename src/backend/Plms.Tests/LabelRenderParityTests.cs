@@ -1,5 +1,8 @@
 using Plms.Api.Models.Canonical;
 using Plms.Api.Services;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Plms.Tests;
 
@@ -72,5 +75,44 @@ public class LabelRenderParityTests
 
         Assert.NotNull(pdf);
         Assert.True(pdf.Length > 1024, $"Expected generated PDF to be non-trivial, got {pdf.Length} bytes.");
+    }
+
+    [Fact]
+    public void GeneratePdf_With100x80Label_ShouldExposeExpectedMediaBox()
+    {
+        var service = new LabelRenderService();
+        var model = new CanonicalLabelModel
+        {
+            Name = "MediaBox",
+            Dimensions = new LabelDimensions { WidthMm = 100, HeightMm = 80 },
+            Elements =
+            [
+                new LabelElement
+                {
+                    Id = "text-1",
+                    Type = "text",
+                    XMm = 5,
+                    YMm = 5,
+                    WidthMm = 20,
+                    HeightMm = 10,
+                    Content = "PDF",
+                    Fill = "#111827"
+                }
+            ]
+        };
+
+        var pdf = service.GeneratePdf(model);
+        var text = Encoding.ASCII.GetString(pdf);
+        var match = Regex.Match(text, @"/MediaBox\s*\[\s*0\s+0\s+(?<width>[\d.]+)\s+(?<height>[\d.]+)\s*\]");
+
+        Assert.True(match.Success, "Expected generated PDF to include a MediaBox declaration.");
+
+        var width = double.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
+        var height = double.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
+        var expectedWidth = 100d / 25.4d * 72d;
+        var expectedHeight = 80d / 25.4d * 72d;
+
+        Assert.InRange(width, expectedWidth - 0.75d, expectedWidth + 0.75d);
+        Assert.InRange(height, expectedHeight - 0.75d, expectedHeight + 0.75d);
     }
 }

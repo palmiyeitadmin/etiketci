@@ -656,6 +656,8 @@ namespace Plms.Api.Controllers
                 warnings.Add("Product context requested but product not found.");
             }
 
+            CanonicalLabelModel? previewModel = null;
+
             try
             {
                 var layoutJson = version.LayoutJson;
@@ -664,10 +666,10 @@ namespace Plms.Api.Controllers
                     layoutJson = _variableService.ResolveVariables(layoutJson, product);
                 }
 
-                var model = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (model != null)
+                previewModel = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (previewModel != null)
                 {
-                    foreach (var el in model.Elements)
+                    foreach (var el in previewModel.Elements)
                     {
                         if (el.Type.ToLower() == "barcode" && el.BarcodeType != "CODE_128")
                         {
@@ -702,6 +704,9 @@ namespace Plms.Api.Controllers
                 HasProductContext = product != null,
                 ProductName = product?.Name,
                 ProductSku = product?.Sku,
+                PageWidthMm = previewModel?.Dimensions.WidthMm ?? 0,
+                PageHeightMm = previewModel?.Dimensions.HeightMm ?? 0,
+                Orientation = (previewModel?.Dimensions.WidthMm ?? 0) > (previewModel?.Dimensions.HeightMm ?? 0) ? "landscape" : "portrait",
                 ReadinessStatus = readiness.Status,
                 ReadinessErrors = readiness.Errors,
                 VariableDetails = variableDetails
