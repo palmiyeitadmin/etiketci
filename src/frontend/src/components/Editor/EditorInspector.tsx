@@ -153,7 +153,7 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
     if (!selectedElement) {
         return (
-            <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} onWheelCapture={(event) => event.stopPropagation()}>
+            <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
                 <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-10 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">
                     {text.selectElement}
                 </div>
@@ -162,7 +162,7 @@ export function EditorInspector({ className = "" }: { className?: string }) {
     }
 
     return (
-        <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} onWheelCapture={(event) => event.stopPropagation()}>
+        <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.properties}</div>

@@ -28,6 +28,7 @@ function getBwipBarcodeType(type?: string) {
 function useContainerSize<T extends HTMLElement>() {
     const ref = useRef<T | null>(null);
     const [size, setSize] = useState({ width: 1200, height: 800 });
+    const frameRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (!ref.current) return;
@@ -35,11 +36,32 @@ function useContainerSize<T extends HTMLElement>() {
         const observer = new ResizeObserver((entries) => {
             const entry = entries[0];
             if (!entry) return;
-            setSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+
+            const nextWidth = Math.round(entry.contentRect.width);
+            const nextHeight = Math.round(entry.contentRect.height);
+
+            if (frameRef.current !== null) {
+                cancelAnimationFrame(frameRef.current);
+            }
+
+            frameRef.current = requestAnimationFrame(() => {
+                setSize((current) => {
+                    if (Math.abs(current.width - nextWidth) < 2 && Math.abs(current.height - nextHeight) < 2) {
+                        return current;
+                    }
+
+                    return { width: nextWidth, height: nextHeight };
+                });
+            });
         });
 
         observer.observe(ref.current);
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            if (frameRef.current !== null) {
+                cancelAnimationFrame(frameRef.current);
+            }
+        };
     }, []);
 
     return { ref, size };
@@ -296,6 +318,7 @@ export function EditorCanvasStage() {
         offsetY: 0,
     });
     const dragSnapshotTakenRef = useRef(false);
+    const lastAutoFitRef = useRef<{ width: number; height: number; labelWidthPx: number; labelHeightPx: number } | null>(null);
 
     const [guides, setGuides] = useState<GuideLine[]>([]);
     const [guideHint, setGuideHint] = useState<string | null>(null);
@@ -337,11 +360,26 @@ export function EditorCanvasStage() {
             transformerRef.current.nodes([]);
         }
         transformerRef.current.getLayer()?.batchDraw();
-    }, [selectedElementId, model.elements]);
+    }, [selectedElementId, model.elements.length]);
 
     useEffect(() => {
-        setFitViewport();
-    }, [setFitViewport]);
+        const previous = lastAutoFitRef.current;
+        const dimensionsChanged = !previous || previous.labelWidthPx !== labelWidthPx || previous.labelHeightPx !== labelHeightPx;
+        const widthDelta = previous ? Math.abs(previous.width - size.width) : Number.POSITIVE_INFINITY;
+        const heightDelta = previous ? Math.abs(previous.height - size.height) : Number.POSITIVE_INFINITY;
+        const significantResize = widthDelta >= 24 || heightDelta >= 24;
+
+        if (dimensionsChanged || significantResize) {
+            setFitViewport();
+        }
+
+        lastAutoFitRef.current = {
+            width: size.width,
+            height: size.height,
+            labelWidthPx,
+            labelHeightPx,
+        };
+    }, [labelHeightPx, labelWidthPx, setFitViewport, size.height, size.width]);
 
     const handleWheel = (event: Konva.KonvaEventObject<WheelEvent>) => {
         if (!event.evt.ctrlKey && !event.evt.metaKey) return;
