@@ -23,6 +23,7 @@ export default function RolesPage() {
   const [form, setForm] = useState(emptyRoleForm);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"general" | "permissions">("permissions");
 
   const text = locale === "tr"
     ? {
@@ -40,6 +41,9 @@ export default function RolesPage() {
         updated: "Rol guncellendi.",
         created: "Rol olusturuldu.",
         deleted: "Rol silindi.",
+        generalSettings: "Genel Ayarlar",
+        permissionsTab: "Yetki Ayarlari",
+        selectedCount: "{count} secili",
       }
     : {
         eyebrow: "Administration",
@@ -56,6 +60,9 @@ export default function RolesPage() {
         updated: "Role updated.",
         created: "Role created.",
         deleted: "Role deleted.",
+        generalSettings: "General Settings",
+        permissionsTab: "Permissions",
+        selectedCount: "{count} selected",
       };
 
   async function load() {
@@ -171,38 +178,82 @@ export default function RolesPage() {
             </div>
 
             <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <input className="plms-input" placeholder={text.roleName} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
-                <input className="plms-input" placeholder={text.descriptionLabel} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+              {/* TABS HEADER */}
+              <div className="mb-6 flex gap-6 border-b border-[color:var(--plms-border)]">
+                <button
+                  className={`pb-3 text-sm font-black uppercase tracking-[0.18em] transition-colors ${activeTab === "general" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-500 hover:text-slate-300"}`}
+                  onClick={() => setActiveTab("general")}
+                >
+                  {text.generalSettings}
+                </button>
+                <button
+                  className={`pb-3 text-sm font-black uppercase tracking-[0.18em] transition-colors ${activeTab === "permissions" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-500 hover:text-slate-300"}`}
+                  onClick={() => setActiveTab("permissions")}
+                >
+                  {text.permissionsTab}
+                </button>
               </div>
 
-              {selectedRole?.isImmutable ? (
-                <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
-              ) : null}
-
-              <div className="mt-6 grid items-start gap-5 md:grid-cols-1 lg:grid-cols-2 3xl:grid-cols-3">
-                {catalog.map((group) => (
-                  <div key={group.key} className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                    <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{group.label}</div>
-                    <div className="mt-4 grid gap-3">
-                      {group.items.map((item) => (
-                        <label key={item.key} className="flex items-start gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-sm text-white">
-                          <input type="checkbox" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={Boolean(selectedRole?.isImmutable)} />
-                          <span>
-                            <span className="block font-bold">{item.label}</span>
-                            <span className="block text-xs text-[color:var(--plms-text-subtle)]">{item.description}</span>
-                          </span>
-                        </label>
-                      ))}
-                    </div>
+              {/* GENERAL TAB */}
+              {activeTab === "general" && (
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <input className="plms-input" placeholder={text.roleName} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
+                    <input className="plms-input" placeholder={text.descriptionLabel} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
                   </div>
-                ))}
-              </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
-                {selectedRole && !selectedRole.isSystem ? <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
-              </div>
+                  {selectedRole?.isImmutable ? (
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
+                  ) : null}
+
+                  <div className="pt-4 flex flex-wrap gap-3">
+                    <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
+                    {selectedRole && !selectedRole.isSystem ? <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
+                  </div>
+                </div>
+              )}
+
+              {/* PERMISSIONS TAB */}
+              {activeTab === "permissions" && (
+                <div className="space-y-6">
+                  {selectedRole?.isImmutable ? (
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
+                  ) : null}
+
+                  <div className="columns-1 lg:columns-2 gap-5 space-y-5">
+                    {catalog.map((group) => {
+                      const selectedCount = group.items.filter(item => form.permissionKeys.includes(item.key)).length;
+                      return (
+                        <details key={group.key} className="break-inside-avoid group rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] overflow-hidden">
+                          <summary className="cursor-pointer bg-white/5 px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-white flex justify-between items-center hover:bg-white/10 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                            <span>{group.label}</span>
+                            <span className="text-[color:var(--plms-text-subtle)] text-xs normal-case font-medium tracking-normal">
+                              {selectedCount > 0 ? text.selectedCount.replace("{count}", String(selectedCount)) : ""}
+                            </span>
+                          </summary>
+                          <div className="p-5 border-t border-[color:var(--plms-border)] bg-black/20">
+                            <div className="grid gap-3">
+                              {group.items.map((item) => (
+                                <label key={item.key} className="flex items-start gap-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-3 text-sm text-white transition-colors hover:border-slate-500">
+                                  <input type="checkbox" className="mt-1" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={Boolean(selectedRole?.isImmutable)} />
+                                  <span>
+                                    <span className="block font-bold">{item.label}</span>
+                                    <span className="block text-xs text-[color:var(--plms-text-subtle)]">{item.description}</span>
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-4 flex flex-wrap gap-3">
+                    <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
