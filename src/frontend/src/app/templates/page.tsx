@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { CaretRight, CaretDown } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -48,6 +49,10 @@ export default function TemplatesPage() {
             uncategorized: "Kategori yok",
             createdBy: "Olusturan",
             lastEditedBy: "Son Duzenleyen",
+            version: "Versiyon",
+            status: "Durum",
+            date: "Tarih",
+            notes: "Notlar",
         }
         : {
             category: "Category",
@@ -65,6 +70,10 @@ export default function TemplatesPage() {
             uncategorized: "Uncategorized",
             createdBy: "Created By",
             lastEditedBy: "Last Edited By",
+            version: "Version",
+            status: "Status",
+            date: "Date",
+            notes: "Notes",
         };
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -76,6 +85,7 @@ export default function TemplatesPage() {
     const [archiveTarget, setArchiveTarget] = useState<LabelTemplate | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<LabelTemplate | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
     async function load() {
         setLoading(true);
@@ -210,11 +220,19 @@ export default function TemplatesPage() {
                         description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={[t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), text.createdBy, text.lastEditedBy, text.actions]}>
+                    <DataTable columns={["", t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), text.createdBy, text.lastEditedBy, text.actions]}>
                         {filteredTemplates.map((template) => {
                             const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
+                            const isExpanded = expandedRowId === template.id;
+                            
                             return (
-                                <tr key={template.id} className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
+                                <React.Fragment key={template.id}>
+                                <tr className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
+                                    <td className="pl-6 pr-2 py-4 w-10 text-center" onClick={(e) => { e.stopPropagation(); setExpandedRowId(isExpanded ? null : template.id); }}>
+                                        <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 transition-colors text-slate-400">
+                                            {isExpanded ? <CaretDown weight="bold" /> : <CaretRight weight="bold" />}
+                                        </button>
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
                                             {template.code}
@@ -272,6 +290,39 @@ export default function TemplatesPage() {
                                         </div>
                                     </td>
                                 </tr>
+                                {isExpanded && template.versions && template.versions.length > 0 && (
+                                    <tr>
+                                        <td colSpan={9} className="bg-black/20 p-4 border-b border-[color:var(--plms-border)] pt-2 pb-6">
+                                            <div className="rounded-xl border border-[color:var(--plms-border)] overflow-hidden bg-[color:var(--plms-panel-2)] ml-[3.25rem]">
+                                                <table className="w-full text-left text-sm text-[color:var(--plms-text-subtle)]">
+                                                    <thead className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] border-b border-[color:var(--plms-border)]">
+                                                        <tr>
+                                                            <th className="px-5 py-3">{text.version}</th>
+                                                            <th className="px-5 py-3">{text.status}</th>
+                                                            <th className="px-5 py-3">{text.createdBy}</th>
+                                                            <th className="px-5 py-3">{text.date}</th>
+                                                            <th className="px-5 py-3">{text.notes}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-[color:var(--plms-border)]">
+                                                        {[...template.versions].sort((a,b) => b.versionNumber - a.versionNumber).map(v => (
+                                                            <tr key={v.id} className="hover:bg-white/5 transition-colors">
+                                                                <td className="px-5 py-3 font-bold text-white">v{v.versionNumber}</td>
+                                                                <td className="px-5 py-3">
+                                                                    <StatusBadge label={v.status} tone={v.status === "Published" ? "success" : v.status === "InReview" ? "info" : "warning"} />
+                                                                </td>
+                                                                <td className="px-5 py-3 font-medium text-slate-300">{v.createdBy || "-"}</td>
+                                                                <td className="px-5 py-3">{formatDate(v.createdAt)}</td>
+                                                                <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                                </React.Fragment>
                             );
                         })}
                     </DataTable>
