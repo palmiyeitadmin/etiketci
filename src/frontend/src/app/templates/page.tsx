@@ -172,7 +172,7 @@ export default function TemplatesPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:px-8 space-y-6">
                 <PageHeader
                     eyebrow={t("templates.eyebrow")}
                     title={t("templates.title")}
