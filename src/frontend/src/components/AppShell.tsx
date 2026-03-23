@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState, type ForwardRefExoticComponent, type RefAttributes } from "react";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass, List, CaretDoubleLeft, CaretDoubleRight } from "@phosphor-icons/react";
 import { BlocksIcon } from "@/components/ui/blocks-icon";
 import { BookOpenCheckIcon } from "@/components/ui/book-open-check-icon";
 import { BookmarkIcon } from "@/components/ui/bookmark-icon";
@@ -81,11 +81,13 @@ function ShellNavLink({
     item,
     label,
     onClick,
+    collapsed,
 }: {
     active: boolean;
     item: NavItem;
     label: string;
     onClick: () => void;
+    collapsed?: boolean;
 }) {
     const Icon = item.icon;
     const iconRef = useRef<AnimatedIconHandle>(null);
@@ -94,7 +96,8 @@ function ShellNavLink({
         <Link
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`group relative flex items-center gap-3 rounded-[1.05rem] px-3 py-2.5 text-[13px] font-bold transition-all ${active
+            title={collapsed ? label : undefined}
+            className={`group relative flex items-center gap-3 rounded-[1.05rem] px-3 py-2.5 transition-all ${collapsed ? "justify-center" : ""} ${active
                 ? "bg-[linear-gradient(90deg,rgba(37,99,235,0.18),rgba(37,99,235,0.07))] text-white shadow-[inset_0_0_0_1px_rgba(96,165,250,0.22)]"
                 : "text-[color:var(--plms-text-subtle)] hover:bg-white/[0.04] hover:text-white"}`}
             onMouseEnter={() => iconRef.current?.startAnimation()}
@@ -107,7 +110,7 @@ function ShellNavLink({
             <span className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors ${active ? "text-blue-100" : "text-slate-300 group-hover:text-white"}`}>
                 <Icon ref={iconRef} size={17} duration={0.9} />
             </span>
-            <span className="min-w-0 truncate">{label}</span>
+            {!collapsed && <span className="min-w-0 truncate text-[13px] font-bold">{label}</span>}
         </Link>
     );
 }
@@ -135,6 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
     const { locale, setLocale, t } = useI18n();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [desktopCollapsed, setDesktopCollapsed] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [pulseExpanded, setPulseExpanded] = useState(false);
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -253,36 +257,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
+    const sidebarWidthClass = desktopCollapsed ? "w-[88px]" : "w-64 xl:w-72";
+    const contentPaddingClass = desktopCollapsed ? "md:pl-[88px]" : "md:pl-64 xl:pl-72";
+
     const shellRootClassName = isEditorRoute
         ? "h-screen overflow-hidden bg-[color:var(--plms-bg)] text-white"
         : "min-h-screen bg-[color:var(--plms-bg)] text-white";
     const shellFrameClassName = isEditorRoute ? "flex h-screen" : "flex min-h-screen";
     const contentColumnClassName = isEditorRoute
-        ? "flex h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-64 xl:pl-72"
-        : "flex min-h-screen min-w-0 flex-1 flex-col md:min-h-0 md:pl-64 xl:pl-72";
+        ? `flex h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out md:min-h-0 ${contentPaddingClass}`
+        : `flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out md:min-h-0 ${contentPaddingClass}`;
 
     return (
         <div className={shellRootClassName}>
             <GlobalSearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
             <div className={shellFrameClassName}>
                 <div className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity md:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMobileOpen(false)} />
-                <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-4 py-4 transition-transform md:translate-x-0 xl:w-72 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-4 py-4 transition-all duration-300 ease-in-out ${sidebarWidthClass} md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
                     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-                        <div className="rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.2),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-2.5 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
+                        <div className={`rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.2),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-2.5 shadow-[0_18px_60px_rgba(2,6,23,0.35)] shrink-0 transition-all duration-300 ${desktopCollapsed ? "px-1 text-center" : ""}`}>
                             <Link
                                 href="/"
                                 aria-label={t("shell.title")}
-                                className="block overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/20 px-2.5 py-2 transition-colors hover:bg-slate-950/28"
+                                className={`block overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/20 transition-colors hover:bg-slate-950/28 ${desktopCollapsed ? "p-2" : "px-2.5 py-2"}`}
                             >
-                                <div className="relative h-[52px] w-full">
-                                    <Image
-                                        src="/assets/palmiye_logo_white.png"
-                                        alt={t("shell.title")}
-                                        fill
-                                        priority
-                                        sizes="(max-width: 1279px) 220px, 252px"
-                                        className="object-contain object-center"
-                                    />
+                                <div className={`relative w-full ${desktopCollapsed ? "h-8" : "h-[52px]"}`}>
+                                    {desktopCollapsed ? (
+                                        <div className="flex h-full items-center justify-center font-black text-white text-lg tracking-tighter">P</div>
+                                    ) : (
+                                        <Image
+                                            src="/assets/palmiye_logo_white.png"
+                                            alt={t("shell.title")}
+                                            fill
+                                            priority
+                                            sizes="(max-width: 1279px) 220px, 252px"
+                                            className="object-contain object-center"
+                                        />
+                                    )}
                                 </div>
                             </Link>
                         </div>
@@ -290,8 +301,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
                             <div className="space-y-5">
                                 {visibleGroups.map((group) => (
-                                    <section key={group.labelKey} className="space-y-1.5">
-                                        <div className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>
+                                    <section key={group.labelKey} className={desktopCollapsed ? "space-y-1.5 pt-2" : "space-y-1.5"}>
+                                        {!desktopCollapsed && <div className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>}
+                                        {desktopCollapsed && <div className="mx-auto w-6 border-b border-white/[0.06] mb-3 mt-1" />}
                                         <div className="space-y-1">
                                             {group.items.map((item) => {
                                                 const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -301,6 +313,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                         item={item}
                                                         active={active}
                                                         label={t(item.labelKey)}
+                                                        collapsed={desktopCollapsed}
                                                         onClick={() => setMobileOpen(false)}
                                                     />
                                                 );
@@ -311,19 +324,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </div>
                         </div>
 
-                        <div className="mt-auto rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] p-3.5 shadow-[0_18px_40px_rgba(2,6,23,0.35)]">
-                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t("shell.session")}</div>
-                            <div className="mt-2.5 text-[15px] font-black tracking-[-0.04em] text-white">{session.user?.name || session.user?.email}</div>
-                            <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300">
-                                {userRoles.length > 0 ? userRoles.join(" / ") : t("common.unknown")}
-                            </div>
-                            {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">{t("shell.passwordRotationRequired")}</div> : null}
-                            <button
-                                onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                                className="mt-3.5 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
-                            >
-                                {t("shell.signOut")}
-                            </button>
+                        <div className={`mt-auto shrink-0 rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] shadow-[0_18px_40px_rgba(2,6,23,0.35)] transition-all duration-300 overflow-hidden ${desktopCollapsed ? "px-2 py-3" : "p-3.5"}`}>
+                            {!desktopCollapsed ? (
+                                <>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t("shell.session")}</div>
+                                    <div className="mt-2.5 text-[15px] font-black tracking-[-0.04em] text-white truncate">{session.user?.name || session.user?.email}</div>
+                                    <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300 truncate">
+                                        {userRoles.length > 0 ? userRoles.join(" / ") : t("common.unknown")}
+                                    </div>
+                                    {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">{t("shell.passwordRotationRequired")}</div> : null}
+                                    <button
+                                        onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                                        className="mt-3.5 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
+                                    >
+                                        {t("shell.signOut")}
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-sm font-black text-blue-300 border border-blue-500/20">
+                                        {(session.user?.name || session.user?.email || "U").charAt(0).toUpperCase()}
+                                    </div>
+                                    <button
+                                        title={t("shell.signOut")}
+                                        onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)] hover:bg-white/[0.06] hover:text-white transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H104a8,8,0,0,0,0,16H204.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"></path></svg>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </aside>
@@ -335,7 +365,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)] md:hidden" onClick={() => setMobileOpen(true)}>
                                     {t("shell.menu")}
                                 </button>
-                                <div>
+                                <button
+                                    onClick={() => setDesktopCollapsed(c => !c)}
+                                    className="hidden md:flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-subtle)] hover:bg-white/[0.06] hover:text-white transition-colors shrink-0"
+                                >
+                                    <List size={18} weight="bold" />
+                                </button>
+                                <div className="min-w-0">
                                     <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.suite")}</div>
                                     <div className="text-xl font-black tracking-[-0.04em] text-white animate-plms-slide-title" key={pathname}>{t(getPageTitleKey(pathname))}</div>
                                 </div>
