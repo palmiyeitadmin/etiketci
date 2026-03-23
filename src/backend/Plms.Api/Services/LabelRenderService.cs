@@ -29,26 +29,34 @@ namespace Plms.Api.Services
 
         public byte[] GeneratePdf(CanonicalLabelModel model)
         {
+            var pageWidthMm = model.Dimensions.WidthMm;
+            var pageHeightMm = model.Dimensions.HeightMm;
+
             var document = Document.Create(container =>
             {
                 container.Page(page =>
                 {
-                    page.Size(model.Dimensions.WidthMm, model.Dimensions.HeightMm, Unit.Millimetre);
+                    page.Size(pageWidthMm, pageHeightMm, Unit.Millimetre);
                     page.Margin(0);
                     page.PageColor(Colors.White);
 
                     page.Content().Layers(layers =>
                     {
-                        layers.PrimaryLayer().Height(model.Dimensions.HeightMm, Unit.Millimetre);
+                        layers.PrimaryLayer()
+                            .Width(pageWidthMm, Unit.Millimetre)
+                            .Height(pageHeightMm, Unit.Millimetre);
 
                         foreach (var element in model.Elements.Where(element => element.Visible != false))
                         {
                             layers.Layer()
-                                .TranslateX(element.XMm, Unit.Millimetre)
-                                .TranslateY(element.YMm, Unit.Millimetre)
-                                .Width(element.WidthMm, Unit.Millimetre)
-                                .Height(element.HeightMm, Unit.Millimetre)
-                                .Element(container => RenderRotatedElement(container, element));
+                                .Width(pageWidthMm, Unit.Millimetre)
+                                .Height(pageHeightMm, Unit.Millimetre)
+                                .Element(pageLayer => pageLayer
+                                    .TranslateX(element.XMm, Unit.Millimetre)
+                                    .TranslateY(element.YMm, Unit.Millimetre)
+                                    .Width(element.WidthMm, Unit.Millimetre)
+                                    .Height(element.HeightMm, Unit.Millimetre)
+                                    .Element(container => RenderRotatedElement(container, element)));
                         }
                     });
                 });
