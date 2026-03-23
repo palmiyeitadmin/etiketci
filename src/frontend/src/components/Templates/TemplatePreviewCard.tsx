@@ -63,7 +63,13 @@ export function TemplatePreviewCard({
             ) : null}
             {element.type === "line" ? <div className="h-full w-full" style={{ background: element.stroke || "#0f172a" }} /> : null}
             {element.type === "barcode" || element.type === "qr" ? <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">{element.type}</div> : null}
-            {element.type === "image" ? <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">asset</div> : null}
+            {element.type === "image" ? (
+                element.assetId ? (
+                    <img src={`/api/assets/${element.assetId}/content`} alt="Asset" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">asset</div>
+                )
+            ) : null}
           </div>
         ))}
       </div>
