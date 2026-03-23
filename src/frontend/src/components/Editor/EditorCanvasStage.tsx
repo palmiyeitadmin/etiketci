@@ -9,7 +9,7 @@ import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
-import { ImageElement, LabelElement } from "@/types/canvas";
+import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
 
 const FIT_PADDING = 48;
 const LABEL_SURFACE_NAME = "label-surface";
@@ -204,6 +204,7 @@ function ElementNode({
     onDragMove,
     onDragEnd,
     registerRef,
+    viewport,
 }: {
     element: LabelElement;
     x: number;
@@ -217,11 +218,12 @@ function ElementNode({
     onDragMove: (event: Konva.KonvaEventObject<DragEvent>) => void;
     onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => void;
     registerRef: (node: Konva.Group | null) => void;
+    viewport: EditorViewport;
 }) {
     const image = useElementImage(element);
     const rotation = element.rotation ?? 0;
     const strokeWidthPx = element.stroke && (element.strokeWidthMm ?? 0) > 0
-        ? UnitConverter.mmToProfile(element.strokeWidthMm || 0.4, ScreenPreviewProfile, 1)
+        ? UnitConverter.mmToProfile(element.strokeWidthMm || 0.4, ScreenPreviewProfile, viewport.zoom)
         : 0;
 
     return (
@@ -247,7 +249,7 @@ function ElementNode({
                     height={height}
                     text={element.content || "Text"}
                     fontFamily={element.font || "Arial"}
-                    fontSize={UnitConverter.mmToProfile((element.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, 1)}
+                    fontSize={UnitConverter.mmToProfile((element.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
                     fontStyle={element.fontWeight === "bold" ? "bold" : "normal"}
                     fill={element.fill || "#0f172a"}
                     align={element.textAlign || "left"}
@@ -524,6 +526,7 @@ export function EditorCanvasStage() {
                                 height={height}
                                 selected={selectedElementId === element.id}
                                 draggable={draggable}
+                                viewport={viewport}
                                 registerRef={(node) => { elementRefs.current[element.id] = node; }}
                                 onSelect={() => setSelectedElementId(element.id)}
                                 onDragStart={() => {
