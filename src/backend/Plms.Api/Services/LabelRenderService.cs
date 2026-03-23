@@ -67,21 +67,23 @@ namespace Plms.Api.Services
 
         private void RenderRotatedElement(IContainer container, LabelElement element)
         {
-            switch (NormalizeRotation(element.Rotation))
+            var rotation = NormalizeRotation(element.Rotation);
+
+            if (rotation == 0)
             {
-                case 90:
-                    container.RotateRight().Element(inner => RenderElement(inner, element));
-                    break;
-                case 180:
-                    container.Rotate(180).Element(inner => RenderElement(inner, element));
-                    break;
-                case 270:
-                    container.RotateLeft().Element(inner => RenderElement(inner, element));
-                    break;
-                default:
-                    RenderElement(container, element);
-                    break;
+                RenderElement(container, element);
+                return;
             }
+
+            // Match the editor's transform model: rotate around the element center
+            // rather than using QuestPDF's constrained right/left rotation semantics.
+            container
+                .TranslateX(element.WidthMm / 2f, Unit.Millimetre)
+                .TranslateY(element.HeightMm / 2f, Unit.Millimetre)
+                .Rotate(rotation)
+                .TranslateX(-element.WidthMm / 2f, Unit.Millimetre)
+                .TranslateY(-element.HeightMm / 2f, Unit.Millimetre)
+                .Element(inner => RenderElement(inner, element));
         }
 
         private void RenderElement(IContainer container, LabelElement element)
