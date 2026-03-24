@@ -105,6 +105,18 @@ body {
     border-color: var(--plms-border);
     color: var(--plms-text);
     background: rgba(255, 255, 255, 0.02);
+    color-scheme: dark;
+  }
+
+  .plms-select option {
+    color: #e2e8f0;
+    background: #101b2d;
+  }
+
+  .plms-select option:checked,
+  .plms-select option:hover {
+    color: #ffffff;
+    background: #2463eb;
   }
 }
 
