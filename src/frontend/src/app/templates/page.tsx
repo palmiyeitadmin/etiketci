@@ -55,6 +55,8 @@ export default function TemplatesPage() {
             deleteDescription: (name: string) => `${name} kalici olarak silinecek. Bu islem yalnizca guvenli taslak kayitlarinda desteklenir.`,
             deleteConfirm: "Kalici Olarak Sil",
             uncategorized: "Kategori yok",
+            ownership: "Yonetim",
+            activeLifecycle: "Surum / Yasam",
             createdBy: "Olusturan",
             lastEditedBy: "Son Duzenleyen",
             version: "Versiyon",
@@ -81,6 +83,8 @@ export default function TemplatesPage() {
             deleteDescription: (name: string) => `${name} will be permanently deleted. This is only supported for safe draft-only records.`,
             deleteConfirm: "Delete Permanently",
             uncategorized: "Uncategorized",
+            ownership: "Ownership",
+            activeLifecycle: "Version / Lifecycle",
             createdBy: "Created By",
             lastEditedBy: "Last Edited By",
             version: "Version",
@@ -256,7 +260,7 @@ export default function TemplatesPage() {
                         description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={["", t("templates.table.code"), text.category, t("templates.table.template"), t("templates.table.activeVersion"), t("templates.table.lifecycle"), text.createdBy, text.lastEditedBy, text.actions]}>
+                    <DataTable columns={["", t("templates.table.code"), t("templates.table.template"), text.activeLifecycle, text.ownership, text.actions]}>
                         {filteredTemplates.map((template) => {
                             const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
                             const isExpanded = expandedRowId === template.id;
@@ -271,43 +275,47 @@ export default function TemplatesPage() {
                                             {isExpanded ? <CaretDown weight="bold" /> : <CaretRight weight="bold" />}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-4">
                                         <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
                                             {template.code}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                            <div className="text-sm font-bold text-white">{template.templateCategoryCode || "-"}</div>
+                                        <div className="mt-2 text-sm font-bold text-white">{template.templateCategoryCode || "-"}</div>
                                             <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
                                             {template.templateCategoryName || text.uncategorized}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-4 min-w-[220px]">
                                         <div className="text-sm font-bold text-white">{template.name}</div>
                                         <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
                                             {template.description || t("templates.detail.noDescription")}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
-                                        {template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}
-                                    </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 py-4">
+                                        <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">
+                                            {template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}
+                                        </div>
+                                        <div className="mt-2">
                                         <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-white">{template.createdBy || "-"}</div>
+                                    <td className="px-4 py-4 min-w-[180px]">
+                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                                            {text.createdBy}
+                                        </div>
+                                        <div className="mt-1 text-sm font-medium text-white">{template.createdBy || "-"}</div>
                                         <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
                                             {formatDate(template.createdAt)}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-white">{template.lastUpdatedBy || "-"}</div>
+                                        <div className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                                            {text.lastEditedBy}
+                                        </div>
+                                        <div className="mt-1 text-sm font-medium text-white">{template.lastUpdatedBy || "-"}</div>
                                         <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
                                             {formatDate(template.updatedAt)}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                                    <td className="px-4 py-4 w-[1%]">
+                                        <div className="flex max-w-[260px] flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
                                             <Link href={`/templates/${template.id}`} className="plms-button-compact">
                                                 {text.open}
                                             </Link>
@@ -349,7 +357,7 @@ export default function TemplatesPage() {
                                 </tr>
                                 {isExpanded && template.versions && template.versions.length > 0 && (
                                     <tr>
-                                        <td colSpan={9} className="bg-black/20 p-4 border-b border-[color:var(--plms-border)] pt-2 pb-6">
+                                        <td colSpan={6} className="bg-black/20 p-4 border-b border-[color:var(--plms-border)] pt-2 pb-6">
                                             <div className="rounded-xl border border-[color:var(--plms-border)] overflow-hidden bg-[color:var(--plms-panel-2)] ml-[3.25rem]">
                                                 <table className="w-full text-left text-sm text-[color:var(--plms-text-subtle)]">
                                                     <thead className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] border-b border-[color:var(--plms-border)]">
