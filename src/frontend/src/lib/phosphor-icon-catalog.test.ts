@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getFeaturedPhosphorIcons,
-  loadFullPhosphorIconCatalog,
+  loadPhosphorIconComponent,
   phosphorIconToDataUri,
   searchPhosphorIcons,
 } from "@/lib/phosphor-icon-catalog";
@@ -15,18 +15,23 @@ describe("phosphor-icon-catalog", () => {
     expect(featured.some((item) => item.key === "Barcode")).toBe(true);
   });
 
-  it("loads the full Phosphor catalog lazily", async () => {
-    const fullCatalog = await loadFullPhosphorIconCatalog();
-
-    expect(fullCatalog.length).toBeGreaterThan(1000);
-    expect(fullCatalog.some((item) => item.key === "Acorn")).toBe(true);
-    expect(fullCatalog.some((item) => item.key === "MagnifyingGlass")).toBe(true);
-  });
-
-  it("searches the full catalog when requested", async () => {
-    const results = await searchPhosphorIcons("acorn", { includeFull: true });
+  it("searches the generated full manifest synchronously", () => {
+    const results = searchPhosphorIcons("acorn");
 
     expect(results.some((item) => item.key === "Acorn")).toBe(true);
+    expect(results.some((item) => item.key === "Star")).toBe(false);
+  });
+
+  it("loads icon components through the generated loader map", async () => {
+    const featuredIcon = await loadPhosphorIconComponent("Star");
+    const fullIcon = await loadPhosphorIconComponent("Acorn");
+
+    expect(featuredIcon).toBeDefined();
+    expect(fullIcon).toBeDefined();
+  });
+
+  it("throws a controlled error for unknown icon keys", async () => {
+    await expect(loadPhosphorIconComponent("MissingIcon" as never)).rejects.toThrow("Unknown Phosphor icon key: MissingIcon");
   });
 
   it("renders a data uri for featured and full-catalog icons", async () => {

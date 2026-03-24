@@ -7,6 +7,7 @@ import { phosphorIconToDataUri, type PhosphorIconKey } from "@/lib/phosphor-icon
 import { hasPermission, permissions } from "@/lib/permissions";
 import { ContentAssetSummary } from "@/types/assets";
 import { PhosphorIconPicker } from "@/components/Editor/PhosphorIconPicker";
+import { PickerErrorBoundary } from "@/components/Editor/PickerErrorBoundary";
 import { useSession } from "next-auth/react";
 
 export function AssetLibraryDrawer({
@@ -44,6 +45,8 @@ export function AssetLibraryDrawer({
       adding: "Ekleniyor",
       delete: "Sil",
       phosphorDescription: "Sik kullanilan ikonlari hizli ekleyin veya tum Phosphor katalogunu arayarak tuvale yerlestirin.",
+      phosphorLoadFailed: "Phosphor ikon tarayicisi yuklenemedi.",
+      phosphorInsertFailed: "Phosphor ikon eklenemedi.",
     }
     : {
       title: "Shared Content Library",
@@ -68,6 +71,8 @@ export function AssetLibraryDrawer({
       adding: "Adding",
       delete: "Delete",
       phosphorDescription: "Add featured icons quickly or search the full Phosphor catalog before inserting into the canvas.",
+      phosphorLoadFailed: "Phosphor icon browser could not be loaded.",
+      phosphorInsertFailed: "Phosphor icon could not be inserted.",
     };
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = hasPermission(userPermissions, permissions.assetsUpload) || (session?.user as any)?.roles?.includes?.("Admin");
@@ -226,12 +231,24 @@ export function AssetLibraryDrawer({
               <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
                 {text.phosphorDescription}
               </div>
-              <PhosphorIconPicker
-                onInsert={async ({ key, name }) => {
-                  const content = await phosphorIconToDataUri(key as PhosphorIconKey);
-                  onInsertImage({ name, content, assetSource: "phosphor", assetKey: key });
-                }}
-              />
+              <PickerErrorBoundary
+                fallback={
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-6 text-sm text-red-100">
+                    {text.phosphorLoadFailed}
+                  </div>
+                }
+              >
+                <PhosphorIconPicker
+                  onInsert={async ({ key, name }) => {
+                    try {
+                      const content = await phosphorIconToDataUri(key as PhosphorIconKey);
+                      onInsertImage({ name, content, assetSource: "phosphor", assetKey: key });
+                    } catch (error) {
+                      setMessage(error instanceof Error ? error.message : text.phosphorInsertFailed);
+                    }
+                  }}
+                />
+              </PickerErrorBoundary>
             </div>
           )}
         </div>

@@ -7,7 +7,8 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "test:unit": "vitest run"
+        "test:unit": "vitest run",
+        "generate:phosphor": "node scripts/generate-phosphor-catalog.mjs"
     },
     "dependencies": {
         "@phosphor-icons/react": "^2.1.10",

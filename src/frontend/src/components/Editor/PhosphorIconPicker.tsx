@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
-import { getFeaturedPhosphorIcons, loadFullPhosphorIconCatalog, searchPhosphorIcons, type PhosphorIconCatalogItem, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
+import { getFeaturedPhosphorIcons, searchPhosphorIcons, type PhosphorIconCatalogItem, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
+import { PhosphorIconPreview } from "@/components/Editor/PhosphorIconPreview";
 import { useI18n } from "@/lib/i18n";
+
+const PAGE_SIZE = 96;
 
 export function PhosphorIconPicker({
   onInsert,
@@ -13,12 +16,17 @@ export function PhosphorIconPicker({
   const { locale } = useI18n();
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
-  const [loadingFullCatalog, setLoadingFullCatalog] = useState(false);
-  const [fullCatalog, setFullCatalog] = useState<PhosphorIconCatalogItem[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [insertingKey, setInsertingKey] = useState<PhosphorIconKey | null>(null);
+  const [pickerError, setPickerError] = useState<string | null>(null);
   const featuredIcons = useMemo(() => getFeaturedPhosphorIcons(), []);
   const shouldShowFullCatalog = showAll || query.trim().length > 0;
-  const [visibleIcons, setVisibleIcons] = useState<PhosphorIconCatalogItem[]>(featuredIcons);
+  const allResults = useMemo(() => searchPhosphorIcons(query), [query]);
+  const visibleIcons = useMemo(
+    () => (shouldShowFullCatalog ? allResults.slice(0, visibleCount) : featuredIcons),
+    [allResults, featuredIcons, shouldShowFullCatalog, visibleCount]
+  );
+  const canLoadMore = shouldShowFullCatalog && allResults.length > visibleCount;
   const text = locale === "tr"
     ? {
         placeholder: "Phosphor ikon ara",
@@ -29,9 +37,9 @@ export function PhosphorIconPicker({
         fullCatalogDescription: "Tum Phosphor ikonlarini arayip gorsel olarak ekleyin.",
         showAll: "Tumunu Goster",
         showLess: "Daha Az Goster",
-        loading: "Phosphor katalogu yukleniyor...",
-        failed: "Phosphor ikon katalogu yuklenemedi.",
         empty: "Sonuc bulunamadi.",
+        insertFailed: "Phosphor ikon eklenemedi.",
+        loadMore: "Daha Fazla Yukle",
       }
     : {
         placeholder: "Search Phosphor icons",
@@ -42,46 +50,26 @@ export function PhosphorIconPicker({
         fullCatalogDescription: "Search the complete Phosphor set and insert any icon as an image.",
         showAll: "Show All",
         showLess: "Show Less",
-        loading: "Loading Phosphor catalog...",
-        failed: "Phosphor icon catalog could not be loaded.",
         empty: "No results found.",
+        insertFailed: "Phosphor icon could not be inserted.",
+        loadMore: "Load More",
       };
 
   useEffect(() => {
-    let cancelled = false;
+    setVisibleCount(PAGE_SIZE);
+  }, [query, showAll]);
 
-    async function loadIcons() {
-      if (!shouldShowFullCatalog) {
-        setVisibleIcons(featuredIcons);
-        return;
-      }
-
-      setLoadingFullCatalog(true);
-      setLoadError(null);
-      try {
-        const catalog = fullCatalog.length > 0 ? fullCatalog : await loadFullPhosphorIconCatalog();
-        if (!cancelled) {
-          if (fullCatalog.length === 0) {
-            setFullCatalog(catalog);
-          }
-          setVisibleIcons(await searchPhosphorIcons(query, { includeFull: true }));
-        }
-      } catch {
-        if (!cancelled) {
-          setLoadError(text.failed);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingFullCatalog(false);
-        }
-      }
+  async function handleInsert(item: PhosphorIconCatalogItem) {
+    try {
+      setPickerError(null);
+      setInsertingKey(item.key);
+      await onInsert({ key: item.key, content: "", name: item.label });
+    } catch (error) {
+      setPickerError(error instanceof Error ? error.message : text.insertFailed);
+    } finally {
+      setInsertingKey(null);
     }
-
-    void loadIcons();
-    return () => {
-      cancelled = true;
-    };
-  }, [featuredIcons, fullCatalog, query, shouldShowFullCatalog, text.failed]);
+  }
 
   return (
     <div className="space-y-5">
@@ -92,6 +80,12 @@ export function PhosphorIconPicker({
         onChange={(event) => setQuery(event.target.value)}
       />
 
+      {pickerError ? (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          {pickerError}
+        </div>
+      ) : null}
+
       {!query.trim() ? (
         <section className="space-y-3">
           <div className="flex items-end justify-between gap-3">
@@ -101,7 +95,7 @@ export function PhosphorIconPicker({
             </div>
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{featuredIcons.length} {text.icons}</div>
           </div>
-          <IconGrid items={featuredIcons} onInsert={onInsert} />
+          <IconGrid items={featuredIcons} onInsert={handleInsert} insertingKey={insertingKey} />
         </section>
       ) : null}
 
@@ -122,23 +116,22 @@ export function PhosphorIconPicker({
         </div>
 
         {shouldShowFullCatalog ? (
-          <>
-            {loadingFullCatalog ? (
-              <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-6 text-sm text-[color:var(--plms-text-subtle)]">
-                {text.loading}
-              </div>
-            ) : loadError ? (
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-6 text-sm text-red-100">
-                {loadError}
-              </div>
-            ) : visibleIcons.length === 0 ? (
-              <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-6 text-sm text-[color:var(--plms-text-subtle)]">
-                {text.empty}
-              </div>
-            ) : (
-              <IconGrid items={visibleIcons} onInsert={onInsert} />
-            )}
-          </>
+          visibleIcons.length === 0 ? (
+            <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-6 text-sm text-[color:var(--plms-text-subtle)]">
+              {text.empty}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <IconGrid items={visibleIcons} onInsert={handleInsert} insertingKey={insertingKey} />
+              {canLoadMore ? (
+                <div className="flex justify-center">
+                  <button type="button" className="plms-button-compact" onClick={() => setVisibleCount((current) => current + PAGE_SIZE)}>
+                    {text.loadMore}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )
         ) : null}
       </section>
     </div>
@@ -148,9 +141,11 @@ export function PhosphorIconPicker({
 function IconGrid({
   items,
   onInsert,
+  insertingKey,
 }: {
-  items: PhosphorIconCatalogItem[];
-  onInsert: (payload: { key: PhosphorIconKey; content: string; name: string }) => void | Promise<void>;
+  items: readonly PhosphorIconCatalogItem[];
+  onInsert: (item: PhosphorIconCatalogItem) => Promise<void>;
+  insertingKey: PhosphorIconKey | null;
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -158,11 +153,12 @@ function IconGrid({
         <button
           key={item.key}
           type="button"
-          onClick={() => void onInsert({ key: item.key, content: "", name: item.label })}
-          className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-left transition-colors hover:bg-white/[0.05]"
+          onClick={() => void onInsert(item)}
+          className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-left transition-colors hover:bg-white/[0.05] disabled:cursor-wait disabled:opacity-60"
+          disabled={insertingKey === item.key}
         >
           <div className="flex h-16 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03] text-white">
-            <item.Icon size={28} weight="regular" />
+            <PhosphorIconPreview iconKey={item.key} size={28} />
           </div>
           <div className="mt-3 truncate text-sm font-bold text-white">{item.label}</div>
           <div className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{item.key}</div>
