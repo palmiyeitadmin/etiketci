@@ -25,7 +25,7 @@ export function EditorViewportControls({
     return (
         <div className="flex items-center gap-2">
             <EditorCommandButton icon={Minus} label={text.zoomOut} onClick={onZoomOut} />
-            <div className="rounded-xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+            <div className="inline-flex h-10 min-w-[4.75rem] items-center justify-center rounded-xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white">
                 {Math.round(zoom * 100)}%
             </div>
             <EditorCommandButton icon={Plus} label={text.zoomIn} onClick={onZoomIn} />

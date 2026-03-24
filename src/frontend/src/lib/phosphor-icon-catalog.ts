@@ -1,66 +1,26 @@
 import { createElement } from "react";
 import {
-  Asterisk,
   Barcode,
-  Buildings,
   Circle,
-  Cube,
-  CursorClick,
   FilePdf,
   GearSix,
   ImageSquare,
-  Lightning,
   MagnifyingGlass,
   Package,
-  Palette,
   Printer,
   QrCode,
-  Scan,
   SealCheck,
-  Shield,
   Sparkle,
   Square,
   Star,
-  Sticker,
   Tag,
   Triangle,
-  User,
-  Users,
   WarningCircle,
-  Wrench,
   type Icon,
 } from "@phosphor-icons/react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-export type PhosphorIconKey =
-  | "MagnifyingGlass"
-  | "Package"
-  | "Barcode"
-  | "QrCode"
-  | "ImageSquare"
-  | "Palette"
-  | "Sticker"
-  | "Cube"
-  | "Tag"
-  | "Printer"
-  | "FilePdf"
-  | "Lightning"
-  | "WarningCircle"
-  | "Circle"
-  | "Square"
-  | "Triangle"
-  | "GearSix"
-  | "Scan"
-  | "Sparkle"
-  | "SealCheck"
-  | "Users"
-  | "User"
-  | "Shield"
-  | "Buildings"
-  | "Wrench"
-  | "CursorClick"
-  | "Asterisk"
-  | "Star";
+export type PhosphorIconKey = string;
 
 export interface PhosphorIconCatalogItem {
   key: PhosphorIconKey;
@@ -69,58 +29,165 @@ export interface PhosphorIconCatalogItem {
   Icon: Icon;
 }
 
-export const phosphorIconCatalog: PhosphorIconCatalogItem[] = [
-  { key: "MagnifyingGlass", label: "Search", keywords: ["search", "find", "inspect"], Icon: MagnifyingGlass },
-  { key: "Package", label: "Package", keywords: ["package", "box", "product"], Icon: Package },
-  { key: "Barcode", label: "Barcode", keywords: ["barcode", "scan", "sku"], Icon: Barcode },
-  { key: "QrCode", label: "QR Code", keywords: ["qr", "code", "scan"], Icon: QrCode },
-  { key: "ImageSquare", label: "Image", keywords: ["image", "picture", "asset"], Icon: ImageSquare },
-  { key: "Palette", label: "Palette", keywords: ["palette", "design", "brand"], Icon: Palette },
-  { key: "Sticker", label: "Sticker", keywords: ["sticker", "label", "shape"], Icon: Sticker },
-  { key: "Cube", label: "Cube", keywords: ["cube", "packaging", "3d"], Icon: Cube },
-  { key: "Tag", label: "Tag", keywords: ["tag", "price", "label"], Icon: Tag },
-  { key: "Printer", label: "Printer", keywords: ["printer", "print", "queue"], Icon: Printer },
-  { key: "FilePdf", label: "PDF", keywords: ["pdf", "document", "file"], Icon: FilePdf },
-  { key: "Lightning", label: "Lightning", keywords: ["fast", "speed", "bolt"], Icon: Lightning },
-  { key: "WarningCircle", label: "Warning", keywords: ["warning", "alert", "risk"], Icon: WarningCircle },
-  { key: "Circle", label: "Circle", keywords: ["circle", "shape", "round"], Icon: Circle },
-  { key: "Square", label: "Square", keywords: ["square", "shape", "box"], Icon: Square },
-  { key: "Triangle", label: "Triangle", keywords: ["triangle", "shape", "warning"], Icon: Triangle },
-  { key: "GearSix", label: "Settings", keywords: ["settings", "gear", "admin"], Icon: GearSix },
-  { key: "Scan", label: "Scan", keywords: ["scan", "reader", "device"], Icon: Scan },
-  { key: "Sparkle", label: "Sparkle", keywords: ["sparkle", "premium", "shine"], Icon: Sparkle },
-  { key: "SealCheck", label: "Seal", keywords: ["seal", "approved", "quality"], Icon: SealCheck },
-  { key: "Users", label: "Users", keywords: ["users", "team", "people"], Icon: Users },
-  { key: "User", label: "User", keywords: ["user", "profile", "person"], Icon: User },
-  { key: "Shield", label: "Shield", keywords: ["shield", "security", "guard"], Icon: Shield },
-  { key: "Buildings", label: "Building", keywords: ["building", "vendor", "company"], Icon: Buildings },
-  { key: "Wrench", label: "Wrench", keywords: ["wrench", "service", "repair"], Icon: Wrench },
-  { key: "CursorClick", label: "Pointer", keywords: ["cursor", "click", "select"], Icon: CursorClick },
-  { key: "Asterisk", label: "Asterisk", keywords: ["asterisk", "marker", "star"], Icon: Asterisk },
-  { key: "Star", label: "Star", keywords: ["star", "favorite", "featured"], Icon: Star },
-];
+export const featuredPhosphorIconKeys = [
+  "MagnifyingGlass",
+  "Package",
+  "Barcode",
+  "QrCode",
+  "ImageSquare",
+  "Tag",
+  "Printer",
+  "FilePdf",
+  "WarningCircle",
+  "Circle",
+  "Square",
+  "Triangle",
+  "GearSix",
+  "Sparkle",
+  "SealCheck",
+  "Star",
+] as const;
 
-export function searchPhosphorIcons(query: string) {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) {
-    return phosphorIconCatalog;
+const FEATURED_ICON_COMPONENTS: Record<string, Icon> = {
+  MagnifyingGlass,
+  Package,
+  Barcode,
+  QrCode,
+  ImageSquare,
+  Tag,
+  Printer,
+  FilePdf,
+  WarningCircle,
+  Circle,
+  Square,
+  Triangle,
+  GearSix,
+  Sparkle,
+  SealCheck,
+  Star,
+};
+
+export const phosphorIconCatalog: PhosphorIconCatalogItem[] = featuredPhosphorIconKeys.map((key) =>
+  buildCatalogItem(key, FEATURED_ICON_COMPONENTS[key])
+);
+
+let fullCatalogCache: PhosphorIconCatalogItem[] | null = null;
+let fullCatalogPromise: Promise<PhosphorIconCatalogItem[]> | null = null;
+
+function buildCatalogItem(key: string, IconComponent: Icon): PhosphorIconCatalogItem {
+  const label = humanizePhosphorKey(key);
+  return {
+    key,
+    label,
+    keywords: buildKeywords(key, label),
+    Icon: IconComponent,
+  };
+}
+
+function humanizePhosphorKey(key: string) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+    .trim();
+}
+
+function buildKeywords(key: string, label: string) {
+  const tokens = new Set<string>();
+  const normalizedLabel = label.toLowerCase();
+  tokens.add(normalizedLabel);
+  for (const part of normalizedLabel.split(/[\s-]+/)) {
+    if (part) {
+      tokens.add(part);
+    }
   }
 
-  return phosphorIconCatalog.filter((item) =>
+  const normalizedKey = key.toLowerCase();
+  tokens.add(normalizedKey);
+  return Array.from(tokens);
+}
+
+function isPhosphorIconExport(value: unknown): value is Icon {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "$$typeof" in (value as Record<string, unknown>) &&
+    "render" in (value as Record<string, unknown>)
+  );
+}
+
+function filterCatalog(catalog: PhosphorIconCatalogItem[], query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return catalog;
+  }
+
+  return catalog.filter((item) =>
     item.label.toLowerCase().includes(normalized) ||
     item.key.toLowerCase().includes(normalized) ||
     item.keywords.some((keyword) => keyword.includes(normalized))
   );
 }
 
-export function phosphorIconToDataUri(key: PhosphorIconKey, color = "#0f172a", size = 128) {
-  const item = phosphorIconCatalog.find((entry) => entry.key === key);
+export function getFeaturedPhosphorIcons() {
+  return phosphorIconCatalog;
+}
+
+export async function loadFullPhosphorIconCatalog() {
+  if (fullCatalogCache) {
+    return fullCatalogCache;
+  }
+
+  if (!fullCatalogPromise) {
+    fullCatalogPromise = import("@phosphor-icons/react").then((module) => {
+      const items: PhosphorIconCatalogItem[] = [];
+      for (const [key, value] of Object.entries(module)) {
+        if (/^[A-Z]/.test(key) && !key.endsWith("Icon") && key !== "IconContext" && isPhosphorIconExport(value)) {
+          items.push(buildCatalogItem(key, value));
+        }
+      }
+
+      items.sort((left, right) => left.label.localeCompare(right.label));
+
+      fullCatalogCache = items;
+      return items;
+    });
+  }
+
+  return fullCatalogPromise;
+}
+
+export async function searchPhosphorIcons(query: string, options?: { includeFull?: boolean }) {
+  const normalized = query.trim();
+  if (!options?.includeFull && !normalized) {
+    return phosphorIconCatalog;
+  }
+
+  const catalog = options?.includeFull || normalized
+    ? await loadFullPhosphorIconCatalog()
+    : phosphorIconCatalog;
+
+  return filterCatalog(catalog, query);
+}
+
+export async function phosphorIconToDataUri(key: PhosphorIconKey, color = "#0f172a", size = 128) {
+  const featured = FEATURED_ICON_COMPONENTS[key];
+  if (featured) {
+    return renderIconToDataUri(featured, color, size);
+  }
+
+  const catalog = await loadFullPhosphorIconCatalog();
+  const item = catalog.find((entry) => entry.key === key);
   if (!item) {
     return "";
   }
 
+  return renderIconToDataUri(item.Icon, color, size);
+}
+
+function renderIconToDataUri(IconComponent: Icon, color: string, size: number) {
   const svg = renderToStaticMarkup(
-    createElement(item.Icon, { size, color, weight: "regular" })
+    createElement(IconComponent, { size, color, weight: "regular" })
   );
+
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }

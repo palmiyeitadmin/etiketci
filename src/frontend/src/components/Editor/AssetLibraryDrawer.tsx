@@ -43,6 +43,7 @@ export function AssetLibraryDrawer({
       add: "Ekle",
       adding: "Ekleniyor",
       delete: "Sil",
+      phosphorDescription: "Sik kullanilan ikonlari hizli ekleyin veya tum Phosphor katalogunu arayarak tuvale yerlestirin.",
     }
     : {
       title: "Shared Content Library",
@@ -66,6 +67,7 @@ export function AssetLibraryDrawer({
       add: "Add",
       adding: "Adding",
       delete: "Delete",
+      phosphorDescription: "Add featured icons quickly or search the full Phosphor catalog before inserting into the canvas.",
     };
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = hasPermission(userPermissions, permissions.assetsUpload) || (session?.user as any)?.roles?.includes?.("Admin");
@@ -220,12 +222,17 @@ export function AssetLibraryDrawer({
               )}
             </div>
           ) : (
-            <PhosphorIconPicker
-              onInsert={({ key, name }) => {
-                const content = phosphorIconToDataUri(key as PhosphorIconKey);
-                onInsertImage({ name, content, assetSource: "phosphor", assetKey: key });
-              }}
-            />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+                {text.phosphorDescription}
+              </div>
+              <PhosphorIconPicker
+                onInsert={async ({ key, name }) => {
+                  const content = await phosphorIconToDataUri(key as PhosphorIconKey);
+                  onInsertImage({ name, content, assetSource: "phosphor", assetKey: key });
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

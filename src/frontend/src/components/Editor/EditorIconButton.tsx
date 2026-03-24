@@ -2,7 +2,7 @@
 
 import { Icon } from "@phosphor-icons/react";
 
-type Tone = "default" | "danger" | "primary";
+type Tone = "default" | "danger" | "primary" | "info";
 
 export function EditorCommandButton({
   icon: IconComponent,
@@ -21,6 +21,8 @@ export function EditorCommandButton({
     ? "border-red-500/20 bg-red-500/10 text-red-100 hover:bg-red-500/15"
     : tone === "primary"
       ? "border-blue-400/20 bg-blue-500/10 text-blue-100 hover:bg-blue-500/15"
+      : tone === "info"
+        ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/15"
       : "border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)] hover:bg-white/[0.06] hover:text-white";
 
   return (
@@ -28,7 +30,7 @@ export function EditorCommandButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
+      className={`inline-flex h-10 min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
       title={label}
       aria-label={label}
     >
