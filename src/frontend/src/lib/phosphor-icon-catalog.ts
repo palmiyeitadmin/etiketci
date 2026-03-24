@@ -106,15 +106,6 @@ function buildKeywords(key: string, label: string) {
   return Array.from(tokens);
 }
 
-function isPhosphorIconExport(value: unknown): value is Icon {
-  return Boolean(
-    value &&
-    typeof value === "object" &&
-    "$$typeof" in (value as Record<string, unknown>) &&
-    "render" in (value as Record<string, unknown>)
-  );
-}
-
 function filterCatalog(catalog: PhosphorIconCatalogItem[], query: string) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
@@ -138,15 +129,10 @@ export async function loadFullPhosphorIconCatalog() {
   }
 
   if (!fullCatalogPromise) {
-    fullCatalogPromise = import("@phosphor-icons/react").then((module) => {
-      const items: PhosphorIconCatalogItem[] = [];
-      for (const [key, value] of Object.entries(module)) {
-        if (/^[A-Z]/.test(key) && !key.endsWith("Icon") && key !== "IconContext" && isPhosphorIconExport(value)) {
-          items.push(buildCatalogItem(key, value));
-        }
-      }
-
-      items.sort((left, right) => left.label.localeCompare(right.label));
+    fullCatalogPromise = import("./phosphor-icon-catalog-full").then(({ fullPhosphorIconExports }) => {
+      const items = fullPhosphorIconExports
+        .map(({ key, Icon }) => buildCatalogItem(key, Icon))
+        .sort((left, right) => left.label.localeCompare(right.label));
 
       fullCatalogCache = items;
       return items;
