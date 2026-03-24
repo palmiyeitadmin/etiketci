@@ -90,6 +90,19 @@ export function nudgeElementInModel(model: CanonicalLabelModel, id: string, delt
     });
 }
 
+export function renameModel(model: CanonicalLabelModel, name: string): CanonicalLabelModel {
+    const next = cloneCanonicalModel(model);
+    next.name = name;
+    return next;
+}
+
+export function resizeModelCanvas(model: CanonicalLabelModel, dimensions: { widthMm: number; heightMm: number }): CanonicalLabelModel {
+    const next = cloneCanonicalModel(model);
+    next.dimensions.widthMm = Math.round(dimensions.widthMm * 100) / 100;
+    next.dimensions.heightMm = Math.round(dimensions.heightMm * 100) / 100;
+    return next;
+}
+
 export function fitViewportToContainer(labelWidthPx: number, labelHeightPx: number, containerWidth: number, containerHeight: number, padding = 48): EditorViewport {
     const availableWidth = Math.max(100, containerWidth - padding * 2);
     const availableHeight = Math.max(100, containerHeight - padding * 2);

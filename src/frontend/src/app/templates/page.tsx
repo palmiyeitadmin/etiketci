@@ -25,6 +25,32 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
 
 type TemplateListStatusFilter = "all" | TemplateStatus | "DraftOnly";
+type VersionActionTarget = { template: LabelTemplate; version: TemplateVersion };
+
+function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
+    switch (tone) {
+        case "info":
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-blue-400/25 bg-blue-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-blue-100 transition-colors hover:bg-blue-500/20";
+        case "warning":
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-amber-400/25 bg-amber-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-amber-100 transition-colors hover:bg-amber-500/20";
+        case "danger":
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-red-400/20 bg-red-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-red-200 transition-colors hover:bg-red-500/20";
+        case "primary":
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-blue-500/30 bg-blue-600 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-blue-500";
+        case "success":
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-100 transition-colors hover:bg-emerald-500/20";
+        default:
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
+    }
+}
+
+function canArchiveVersion(template: LabelTemplate, version: TemplateVersion) {
+    return !template.isArchived && template.currentActiveVersionId !== version.id && (version.status === "Rejected" || version.status === "Deprecated");
+}
+
+function canDeleteVersion(template: LabelTemplate, version: TemplateVersion) {
+    return template.currentActiveVersionId !== version.id && version.status === "Draft" && (template.versions?.length ?? 0) > 1;
+}
 
 export default function TemplatesPage() {
     const { data: session } = useSession();
@@ -75,6 +101,12 @@ export default function TemplatesPage() {
             favoriteAdded: "Sablon favorilere eklendi.",
             favoriteRemoved: "Sablon favorilerden cikarildi.",
             draftOnly: "Sadece taslak",
+            versionArchiveTitle: "Surumu arsivle",
+            versionArchiveDescription: (name: string, version: number) => `${name} icindeki v${version} surumu arsivlenecek ve normal liste akisindan cikacak.`,
+            versionArchiveConfirm: "Surumu Arsivle",
+            versionDeleteTitle: "Surumu sil",
+            versionDeleteDescription: (name: string, version: number) => `${name} icindeki v${version} taslagi kalici olarak silinecek.`,
+            versionDeleteConfirm: "Surumu Sil",
         }
         : {
             category: "Category",
@@ -113,6 +145,12 @@ export default function TemplatesPage() {
             favoriteAdded: "Template added to favorites.",
             favoriteRemoved: "Template removed from favorites.",
             draftOnly: "Draft only",
+            versionArchiveTitle: "Archive version",
+            versionArchiveDescription: (name: string, version: number) => `Version v${version} of ${name} will be archived and removed from the active list flow.`,
+            versionArchiveConfirm: "Archive Version",
+            versionDeleteTitle: "Delete version",
+            versionDeleteDescription: (name: string, version: number) => `Draft version v${version} of ${name} will be permanently deleted.`,
+            versionDeleteConfirm: "Delete Version",
         };
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -123,6 +161,8 @@ export default function TemplatesPage() {
     const [message, setMessage] = useState<string | null>(null);
     const [archiveTarget, setArchiveTarget] = useState<LabelTemplate | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<LabelTemplate | null>(null);
+    const [archiveVersionTarget, setArchiveVersionTarget] = useState<VersionActionTarget | null>(null);
+    const [deleteVersionTarget, setDeleteVersionTarget] = useState<VersionActionTarget | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [cloneTarget, setCloneTarget] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
@@ -131,10 +171,6 @@ export default function TemplatesPage() {
     const [favoritesOnly, setFavoritesOnly] = useState(false);
     const [mineOnly, setMineOnly] = useState(false);
 
-    const actionButtonClass =
-        "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
-    const actionDeleteButtonClass =
-        "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-red-400/20 bg-red-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-red-200 transition-colors hover:bg-red-500/20";
     const filterChipClass =
         "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-2xl border px-3 text-[10px] font-black uppercase tracking-[0.18em] transition-colors";
 
@@ -275,6 +311,38 @@ export default function TemplatesPage() {
             setSelectedTemplate(null);
         }
         setDeleteTarget(null);
+        await load();
+    }
+
+    async function handleArchiveVersionConfirm() {
+        if (!archiveVersionTarget) return;
+        setSubmitting(true);
+        const res = await apiFetch(`/api/Templates/${archiveVersionTarget.template.id}/versions/${archiveVersionTarget.version.id}/archive`, {
+            method: "POST",
+        });
+        setSubmitting(false);
+        if (!res.success) {
+            setMessage(res.error.message);
+            return;
+        }
+
+        setArchiveVersionTarget(null);
+        await load();
+    }
+
+    async function handleDeleteVersionConfirm() {
+        if (!deleteVersionTarget) return;
+        setSubmitting(true);
+        const res = await apiFetch(`/api/Templates/${deleteVersionTarget.template.id}/versions/${deleteVersionTarget.version.id}`, {
+            method: "DELETE",
+        });
+        setSubmitting(false);
+        if (!res.success) {
+            setMessage(res.error.message);
+            return;
+        }
+
+        setDeleteVersionTarget(null);
         await load();
     }
 
@@ -493,19 +561,19 @@ export default function TemplatesPage() {
                                         <div className="flex items-center gap-1.5 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
                                             <button
                                                 type="button"
-                                                className={`${actionButtonClass} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                                                className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
                                                 onClick={() => void handleToggleFavorite(template)}
                                                 title={template.isFavorite ? text.unfavorite : text.favorite}
                                                 aria-label={template.isFavorite ? text.unfavorite : text.favorite}
                                             >
                                                 <Star size={14} weight={template.isFavorite ? "fill" : "regular"} />
                                             </button>
-                                            <Link href={`/templates/${template.id}`} className={actionButtonClass}>
+                                            <Link href={`/templates/${template.id}`} className={getActionButtonClass()}>
                                                 {text.open}
                                             </Link>
                                             <button
                                                 type="button"
-                                                className={actionButtonClass}
+                                                className={getActionButtonClass("info")}
                                                 onClick={() => handlePrintVersion(template, printableVersion)}
                                                 disabled={!printableVersion}
                                                 title={!printableVersion ? text.activeVersionRequired : undefined}
@@ -515,7 +583,7 @@ export default function TemplatesPage() {
                                             {canCreate ? (
                                                 <button
                                                     type="button"
-                                                    className={actionButtonClass}
+                                                    className={getActionButtonClass()}
                                                     onClick={() => handleClone(template, cloneVersion)}
                                                     disabled={!cloneVersion}
                                                 >
@@ -523,14 +591,14 @@ export default function TemplatesPage() {
                                                 </button>
                                             ) : null}
                                             {canArchive ? (
-                                                <button type="button" className={actionButtonClass} onClick={() => setArchiveTarget(template)}>
+                                                <button type="button" className={getActionButtonClass("warning")} onClick={() => setArchiveTarget(template)}>
                                                     {text.archive}
                                                 </button>
                                             ) : null}
                                             {canDelete ? (
                                                 <button
                                                     type="button"
-                                                    className={actionDeleteButtonClass}
+                                                    className={getActionButtonClass("danger")}
                                                     onClick={() => setDeleteTarget(template)}
                                                 >
                                                     {text.delete}
@@ -566,15 +634,42 @@ export default function TemplatesPage() {
                                                                 <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
                                                                 <td className="px-5 py-3">
                                                                     <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className={actionButtonClass}>
+                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className={getActionButtonClass()}>
                                                                             {text.preview}
                                                                         </Link>
-                                                                        <button type="button" className={actionButtonClass} onClick={() => handlePrintVersion(template, v)}>
+                                                                        <button type="button" className={getActionButtonClass("info")} onClick={() => handlePrintVersion(template, v)}>
                                                                             {text.print}
                                                                         </button>
                                                                         {canCreate ? (
-                                                                            <button type="button" className={actionButtonClass} onClick={() => handleClone(template, v)}>
+                                                                            <button type="button" className={getActionButtonClass()} onClick={() => handleClone(template, v)}>
                                                                                 {text.clone}
+                                                                            </button>
+                                                                        ) : null}
+                                                                        <button
+                                                                            type="button"
+                                                                            className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                                                                            onClick={() => void handleToggleFavorite(template)}
+                                                                            title={template.isFavorite ? text.unfavorite : text.favorite}
+                                                                            aria-label={template.isFavorite ? text.unfavorite : text.favorite}
+                                                                        >
+                                                                            <Star size={14} weight={template.isFavorite ? "fill" : "regular"} />
+                                                                        </button>
+                                                                        {canArchive && canArchiveVersion(template, v) ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                className={getActionButtonClass("warning")}
+                                                                                onClick={() => setArchiveVersionTarget({ template, version: v })}
+                                                                            >
+                                                                                {text.archive}
+                                                                            </button>
+                                                                        ) : null}
+                                                                        {canDelete && canDeleteVersion(template, v) ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                className={getActionButtonClass("danger")}
+                                                                                onClick={() => setDeleteVersionTarget({ template, version: v })}
+                                                                            >
+                                                                                {text.delete}
                                                                             </button>
                                                                         ) : null}
                                                                     </div>
@@ -657,6 +752,27 @@ export default function TemplatesPage() {
                 confirmLabel={text.deleteConfirm}
                 onCancel={() => setDeleteTarget(null)}
                 onConfirm={() => void handleDeleteConfirm()}
+                loading={submitting}
+            />
+
+            <ConfirmModal
+                open={Boolean(archiveVersionTarget)}
+                title={text.versionArchiveTitle}
+                description={text.versionArchiveDescription(archiveVersionTarget?.template.name || "", archiveVersionTarget?.version.versionNumber || 0)}
+                confirmLabel={text.versionArchiveConfirm}
+                tone="primary"
+                onCancel={() => setArchiveVersionTarget(null)}
+                onConfirm={() => void handleArchiveVersionConfirm()}
+                loading={submitting}
+            />
+
+            <ConfirmModal
+                open={Boolean(deleteVersionTarget)}
+                title={text.versionDeleteTitle}
+                description={text.versionDeleteDescription(deleteVersionTarget?.template.name || "", deleteVersionTarget?.version.versionNumber || 0)}
+                confirmLabel={text.versionDeleteConfirm}
+                onCancel={() => setDeleteVersionTarget(null)}
+                onConfirm={() => void handleDeleteVersionConfirm()}
                 loading={submitting}
             />
 

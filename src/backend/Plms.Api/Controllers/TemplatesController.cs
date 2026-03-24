@@ -488,6 +488,45 @@ namespace Plms.Api.Controllers
             });
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Policy = "Permission:templates.edit")]
+        public async Task<IActionResult> UpdateTemplate(Guid id, UpdateTemplateDto dto)
+        {
+            var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            var nextName = dto.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(nextName))
+            {
+                return BadRequest(new { success = false, error = "Template name is required." });
+            }
+
+            var oldName = template.Name;
+            var oldDescription = template.Description;
+
+            template.Name = nextName;
+            template.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+            template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateUpdated",
+                EntityId = template.Id.ToString(),
+                EntityType = "LabelTemplate",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template metadata updated. Name: '{oldName}' -> '{template.Name}'. DescriptionChanged={oldDescription != template.Description}.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
         [HttpPost("{id}/favorite")]
         [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> AddFavorite(Guid id)
@@ -610,6 +649,63 @@ namespace Plms.Api.Controllers
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
                 Details = $"Template {template.Code} archived.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("{id}/versions/{versionId}/archive")]
+        [Authorize(Policy = "Permission:templates.archive")]
+        public async Task<IActionResult> ArchiveTemplateVersion(Guid id, Guid versionId)
+        {
+            var template = await _context.Templates
+                .Include(t => t.Versions)
+                .FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            if (template.IsArchived)
+            {
+                return BadRequest(new { success = false, error = "Archived template masters cannot archive additional versions." });
+            }
+
+            var version = template.Versions.FirstOrDefault(v => v.Id == versionId);
+            if (version == null)
+            {
+                return NotFound(new { success = false, error = "Version not found." });
+            }
+
+            if (template.CurrentActiveVersionId == versionId)
+            {
+                return BadRequest(new { success = false, error = "The current active version cannot be archived." });
+            }
+
+            if (version.Status == TemplateStatus.Archived)
+            {
+                return Ok(new { success = true });
+            }
+
+            if (version.Status != TemplateStatus.Rejected && version.Status != TemplateStatus.Deprecated)
+            {
+                return BadRequest(new { success = false, error = "Only rejected or deprecated versions can be archived." });
+            }
+
+            version.Status = TemplateStatus.Archived;
+            template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateVersionArchived",
+                EntityId = versionId.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template {template.Code} version {version.VersionNumber} archived.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
 
@@ -1213,6 +1309,77 @@ namespace Plms.Api.Controllers
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
                 Details = $"Template {t.Code} deleted.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpDelete("{id}/versions/{versionId}")]
+        [Authorize(Policy = "Permission:templates.delete")]
+        public async Task<IActionResult> DeleteTemplateVersion(Guid id, Guid versionId)
+        {
+            var template = await _context.Templates
+                .Include(item => item.Versions)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            var version = template.Versions.FirstOrDefault(item => item.Id == versionId);
+            if (version == null)
+            {
+                return NotFound(new { success = false, error = "Version not found." });
+            }
+
+            if (template.CurrentActiveVersionId == versionId)
+            {
+                return BadRequest(new { success = false, error = "The current active version cannot be deleted." });
+            }
+
+            if (version.Status != TemplateStatus.Draft)
+            {
+                return BadRequest(new { success = false, error = "Only draft versions can be deleted." });
+            }
+
+            if (template.Versions.Count <= 1)
+            {
+                return BadRequest(new { success = false, error = "The last remaining version cannot be deleted." });
+            }
+
+            var hasPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.VersionId == versionId);
+            if (hasPrintIntents)
+            {
+                return BadRequest(new { success = false, error = "This version cannot be deleted because one or more print intents reference it." });
+            }
+
+            var hasDerivedVersions = await _context.TemplateVersions.AnyAsync(item => item.SourceVersionId == versionId);
+            if (hasDerivedVersions)
+            {
+                return BadRequest(new { success = false, error = "This version cannot be deleted because newer drafts or clones depend on it." });
+            }
+
+            var hasRestorationReferences = await _context.TemplateRestorationRequests.AnyAsync(request =>
+                request.TemplateVersionId == versionId || request.RestoredVersionId == versionId);
+            if (hasRestorationReferences)
+            {
+                return BadRequest(new { success = false, error = "This version cannot be deleted because restoration history references it." });
+            }
+
+            _context.TemplateVersions.Remove(version);
+            template.UpdatedAt = DateTime.UtcNow;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateVersionDeleted",
+                EntityId = versionId.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Template {template.Code} version {version.VersionNumber} deleted.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
 

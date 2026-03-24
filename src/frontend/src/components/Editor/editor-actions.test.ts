@@ -1,4 +1,4 @@
-import { addElementToModel, duplicateElementInModel, fitViewportToContainer, nudgeElementInModel } from "@/components/Editor/editor-actions";
+import { addElementToModel, duplicateElementInModel, fitViewportToContainer, nudgeElementInModel, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 
 describe("editor canonical helpers", () => {
@@ -66,5 +66,20 @@ describe("editor canonical helpers", () => {
     expect(viewport.zoom).toBeGreaterThan(0.2);
     expect(viewport.offsetX).toBe(0);
     expect(viewport.offsetY).toBe(0);
+  });
+
+  it("renames the canonical model and resizes canvas without touching element geometry", () => {
+    const base = normalizeCanonicalLabelModel({
+      name: "Draft",
+      dimensions: { widthMm: 100, heightMm: 150 },
+      elements: [{ id: "rect-1", type: "rect", xMm: 10, yMm: 12, widthMm: 20, heightMm: 30, content: "" }],
+    });
+
+    const renamed = renameModel(base, "Renamed");
+    const resized = resizeModelCanvas(renamed, { widthMm: 110.25, heightMm: 85.5 });
+
+    expect(resized.name).toBe("Renamed");
+    expect(resized.dimensions).toEqual({ widthMm: 110.25, heightMm: 85.5 });
+    expect(resized.elements[0]).toMatchObject({ xMm: 10, yMm: 12, widthMm: 20, heightMm: 30 });
   });
 });

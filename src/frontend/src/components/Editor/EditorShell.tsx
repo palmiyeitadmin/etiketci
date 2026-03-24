@@ -8,7 +8,7 @@ import { EditorLayersPanel } from "@/components/Editor/EditorLayersPanel";
 import { EditorToolRail } from "@/components/Editor/EditorToolRail";
 import { EditorTopBar } from "@/components/Editor/EditorTopBar";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
-import { fitViewportToContainer } from "@/components/Editor/editor-actions";
+import { fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
@@ -25,6 +25,7 @@ interface EditorShellProps {
   initialModel: CanonicalLabelModel;
   onSave: (model: CanonicalLabelModel) => Promise<EditorSaveResult>;
   previewHref?: string;
+  onRenameTemplate?: (name: string, model: CanonicalLabelModel) => Promise<void>;
 }
 
 type RightPanelTab = "layers" | "properties";
@@ -35,7 +36,7 @@ function isInteractiveTarget(target: EventTarget | null) {
   return ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(element.tagName) || element.isContentEditable;
 }
 
-export function EditorShell({ initialModel, onSave, previewHref }: EditorShellProps) {
+export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplate }: EditorShellProps) {
   const { locale } = useI18n();
   const initialize = useEditorStore((state) => state.initialize);
   const model = useEditorStore((state) => state.model);
@@ -55,6 +56,7 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
   const markSaved = useEditorStore((state) => state.markSaved);
+  const applyModel = useEditorStore((state) => state.applyModel);
   const insertElement = useEditorStore((state) => state.insertElement);
   const rotateSelected = useEditorStore((state) => state.rotateSelected);
 
@@ -97,6 +99,32 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
       setSavePending(false);
     }
   }, [markSaved, model, onSave]);
+
+  const handleRenameTemplate = useCallback(async (name: string) => {
+    const nextModel = renameModel(model, name);
+    if (onRenameTemplate) {
+      await onRenameTemplate(name, nextModel);
+    } else {
+      const result = await onSave(nextModel);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+    }
+
+    applyModel(nextModel, { recordHistory: false, dirty: false });
+    markSaved();
+  }, [applyModel, markSaved, model, onRenameTemplate, onSave]);
+
+  const handleResizeCanvas = useCallback(async (dimensions: { widthMm: number; heightMm: number }) => {
+    const nextModel = resizeModelCanvas(model, dimensions);
+    const result = await onSave(nextModel);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+
+    applyModel(nextModel, { recordHistory: false, dirty: false });
+    markSaved();
+  }, [applyModel, markSaved, model, onSave]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -246,6 +274,8 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
         onDelete={removeSelected}
         onRotateLeft={() => rotateSelected("left")}
         onRotateRight={() => rotateSelected("right")}
+        onRenameTemplate={handleRenameTemplate}
+        onResizeCanvas={handleResizeCanvas}
       />
 
       <div className={layoutClassName}>

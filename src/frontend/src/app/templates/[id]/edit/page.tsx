@@ -156,6 +156,32 @@ export default function TemplateEditorPage() {
         }
     };
 
+    const handleRenameTemplate = async (name: string, model: CanonicalLabelModel) => {
+        const trimmedName = name.trim();
+        if (!trimmedName || !editableVersion || !template) {
+            throw new Error(text.draftUnavailable);
+        }
+
+        const metadataRes = await apiFetch(`/api/Templates/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+                name: trimmedName,
+                description: template.description ?? null,
+            }),
+        });
+
+        if (!metadataRes.success) {
+            throw new Error(metadataRes.error.message);
+        }
+
+        const saveResult = await handleSave(model);
+        if (!saveResult.ok) {
+            throw new Error(saveResult.message);
+        }
+
+        setTemplate((current) => current ? { ...current, name: trimmedName } : current);
+    };
+
     if (loading) return <div className="p-8">{text.loading}</div>;
     if (error) return (
         <div className="p-8 text-center">
@@ -177,6 +203,7 @@ export default function TemplateEditorPage() {
                     initialModel={initialModel}
                     onSave={handleSave}
                     previewHref={`/templates/${template.id}/preview?versionId=${editableVersion.id}`}
+                    onRenameTemplate={handleRenameTemplate}
                 />
             </div>
         </RoleGuard>

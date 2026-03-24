@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Star } from "@phosphor-icons/react";
+import { CaretDown, CaretRight, Star } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Portal } from "@/components/ui/Portal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 function getTemplateTone(status: string): "neutral" | "info" | "success" | "warning" | "danger" {
   switch (status) {
@@ -39,6 +40,31 @@ function getTemplateTone(status: string): "neutral" | "info" | "success" | "warn
   }
 }
 
+function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
+  switch (tone) {
+    case "info":
+      return "inline-flex items-center justify-center rounded-2xl border border-blue-400/25 bg-blue-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-blue-100 transition-colors hover:bg-blue-500/20";
+    case "warning":
+      return "inline-flex items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-amber-100 transition-colors hover:bg-amber-500/20";
+    case "danger":
+      return "inline-flex items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-red-200 transition-colors hover:bg-red-500/20";
+    case "primary":
+      return "inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-blue-700";
+    case "success":
+      return "inline-flex items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-emerald-100 transition-colors hover:bg-emerald-500/20";
+    default:
+      return "inline-flex items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/5 hover:text-white";
+  }
+}
+
+function canArchiveVersion(template: LabelTemplate, version: TemplateVersion) {
+  return !template.isArchived && template.currentActiveVersionId !== version.id && (version.status === "Rejected" || version.status === "Deprecated");
+}
+
+function canDeleteVersion(template: LabelTemplate, version: TemplateVersion) {
+  return template.currentActiveVersionId !== version.id && version.status === "Draft" && (template.versions?.length ?? 0) > 1;
+}
+
 export default function TemplateDetailPage() {
   const { data: session } = useSession();
   const { formatDateTime, t, locale } = useI18n();
@@ -54,12 +80,44 @@ export default function TemplateDetailPage() {
   const [loading, setLoading] = useState(true);
   const [reviewModal, setReviewModal] = useState<{ versionId: string; versionNumber: number } | null>(null);
   const [cloneTarget, setCloneTarget] = useState<TemplateVersion | null>(null);
+  const [archiveVersionTarget, setArchiveVersionTarget] = useState<TemplateVersion | null>(null);
+  const [deleteVersionTarget, setDeleteVersionTarget] = useState<TemplateVersion | null>(null);
   const [reviewComments, setReviewComments] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [snapshotExpanded, setSnapshotExpanded] = useState(false);
   const archivedMessage = locale === "tr"
     ? "Bu sablon arsivde. Duzenleme ve yeni taslak olusturma islemleri geri yuklenene kadar kapatildi."
     : "This template is archived. Editing and new draft creation are disabled until it is restored.";
+  const detailText = locale === "tr"
+    ? {
+      archiveVersionTitle: "Surumu arsivle",
+      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} surumu arsivlenecek ve aktif zaman cizelgesinden kaldirilacak.`,
+      archiveVersionConfirm: "Surumu Arsivle",
+      deleteVersionTitle: "Surumu sil",
+      deleteVersionDescription: (versionNumber: number) => `v${versionNumber} taslagi kalici olarak silinecek.`,
+      deleteVersionConfirm: "Surumu Sil",
+      archiveVersion: "Arsivle",
+      deleteVersion: "Sil",
+      jsonSnapshot: "Yerlesim JSON Gorunumu",
+      jsonSnapshotDescription: "Kaydedilen canonical yerlesim JSON kaydi.",
+      expandSnapshot: "JSON gorunumunu ac",
+      collapseSnapshot: "JSON gorunumunu kapat",
+    }
+    : {
+      archiveVersionTitle: "Archive version",
+      archiveVersionDescription: (versionNumber: number) => `Version v${versionNumber} will be archived and removed from the active timeline flow.`,
+      archiveVersionConfirm: "Archive Version",
+      deleteVersionTitle: "Delete version",
+      deleteVersionDescription: (versionNumber: number) => `Draft version v${versionNumber} will be permanently deleted.`,
+      deleteVersionConfirm: "Delete Version",
+      archiveVersion: "Archive",
+      deleteVersion: "Delete",
+      jsonSnapshot: "Layout JSON View",
+      jsonSnapshotDescription: "Stored canonical layout JSON record.",
+      expandSnapshot: "Expand JSON view",
+      collapseSnapshot: "Collapse JSON view",
+    };
 
   async function load() {
     setLoading(true);
@@ -87,6 +145,17 @@ export default function TemplateDetailPage() {
   }, [template]);
   const snapshotVersion = activeVersion || editableDraft || template?.versions?.[0] || null;
   const snapshotTitle = activeVersion ? t("templates.detailPage.publishedSnapshot") : editableDraft ? t("templates.detailPage.workingSnapshot") : t("templates.detailPage.snapshot");
+  const formattedSnapshotJson = useMemo(() => {
+    if (!snapshotVersion?.layoutJson) {
+      return t("templates.detailPage.noLayout");
+    }
+
+    try {
+      return JSON.stringify(JSON.parse(snapshotVersion.layoutJson), null, 2);
+    } catch {
+      return snapshotVersion.layoutJson;
+    }
+  }, [snapshotVersion?.layoutJson, t]);
 
   const metrics = useMemo(() => {
     const versions = template?.versions || [];
@@ -169,6 +238,42 @@ export default function TemplateDetailPage() {
     setMessage(nextFavoriteState ? t("templates.favoriteAdded") : t("templates.favoriteRemoved"));
   }
 
+  async function handleArchiveVersion() {
+    if (!template || !archiveVersionTarget) return;
+
+    setBusy(true);
+    const res = await apiFetch(`/api/Templates/${template.id}/versions/${archiveVersionTarget.id}/archive`, {
+      method: "POST",
+    });
+    setBusy(false);
+
+    if (!res.success) {
+      setMessage(res.error.message);
+      return;
+    }
+
+    setArchiveVersionTarget(null);
+    await load();
+  }
+
+  async function handleDeleteVersion() {
+    if (!template || !deleteVersionTarget) return;
+
+    setBusy(true);
+    const res = await apiFetch(`/api/Templates/${template.id}/versions/${deleteVersionTarget.id}`, {
+      method: "DELETE",
+    });
+    setBusy(false);
+
+    if (!res.success) {
+      setMessage(res.error.message);
+      return;
+    }
+
+    setDeleteVersionTarget(null);
+    await load();
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>;
   }
@@ -241,14 +346,6 @@ export default function TemplateDetailPage() {
                 <StatusBadge label={template.isActive ? "Active" : "Inactive"} tone={template.isActive ? "success" : "danger"} />
                 <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.updatedAt", undefined, { date: formatDateTime(template.updatedAt) })}</div>
               </div>
-              <div className="mt-6 rounded-[1.5rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{snapshotTitle}</div>
-                  {snapshotVersion ? <StatusBadge label={snapshotVersion.status} tone={getTemplateTone(snapshotVersion.status)} /> : null}
-                  {snapshotVersion ? <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">v{snapshotVersion.versionNumber}</div> : null}
-                </div>
-                <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-all rounded-2xl bg-slate-950 p-5 text-xs font-medium text-emerald-300">{snapshotVersion?.layoutJson || t("templates.detailPage.noLayout")}</pre>
-              </div>
             </div>
 
             <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
@@ -277,38 +374,52 @@ export default function TemplateDetailPage() {
                         <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{version.changeNotes || t("templates.detailPage.noNotesRecorded")}</td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
-                            <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className="plms-button-secondary">{t("templates.detailPage.preview")}</Link>
-                            <button className="plms-button-secondary" onClick={() => handlePrint(version)}>{t("templates.detailPage.print")}</button>
+                            <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className={getActionButtonClass()}>{t("templates.detailPage.preview")}</Link>
+                            <button className={getActionButtonClass("info")} onClick={() => handlePrint(version)}>{t("templates.detailPage.print")}</button>
                             {canCreate ? (
-                              <button className="plms-button-secondary" onClick={() => setCloneTarget(version)}>
+                              <button className={getActionButtonClass()} onClick={() => setCloneTarget(version)}>
                                 {t("templates.detailPage.clone")}
                               </button>
                             ) : null}
                             {snapshotVersion && snapshotVersion.id !== version.id ? (
-                              <Link href={`/templates/${template.id}/compare?leftVersionId=${version.id}&rightVersionId=${snapshotVersion.id}`} className="plms-button-secondary">{t("templates.detailPage.compare")}</Link>
+                              <Link href={`/templates/${template.id}/compare?leftVersionId=${version.id}&rightVersionId=${snapshotVersion.id}`} className={getActionButtonClass()}>{t("templates.detailPage.compare")}</Link>
                             ) : null}
                             {(version.status === "Draft" || version.status === "Rejected") ? (
                               <RoleGuard allowedRoles={["Admin", "Operator"]}>
                                 <>
-                                  <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.edit")}</button>
-                                  <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "request-approval")} disabled={busy || template.isArchived}>{t("templates.detailPage.submitReview")}</button>
+                                  <button className={getActionButtonClass("primary")} onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.edit")}</button>
+                                  <button className={getActionButtonClass("primary")} onClick={() => handleWorkflowAction(version.id, "request-approval")} disabled={busy || template.isArchived}>{t("templates.detailPage.submitReview")}</button>
                                 </>
                               </RoleGuard>
                             ) : null}
                             {(version.status === "Rejected" || version.status === "Approved" || version.status === "Published" || version.status === "Deprecated" || version.status === "Archived") ? (
                               <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                <button className="plms-button-secondary" onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.createRevision")}</button>
+                                <button className={getActionButtonClass("primary")} onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.createRevision")}</button>
                               </RoleGuard>
                             ) : null}
                             {version.status === "InReview" ? (
                               <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className="plms-button-primary" onClick={() => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber })} disabled={template.isArchived}>{t("templates.detailPage.review")}</button>
+                                <button className={getActionButtonClass("warning")} onClick={() => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber })} disabled={template.isArchived}>{t("templates.detailPage.review")}</button>
                               </RoleGuard>
                             ) : null}
                             {version.status === "Approved" ? (
                               <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className="plms-button-primary" onClick={() => handleWorkflowAction(version.id, "publish")} disabled={busy || template.isArchived}>{t("templates.detailPage.publish")}</button>
+                                <button className={getActionButtonClass("success")} onClick={() => handleWorkflowAction(version.id, "publish")} disabled={busy || template.isArchived}>{t("templates.detailPage.publish")}</button>
                               </RoleGuard>
+                            ) : null}
+                            {hasAnyPermission(grantedPermissions, [permissions.templatesArchive]) || roles.includes("Admin") ? (
+                              canArchiveVersion(template, version) ? (
+                                <button className={getActionButtonClass("warning")} onClick={() => setArchiveVersionTarget(version)} disabled={busy}>
+                                  {detailText.archiveVersion}
+                                </button>
+                              ) : null
+                            ) : null}
+                            {hasAnyPermission(grantedPermissions, [permissions.templatesDelete]) || roles.includes("Admin") ? (
+                              canDeleteVersion(template, version) ? (
+                                <button className={getActionButtonClass("danger")} onClick={() => setDeleteVersionTarget(version)} disabled={busy}>
+                                  {detailText.deleteVersion}
+                                </button>
+                              ) : null
                             ) : null}
                           </div>
                         </td>
@@ -317,6 +428,39 @@ export default function TemplateDetailPage() {
                   </DataTable>
                 </div>
               )}
+            </div>
+
+            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+              <div
+                className="flex cursor-pointer items-center justify-between gap-4"
+                onClick={() => setSnapshotExpanded((current) => !current)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSnapshotExpanded((current) => !current);
+                  }
+                }}
+                aria-expanded={snapshotExpanded}
+                aria-label={snapshotExpanded ? detailText.collapseSnapshot : detailText.expandSnapshot}
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{detailText.jsonSnapshot}</div>
+                    {snapshotVersion ? <StatusBadge label={snapshotVersion.status} tone={getTemplateTone(snapshotVersion.status)} /> : null}
+                    {snapshotVersion ? <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">v{snapshotVersion.versionNumber}</div> : null}
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-[color:var(--plms-text-muted)]">{detailText.jsonSnapshotDescription}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{snapshotTitle}</span>
+                  {snapshotExpanded ? <CaretDown size={18} weight="bold" className="text-[color:var(--plms-text-subtle)]" /> : <CaretRight size={18} weight="bold" className="text-[color:var(--plms-text-subtle)]" />}
+                </div>
+              </div>
+              {snapshotExpanded ? (
+                <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre rounded-2xl bg-slate-950 p-5 text-xs font-medium leading-6 text-emerald-300">{formattedSnapshotJson}</pre>
+              ) : null}
             </div>
           </div>
 
@@ -409,6 +553,27 @@ export default function TemplateDetailPage() {
           </div>
           </Portal>
         ) : null}
+
+        <ConfirmModal
+          open={archiveVersionTarget !== null}
+          title={detailText.archiveVersionTitle}
+          description={detailText.archiveVersionDescription(archiveVersionTarget?.versionNumber || 0)}
+          confirmLabel={detailText.archiveVersionConfirm}
+          tone="primary"
+          onCancel={() => setArchiveVersionTarget(null)}
+          onConfirm={() => void handleArchiveVersion()}
+          loading={busy}
+        />
+
+        <ConfirmModal
+          open={deleteVersionTarget !== null}
+          title={detailText.deleteVersionTitle}
+          description={detailText.deleteVersionDescription(deleteVersionTarget?.versionNumber || 0)}
+          confirmLabel={detailText.deleteVersionConfirm}
+          onCancel={() => setDeleteVersionTarget(null)}
+          onConfirm={() => void handleDeleteVersion()}
+          loading={busy}
+        />
       </div>
     </RoleGuard>
   );

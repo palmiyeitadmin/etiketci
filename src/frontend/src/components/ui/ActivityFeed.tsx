@@ -44,10 +44,10 @@ export function ActivityFeed({
                         const content = (
                             <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-4 transition-colors hover:border-blue-400/30 hover:bg-white/5">
                                 <div className="flex items-start justify-between gap-3">
-                                    <div className="space-y-1">
-                                        <div className="text-sm font-bold text-white">{item.title}</div>
+                                    <div className="min-w-0 flex-1 space-y-1">
+                                        <div className="truncate text-sm font-bold text-white" title={item.title}>{item.title}</div>
                                         {item.subtitle ? (
-                                            <p className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{item.subtitle}</p>
+                                            <p className="truncate text-xs font-medium text-[color:var(--plms-text-subtle)]" title={item.subtitle}>{item.subtitle}</p>
                                         ) : null}
                                     </div>
                                     {item.status ? <StatusBadge label={item.status} tone={toTone(item.status)} /> : null}
