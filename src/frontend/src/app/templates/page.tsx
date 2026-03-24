@@ -105,6 +105,11 @@ export default function TemplatesPage() {
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [cloneTarget, setCloneTarget] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
 
+    const actionButtonClass =
+        "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
+    const actionDeleteButtonClass =
+        "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-red-400/20 bg-red-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-red-200 transition-colors hover:bg-red-500/20";
+
     async function load() {
         setLoading(true);
         const res = await apiFetch<LabelTemplate[]>("/api/Templates");
@@ -212,7 +217,7 @@ export default function TemplatesPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:px-8 space-y-6">
+            <div className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 xl:px-8 space-y-6">
                 <PageHeader
                     eyebrow={t("templates.eyebrow")}
                     title={t("templates.title")}
@@ -284,7 +289,7 @@ export default function TemplatesPage() {
                                             {template.templateCategoryName || text.uncategorized}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 min-w-[220px]">
+                                    <td className="px-4 py-4 min-w-[240px] xl:min-w-[280px]">
                                         <div className="text-sm font-bold text-white">{template.name}</div>
                                         <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
                                             {template.description || t("templates.detail.noDescription")}
@@ -298,7 +303,7 @@ export default function TemplatesPage() {
                                         <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 min-w-[180px]">
+                                    <td className="px-4 py-4 min-w-[170px]">
                                         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
                                             {text.createdBy}
                                         </div>
@@ -315,13 +320,13 @@ export default function TemplatesPage() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 w-[1%]">
-                                        <div className="flex max-w-[260px] flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
-                                            <Link href={`/templates/${template.id}`} className="plms-button-compact">
+                                        <div className="flex items-center gap-1.5 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                                            <Link href={`/templates/${template.id}`} className={actionButtonClass}>
                                                 {text.open}
                                             </Link>
                                             <button
                                                 type="button"
-                                                className="plms-button-compact"
+                                                className={actionButtonClass}
                                                 onClick={() => handlePrintVersion(template, printableVersion)}
                                                 disabled={!printableVersion}
                                                 title={!printableVersion ? text.activeVersionRequired : undefined}
@@ -331,7 +336,7 @@ export default function TemplatesPage() {
                                             {canCreate ? (
                                                 <button
                                                     type="button"
-                                                    className="plms-button-compact"
+                                                    className={actionButtonClass}
                                                     onClick={() => handleClone(template, cloneVersion)}
                                                     disabled={!cloneVersion}
                                                 >
@@ -339,14 +344,14 @@ export default function TemplatesPage() {
                                                 </button>
                                             ) : null}
                                             {canArchive ? (
-                                                <button type="button" className="plms-button-compact" onClick={() => setArchiveTarget(template)}>
+                                                <button type="button" className={actionButtonClass} onClick={() => setArchiveTarget(template)}>
                                                     {text.archive}
                                                 </button>
                                             ) : null}
                                             {canDelete ? (
                                                 <button
                                                     type="button"
-                                                    className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-200 transition-colors hover:bg-red-500/20"
+                                                    className={actionDeleteButtonClass}
                                                     onClick={() => setDeleteTarget(template)}
                                                 >
                                                     {text.delete}
@@ -381,15 +386,15 @@ export default function TemplatesPage() {
                                                                 <td className="px-5 py-3">{formatDate(v.createdAt)}</td>
                                                                 <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
                                                                 <td className="px-5 py-3">
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className="plms-button-compact">
+                                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className={actionButtonClass}>
                                                                             {text.preview}
                                                                         </Link>
-                                                                        <button type="button" className="plms-button-compact" onClick={() => handlePrintVersion(template, v)}>
+                                                                        <button type="button" className={actionButtonClass} onClick={() => handlePrintVersion(template, v)}>
                                                                             {text.print}
                                                                         </button>
                                                                         {canCreate ? (
-                                                                            <button type="button" className="plms-button-compact" onClick={() => handleClone(template, v)}>
+                                                                            <button type="button" className={actionButtonClass} onClick={() => handleClone(template, v)}>
                                                                                 {text.clone}
                                                                             </button>
                                                                         ) : null}
