@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Canvas } from "./Canvas";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { CanonicalLabelModel, EditorHistoryState, EditorSelectionState, ElementType, LabelElement } from "@/types/canvas";
-import { UnitConverter } from "@/lib/unit-converter";
+import { EDITOR_SNAP_MM, UnitConverter } from "@/lib/unit-converter";
 
 interface EditorWorkspaceProps {
     initialModel: CanonicalLabelModel;
@@ -100,10 +100,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
                 if (element.id !== id) return element;
                 const updated = { ...element, ...updates };
                 if (snapToGrid) {
-                    if (updates.xMm !== undefined) updated.xMm = UnitConverter.snapToGrid(updated.xMm, 1);
-                    if (updates.yMm !== undefined) updated.yMm = UnitConverter.snapToGrid(updated.yMm, 1);
-                    if (updates.widthMm !== undefined) updated.widthMm = UnitConverter.snapToGrid(updated.widthMm, 1);
-                    if (updates.heightMm !== undefined) updated.heightMm = UnitConverter.snapToGrid(updated.heightMm, 1);
+                    if (updates.xMm !== undefined) updated.xMm = UnitConverter.snapToGrid(updated.xMm, EDITOR_SNAP_MM);
+                    if (updates.yMm !== undefined) updated.yMm = UnitConverter.snapToGrid(updated.yMm, EDITOR_SNAP_MM);
+                    if (updates.widthMm !== undefined) updated.widthMm = UnitConverter.snapToGrid(updated.widthMm, EDITOR_SNAP_MM);
+                    if (updates.heightMm !== undefined) updated.heightMm = UnitConverter.snapToGrid(updated.heightMm, EDITOR_SNAP_MM);
                 }
                 return updated;
             });
@@ -295,7 +295,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
                             <ToolbarButton label="+" onClick={() => setZoom((value) => Math.min(5, value + 0.1))} />
                             <label className="ml-2 flex items-center gap-2 text-xs font-medium text-[color:var(--plms-text-subtle)]">
                                 <input type="checkbox" checked={snapToGrid} onChange={(event) => setSnapToGrid(event.target.checked)} />
-                                Snap to 1mm grid
+                                Snap to 0.1mm grid
                             </label>
                         </div>
                         {selectedElement ? (
@@ -328,10 +328,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
 
                                 <PropertySection label="Geometry (mm)">
                                     <div className="grid grid-cols-2 gap-3">
-                                        <PropertyField label="X" type="number" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
-                                        <PropertyField label="Y" type="number" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
-                                        <PropertyField label="Width" type="number" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: value })} />
-                                        <PropertyField label="Height" type="number" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: value })} />
+                                        <PropertyField label="X" type="number" step="0.1" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
+                                        <PropertyField label="Y" type="number" step="0.1" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
+                                        <PropertyField label="Width" type="number" step="0.1" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: value })} />
+                                        <PropertyField label="Height" type="number" step="0.1" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: value })} />
                                     </div>
                                     <PropertyField label="Rotation" type="number" value={selectedElement.rotation || 0} onChange={(value) => updateElement(selectedElement.id, { rotation: normalizeDiscreteRotation(value) })} />
                                 </PropertySection>
@@ -410,12 +410,13 @@ function PropertySection({ label, children }: { label: string; children: React.R
     );
 }
 
-function PropertyField({ label, value, readOnly, type = "text", mono, onChange }: { label: string; value: string | number; readOnly?: boolean; type?: string; mono?: boolean; onChange?: (value: any) => void }) {
+function PropertyField({ label, value, readOnly, type = "text", mono, step, onChange }: { label: string; value: string | number; readOnly?: boolean; type?: string; mono?: boolean; step?: number | string; onChange?: (value: any) => void }) {
     return (
         <div>
             <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
             <input
                 type={type}
+                step={step}
                 value={value}
                 readOnly={readOnly}
                 onChange={(event) => onChange?.(type === "number" ? Number(event.target.value) : event.target.value)}

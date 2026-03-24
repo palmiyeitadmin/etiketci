@@ -176,10 +176,10 @@ export function EditorInspector({ className = "" }: { className?: string }) {
                 <PropertySection label={text.identity}>
                     <PropertyField label={text.name} value={selectedElement.name || ""} onChange={(value) => updateElement(selectedElement.id, { name: value }, { recordHistory: false })} />
                     <div className="grid grid-cols-2 gap-3">
-                        <PropertyField label={text.xMm} type="number" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
-                        <PropertyField label={text.yMm} type="number" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
-                        <PropertyField label={text.widthMm} type="number" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: Math.max(1, value) })} />
-                        <PropertyField label={text.heightMm} type="number" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: Math.max(1, value) })} />
+                        <PropertyField label={text.xMm} type="number" step="0.1" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
+                        <PropertyField label={text.yMm} type="number" step="0.1" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
+                        <PropertyField label={text.widthMm} type="number" step="0.1" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: Math.max(1, value) })} />
+                        <PropertyField label={text.heightMm} type="number" step="0.1" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: Math.max(1, value) })} />
                     </div>
                     <RotationField label={text.rotation} value={selectedElement.rotation || 0} onChange={(value) => updateElement(selectedElement.id, { rotation: value })} />
                 </PropertySection>
@@ -255,6 +255,7 @@ export function EditorInspector({ className = "" }: { className?: string }) {
                         <PropertyField
                             label={text.strokeWidthMm}
                             type="number"
+                            step="0.1"
                             value={selectedElement.strokeWidthMm || 0}
                             disabled={!selectedElement.stroke || (selectedElement.strokeWidthMm ?? 0) <= 0}
                             onChange={(value) => {
@@ -281,11 +282,11 @@ function PropertySection({ label, children }: { label: string; children: React.R
     );
 }
 
-function PropertyField({ label, value, onChange, type = "text", disabled = false }: { label: string; value: string | number; onChange: (value: any) => void; type?: string; disabled?: boolean }) {
+function PropertyField({ label, value, onChange, type = "text", disabled = false, step }: { label: string; value: string | number; onChange: (value: any) => void; type?: string; disabled?: boolean; step?: number | string }) {
     return (
         <div>
             <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
-            <input className="plms-input" type={type} value={value} disabled={disabled} onChange={(event) => onChange(type === "number" ? Number(event.target.value) : event.target.value)} />
+            <input className="plms-input" type={type} step={step} value={value} disabled={disabled} onChange={(event) => onChange(type === "number" ? Number(event.target.value) : event.target.value)} />
         </div>
     );
 }

@@ -8,7 +8,7 @@ import { EditorRulers } from "@/components/Editor/EditorRulers";
 import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides";
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
-import { ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
+import { EDITOR_SNAP_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
 
 const FIT_PADDING = 48;
@@ -434,8 +434,8 @@ export function EditorCanvasStage() {
         const xMm = UnitConverter.profileToMm((pointer.x - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
         const yMm = UnitConverter.profileToMm((pointer.y - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
         addElement(activeTool, {
-            xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, 1)),
-            yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, 1)),
+            xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
+            yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
         });
     };
 
@@ -557,8 +557,8 @@ export function EditorCanvasStage() {
                                     const posX = UnitConverter.profileToMm((evt.target.x() - width / 2 - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
                                     const posY = UnitConverter.profileToMm((evt.target.y() - height / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
                                     updateElement(element.id, {
-                                        xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posX, 1)),
-                                        yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posY, 1)),
+                                        xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posX, EDITOR_SNAP_MM)),
+                                        yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posY, EDITOR_SNAP_MM)),
                                     }, { recordHistory: false });
                                     dragSnapshotTakenRef.current = false;
                                     setGuides([]);
@@ -584,10 +584,10 @@ export function EditorCanvasStage() {
                             if (!node) return;
                             const scaleX = node.scaleX();
                             const scaleY = node.scaleY();
-                            const widthMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.width() * scaleX) / viewport.zoom, ScreenPreviewProfile, 1), 1));
-                            const heightMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.height() * scaleY) / viewport.zoom, ScreenPreviewProfile, 1), 1));
-                            const xMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.x() - (node.width() * scaleX) / 2 - labelX) / viewport.zoom, ScreenPreviewProfile, 1), 1));
-                            const yMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.y() - (node.height() * scaleY) / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1), 1));
+                            const widthMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.width() * scaleX) / viewport.zoom, ScreenPreviewProfile, 1), EDITOR_SNAP_MM));
+                            const heightMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.height() * scaleY) / viewport.zoom, ScreenPreviewProfile, 1), EDITOR_SNAP_MM));
+                            const xMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.x() - (node.width() * scaleX) / 2 - labelX) / viewport.zoom, ScreenPreviewProfile, 1), EDITOR_SNAP_MM));
+                            const yMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.y() - (node.height() * scaleY) / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1), EDITOR_SNAP_MM));
                             node.scaleX(1);
                             node.scaleY(1);
                             updateElement(selectedElementId, {

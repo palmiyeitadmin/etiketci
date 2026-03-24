@@ -12,7 +12,7 @@ import { fitViewportToContainer } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
-import { ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
+import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 
@@ -155,7 +155,7 @@ export function EditorShell({ initialModel, onSave, previewHref }: EditorShellPr
         return;
       }
 
-      const step = event.shiftKey ? 10 : 1;
+      const step = event.shiftKey ? EDITOR_NUDGE_SHIFT_MM : EDITOR_NUDGE_MM;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         nudgeSelected(-step, 0);

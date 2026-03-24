@@ -37,6 +37,20 @@ describe("editor canonical helpers", () => {
     expect(copy?.yMm).toBe(13);
   });
 
+  it("preserves sub-millimeter nudge precision with two-decimal storage", () => {
+    const base = normalizeCanonicalLabelModel({
+      name: "Draft",
+      dimensions: { widthMm: 100, heightMm: 150 },
+      elements: [{ id: "text-1", type: "text", xMm: 10.25, yMm: 4.75, widthMm: 20, heightMm: 10, content: "Hello" }],
+    });
+
+    const nudged = nudgeElementInModel(base, "text-1", 0.1, -0.1);
+    const element = nudged.elements.find((item) => item.id === "text-1");
+
+    expect(element?.xMm).toBe(10.35);
+    expect(element?.yMm).toBe(4.65);
+  });
+
   it("adds new elements and computes fit viewport bounds", () => {
     const base = normalizeCanonicalLabelModel({
       name: "Draft",

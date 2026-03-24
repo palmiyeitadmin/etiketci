@@ -10,8 +10,8 @@ export interface RenderProfile {
 
 export const ScreenPreviewProfile: RenderProfile = {
     dpi: 96,
-    roundToGrid: true,
-    defaultSnapMm: 1.0
+    roundToGrid: false,
+    defaultSnapMm: 0.1
 };
 
 export const PdfRenderProfile: RenderProfile = {
@@ -25,6 +25,9 @@ export const PrinterProfile: RenderProfile = {
 };
 
 export const MM_PER_INCH = 25.4;
+export const EDITOR_SNAP_MM = 0.1;
+export const EDITOR_NUDGE_MM = 0.1;
+export const EDITOR_NUDGE_SHIFT_MM = 1;
 
 export const UnitConverter = {
     /**
