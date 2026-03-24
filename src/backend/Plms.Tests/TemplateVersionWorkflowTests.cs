@@ -192,5 +192,152 @@ namespace Plms.Tests
             Assert.Equal(TemplateStatus.Published, publishedVersion.Status);
             Assert.Equal(TemplateStatus.Deprecated, deprecatedVersion.Status);
         }
+
+        [Fact]
+        public async Task CloneTemplate_PublishedVersion_CreatesNewDraftTemplateAndWritesAudit()
+        {
+            var dbName = Guid.NewGuid().ToString();
+            using var context = GetInMemoryContext(dbName);
+
+            var sourceCategory = new TemplateCategory
+            {
+                Id = Guid.NewGuid(),
+                Code = "ETK",
+                Name = "Etiketler",
+                IsActive = true,
+                NextTemplateSequence = 5,
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                UpdatedAt = DateTime.UtcNow.AddDays(-3),
+            };
+            var targetCategory = new TemplateCategory
+            {
+                Id = Guid.NewGuid(),
+                Code = "KOLI",
+                Name = "Koli",
+                IsActive = true,
+                NextTemplateSequence = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                UpdatedAt = DateTime.UtcNow.AddDays(-2),
+            };
+            var sourceTemplate = new LabelTemplate
+            {
+                Id = Guid.NewGuid(),
+                Name = "Source Template",
+                Code = "PLM-ETK-004",
+                Description = "Source description",
+                TemplateCategoryId = sourceCategory.Id,
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1),
+                IsActive = true,
+            };
+            var sourceVersion = new LabelTemplateVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = sourceTemplate.Id,
+                VersionNumber = 3,
+                Status = TemplateStatus.Published,
+                LayoutJson = "{\"name\":\"source-layout\"}",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                CreatedBy = "operator",
+            };
+
+            context.TemplateCategories.AddRange(sourceCategory, targetCategory);
+            context.Templates.Add(sourceTemplate);
+            context.TemplateVersions.Add(sourceVersion);
+            await context.SaveChangesAsync();
+
+            var controller = CreateController(context, "operator");
+
+            var result = await controller.CloneTemplate(sourceTemplate.Id, sourceVersion.Id, new CloneTemplateDto
+            {
+                Name = "Cloned Template",
+                TemplateCategoryId = targetCategory.Id,
+                Description = "Clone description",
+            });
+
+            Assert.IsType<CreatedAtActionResult>(result);
+
+            var clonedTemplate = await context.Templates
+                .Include(t => t.Versions)
+                .FirstAsync(t => t.Id != sourceTemplate.Id);
+            var clonedVersion = clonedTemplate.Versions.Single();
+            var auditLog = await context.AuditLogs.FirstOrDefaultAsync(a => a.Action == "TemplateCloned" && a.EntityId == clonedTemplate.Id.ToString());
+            var refreshedCategory = await context.TemplateCategories.FirstAsync(c => c.Id == targetCategory.Id);
+
+            Assert.Equal("Cloned Template", clonedTemplate.Name);
+            Assert.Equal("PLM-KOLI-001", clonedTemplate.Code);
+            Assert.Equal(targetCategory.Id, clonedTemplate.TemplateCategoryId);
+            Assert.Equal(TemplateStatus.Draft, clonedVersion.Status);
+            Assert.Equal(1, clonedVersion.VersionNumber);
+            Assert.Equal(sourceVersion.LayoutJson, clonedVersion.LayoutJson);
+            Assert.Equal(sourceVersion.Id, clonedVersion.SourceVersionId);
+            Assert.Contains("Cloned from PLM-ETK-004 v3", clonedVersion.ChangeNotes);
+            Assert.Equal(2, refreshedCategory.NextTemplateSequence);
+            Assert.NotNull(auditLog);
+        }
+
+        [Fact]
+        public async Task CloneTemplate_InactiveCategory_ReturnsBadRequest()
+        {
+            var dbName = Guid.NewGuid().ToString();
+            using var context = GetInMemoryContext(dbName);
+
+            var sourceCategory = new TemplateCategory
+            {
+                Id = Guid.NewGuid(),
+                Code = "ETK",
+                Name = "Etiketler",
+                IsActive = true,
+                NextTemplateSequence = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                UpdatedAt = DateTime.UtcNow.AddDays(-3),
+            };
+            var inactiveCategory = new TemplateCategory
+            {
+                Id = Guid.NewGuid(),
+                Code = "PASIF",
+                Name = "Inactive",
+                IsActive = false,
+                NextTemplateSequence = 1,
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                UpdatedAt = DateTime.UtcNow.AddDays(-3),
+            };
+            var sourceTemplate = new LabelTemplate
+            {
+                Id = Guid.NewGuid(),
+                Name = "Source Template",
+                Code = "PLM-ETK-001",
+                TemplateCategoryId = sourceCategory.Id,
+                CreatedAt = DateTime.UtcNow.AddDays(-2),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1),
+                IsActive = true,
+            };
+            var sourceVersion = new LabelTemplateVersion
+            {
+                Id = Guid.NewGuid(),
+                TemplateId = sourceTemplate.Id,
+                VersionNumber = 1,
+                Status = TemplateStatus.Draft,
+                LayoutJson = "{\"name\":\"source-layout\"}",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                CreatedBy = "operator",
+            };
+
+            context.TemplateCategories.AddRange(sourceCategory, inactiveCategory);
+            context.Templates.Add(sourceTemplate);
+            context.TemplateVersions.Add(sourceVersion);
+            await context.SaveChangesAsync();
+
+            var controller = CreateController(context, "operator");
+
+            var result = await controller.CloneTemplate(sourceTemplate.Id, sourceVersion.Id, new CloneTemplateDto
+            {
+                Name = "Blocked Clone",
+                TemplateCategoryId = inactiveCategory.Id,
+            });
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.False(await context.AuditLogs.AnyAsync(a => a.Action == "TemplateCloned"));
+        }
     }
 }

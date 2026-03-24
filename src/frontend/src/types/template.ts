@@ -53,6 +53,25 @@ export interface TemplateCategory {
     nextTemplateSequence: number;
 }
 
+export interface CloneTemplateRequest {
+    name: string;
+    templateCategoryId: string;
+    description?: string;
+}
+
+export interface TemplateCloneSource {
+    templateId: string;
+    templateName: string;
+    templateCode: string;
+    versionId: string;
+    versionNumber: number;
+    status: TemplateStatus;
+    description?: string;
+    categoryId?: string;
+    categoryCode?: string;
+    categoryName?: string;
+}
+
 export interface TemplateComparisonElementChange {
     elementId: string;
     elementType: string;

@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
+import { hasAnyPermission, permissions } from "@/lib/permissions";
+import { openPdfDocument } from "@/lib/pdf-print";
+import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
@@ -34,14 +39,19 @@ function getTemplateTone(status: string): "neutral" | "info" | "success" | "warn
 }
 
 export default function TemplateDetailPage() {
+  const { data: session } = useSession();
   const { formatDateTime, t, locale } = useI18n();
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
+  const roles = ((session?.user as any)?.roles || []) as string[];
+  const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
+  const canCreate = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesCreate]);
 
   const [template, setTemplate] = useState<LabelTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewModal, setReviewModal] = useState<{ versionId: string; versionNumber: number } | null>(null);
+  const [cloneTarget, setCloneTarget] = useState<TemplateVersion | null>(null);
   const [reviewComments, setReviewComments] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -124,6 +134,18 @@ export default function TemplateDetailPage() {
     setReviewModal(null);
     setReviewComments("");
     await load();
+  }
+
+  function handlePrint(version: TemplateVersion | null | undefined) {
+    if (!template || !version) {
+      setMessage(t("templates.detailPage.activeVersionRequired"));
+      return;
+    }
+
+    const opened = openPdfDocument(buildTemplatePreviewFileUrl(template.id, version.id));
+    if (!opened) {
+      setMessage(t("templates.detailPage.printPopupBlocked"));
+    }
   }
 
   if (loading) {
@@ -226,6 +248,12 @@ export default function TemplateDetailPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
                             <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className="plms-button-secondary">{t("templates.detailPage.preview")}</Link>
+                            <button className="plms-button-secondary" onClick={() => handlePrint(version)}>{t("templates.detailPage.print")}</button>
+                            {canCreate ? (
+                              <button className="plms-button-secondary" onClick={() => setCloneTarget(version)}>
+                                {t("templates.detailPage.clone")}
+                              </button>
+                            ) : null}
                             {snapshotVersion && snapshotVersion.id !== version.id ? (
                               <Link href={`/templates/${template.id}/compare?leftVersionId=${version.id}&rightVersionId=${snapshotVersion.id}`} className="plms-button-secondary">{t("templates.detailPage.compare")}</Link>
                             ) : null}
@@ -301,7 +329,10 @@ export default function TemplateDetailPage() {
                     <div className="text-2xl font-black tracking-[-0.04em] text-white">v{activeVersion.versionNumber}</div>
                     <div className="mt-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.productionDescription")}</div>
                   </div>
-                  <Link href={`/templates/${template.id}/preview?versionId=${activeVersion.id}`} className="plms-button-primary w-full">{t("templates.detailPage.openProductionPreview")}</Link>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Link href={`/templates/${template.id}/preview?versionId=${activeVersion.id}`} className="plms-button-primary">{t("templates.detailPage.openProductionPreview")}</Link>
+                    <button className="plms-button-secondary" onClick={() => handlePrint(activeVersion)}>{t("templates.detailPage.printActiveVersion")}</button>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.noPublished")}</div>
@@ -318,6 +349,14 @@ export default function TemplateDetailPage() {
             </div>
           </div>
         </div>
+
+        <TemplateCloneModal
+          open={cloneTarget !== null}
+          sourceTemplate={template}
+          sourceVersion={cloneTarget}
+          onClose={() => setCloneTarget(null)}
+          onCloned={(templateId) => router.push(`/templates/${templateId}`)}
+        />
 
         {reviewModal ? (
           <Portal>

@@ -333,7 +333,7 @@ namespace Plms.Api.Controllers
                 ? await _context.Database.BeginTransactionAsync()
                 : null;
 
-            var generatedCode = $"PLM-{category.Code}-{category.NextTemplateSequence:D3}";
+            var generatedCode = FormatTemplateCode(category);
             if (await _context.Templates.AnyAsync(t => t.Code == generatedCode))
             {
                 return BadRequest(new { success = false, error = "Generated template code already exists. Refresh and try again." });
@@ -371,6 +371,113 @@ namespace Plms.Api.Controllers
             }
 
             return CreatedAtAction(nameof(GetTemplate), new { id = template.Id }, new { success = true, data = new { id = template.Id } });
+        }
+
+        [HttpPost("{id}/versions/{versionId}/clone")]
+        [Authorize(Policy = "Permission:templates.create")]
+        public async Task<IActionResult> CloneTemplate(Guid id, Guid versionId, CloneTemplateDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+            {
+                return BadRequest(new { success = false, error = "Template name is required." });
+            }
+
+            var sourceTemplate = await _context.Templates
+                .Include(t => t.TemplateCategory)
+                .Include(t => t.Versions)
+                .FirstOrDefaultAsync(t => t.Id == id);
+            if (sourceTemplate == null)
+            {
+                return NotFound(new { success = false, error = "Source template not found." });
+            }
+
+            var sourceVersion = sourceTemplate.Versions.FirstOrDefault(v => v.Id == versionId);
+            if (sourceVersion == null)
+            {
+                return NotFound(new { success = false, error = "Source version not found." });
+            }
+
+            var category = await _context.TemplateCategories.FirstOrDefaultAsync(c => c.Id == dto.TemplateCategoryId);
+            if (category == null)
+            {
+                return BadRequest(new { success = false, error = "Template category not found." });
+            }
+
+            if (!category.IsActive)
+            {
+                return BadRequest(new { success = false, error = "Inactive template categories cannot be used for cloned templates." });
+            }
+
+            await using var transaction = _context.Database.IsRelational()
+                ? await _context.Database.BeginTransactionAsync()
+                : null;
+
+            var generatedCode = FormatTemplateCode(category);
+            if (await _context.Templates.AnyAsync(t => t.Code == generatedCode))
+            {
+                return BadRequest(new { success = false, error = "Generated template code already exists. Refresh and try again." });
+            }
+
+            var actor = User.Identity?.Name ?? "System";
+            var now = DateTime.UtcNow;
+
+            var clonedTemplate = new LabelTemplate
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name.Trim(),
+                Code = generatedCode,
+                Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+                TemplateCategoryId = category.Id,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsActive = true
+            };
+
+            var clonedVersion = new LabelTemplateVersion
+            {
+                Id = Guid.NewGuid(),
+                Template = clonedTemplate,
+                VersionNumber = 1,
+                Status = TemplateStatus.Draft,
+                LayoutJson = sourceVersion.LayoutJson,
+                ChangeNotes = $"Cloned from {sourceTemplate.Code} v{sourceVersion.VersionNumber}",
+                CreatedAt = now,
+                CreatedBy = actor,
+                SourceVersionId = sourceVersion.Id
+            };
+
+            _context.Templates.Add(clonedTemplate);
+            _context.TemplateVersions.Add(clonedVersion);
+            category.NextTemplateSequence += 1;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = now,
+                Action = "TemplateCloned",
+                EntityId = clonedTemplate.Id.ToString(),
+                EntityType = "LabelTemplate",
+                UserId = actor,
+                Details = $"Template {generatedCode} cloned from {sourceTemplate.Code} v{sourceVersion.VersionNumber}.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
+
+            await _context.SaveChangesAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+
+            return CreatedAtAction(nameof(GetTemplate), new { id = clonedTemplate.Id }, new
+            {
+                success = true,
+                data = new
+                {
+                    template = MapTemplateDto(clonedTemplate, category, clonedVersion),
+                    version = MapTemplateVersionDto(clonedVersion),
+                    sourceTemplateId = sourceTemplate.Id,
+                    sourceVersionId = sourceVersion.Id
+                }
+            });
         }
 
         [HttpPost("{id}/archive")]
@@ -1079,6 +1186,66 @@ namespace Plms.Api.Controllers
             return changedFields.Count == 0
                 ? "Element payload changed."
                 : $"Changed fields: {string.Join(", ", changedFields)}";
+        }
+
+        private static string FormatTemplateCode(TemplateCategory category)
+        {
+            return $"PLM-{category.Code}-{category.NextTemplateSequence:D3}";
+        }
+
+        private static TemplateVersionDto MapTemplateVersionDto(LabelTemplateVersion version)
+        {
+            return new TemplateVersionDto
+            {
+                Id = version.Id,
+                VersionNumber = version.VersionNumber,
+                Status = version.Status,
+                LayoutJson = version.LayoutJson,
+                ChangeNotes = version.ChangeNotes,
+                CreatedAt = version.CreatedAt,
+                CreatedBy = version.CreatedBy,
+                SubmittedForReviewAt = version.SubmittedForReviewAt,
+                SubmittedForReviewBy = version.SubmittedForReviewBy,
+                ReviewedAt = version.ReviewedAt,
+                ReviewedBy = version.ReviewedBy,
+                ReviewDecision = version.ReviewDecision,
+                ReviewComment = version.ReviewComment,
+                PublishedAt = version.PublishedAt,
+                PublishedBy = version.PublishedBy,
+                SourceVersionId = version.SourceVersionId
+            };
+        }
+
+        private static TemplateDto MapTemplateDto(LabelTemplate template, TemplateCategory category, LabelTemplateVersion latestVersion)
+        {
+            var latestVersionDto = MapTemplateVersionDto(latestVersion);
+
+            return new TemplateDto
+            {
+                Id = template.Id,
+                Name = template.Name,
+                Code = template.Code,
+                Description = template.Description,
+                IsActive = template.IsActive,
+                IsArchived = template.IsArchived,
+                ArchivedAt = template.ArchivedAt,
+                ArchivedBy = template.ArchivedBy,
+                TemplateCategoryId = template.TemplateCategoryId,
+                TemplateCategoryCode = category.Code,
+                TemplateCategoryName = category.Name,
+                CurrentActiveVersionId = template.CurrentActiveVersionId,
+                CurrentActiveVersion = null,
+                LatestVersion = latestVersionDto,
+                LinkedProductCount = 0,
+                DraftCount = latestVersion.Status == TemplateStatus.Draft ? 1 : 0,
+                InReviewCount = 0,
+                PublishedCount = 0,
+                LastUpdatedBy = latestVersion.CreatedBy,
+                CreatedBy = latestVersion.CreatedBy,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt,
+                Versions = new List<TemplateVersionDto> { latestVersionDto }
+            };
         }
 
         private static TemplateRestorationRequestDto MapRestorationRequest(TemplateRestorationRequest request, LabelTemplateVersion version)

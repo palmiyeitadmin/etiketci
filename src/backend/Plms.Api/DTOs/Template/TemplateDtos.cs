@@ -70,6 +70,13 @@ namespace Plms.Api.DTOs.Template
         public string InitialLayoutJson { get; set; } = "{}";
     }
 
+    public class CloneTemplateDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public Guid TemplateCategoryId { get; set; }
+        public string? Description { get; set; }
+    }
+
     public class UpdateTemplateDto
     {
         public string Name { get; set; } = string.Empty;

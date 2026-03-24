@@ -22,6 +22,19 @@ function getLatestDerivedDraft(template: LabelTemplate, sourceVersionId: string)
     .sort((left, right) => right.versionNumber - left.versionNumber)[0];
 }
 
+export function resolveTemplateCloneSourceVersion(template: LabelTemplate, preferredVersion?: TemplateVersion): TemplateVersion | undefined {
+  return (
+    preferredVersion ||
+    template.currentActiveVersion ||
+    template.latestVersion ||
+    [...(template.versions || [])].sort((left, right) => right.versionNumber - left.versionNumber)[0]
+  );
+}
+
+export function resolveTemplatePrintVersion(template: LabelTemplate): TemplateVersion | undefined {
+  return template.currentActiveVersion;
+}
+
 export function findTemplateVersion(template: LabelTemplate, versionId?: string | null): TemplateVersion | undefined {
   if (!versionId) {
     return undefined;

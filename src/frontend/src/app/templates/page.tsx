@@ -6,11 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
+import { openPdfDocument } from "@/lib/pdf-print";
+import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { normalizeLabelTemplate } from "@/lib/template-status";
-import { ensureEditableVersion } from "@/lib/template-versioning";
+import { ensureEditableVersion, resolveTemplateCloneSourceVersion, resolveTemplatePrintVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
@@ -38,8 +41,13 @@ export default function TemplatesPage() {
             actions: "Aksiyonlar",
             manageCategories: "Sablon Kategorileri",
             open: "Ac",
+            preview: "Onizle",
+            print: "Yazdir",
+            clone: "Klonla",
             archive: "Arsivle",
             delete: "Sil",
+            activeVersionRequired: "Aktif surum gerekli",
+            printPopupBlocked: "PDF sekmesi acilamadi. Tarayicinizda popup engelini kaldirin.",
             archiveTitle: "Sablonu arsivle",
             archiveDescription: (name: string) => `${name} ana listeden cikacak, gecmis surumleri korunacak ve arsiv ekranindan geri alinabilecek.`,
             archiveConfirm: "Sablonu Arsivle",
@@ -59,8 +67,13 @@ export default function TemplatesPage() {
             actions: "Actions",
             manageCategories: "Template Categories",
             open: "Open",
+            preview: "Preview",
+            print: "Print",
+            clone: "Clone",
             archive: "Archive",
             delete: "Delete",
+            activeVersionRequired: "Active version required",
+            printPopupBlocked: "The PDF tab could not be opened. Allow popups in your browser and try again.",
             archiveTitle: "Archive template",
             archiveDescription: (name: string) => `${name} will leave the active list, keep its history and remain restorable from the archive view.`,
             archiveConfirm: "Archive Template",
@@ -86,6 +99,7 @@ export default function TemplatesPage() {
     const [deleteTarget, setDeleteTarget] = useState<LabelTemplate | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+    const [cloneTarget, setCloneTarget] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
 
     async function load() {
         setLoading(true);
@@ -170,6 +184,28 @@ export default function TemplatesPage() {
         await load();
     }
 
+    function handlePrintVersion(template: LabelTemplate, version?: TemplateVersion | null) {
+        if (!version) {
+            setMessage(text.activeVersionRequired);
+            return;
+        }
+
+        const opened = openPdfDocument(buildTemplatePreviewFileUrl(template.id, version.id));
+        if (!opened) {
+            setMessage(text.printPopupBlocked);
+        }
+    }
+
+    function handleClone(template: LabelTemplate, preferredVersion?: TemplateVersion) {
+        const sourceVersion = resolveTemplateCloneSourceVersion(template, preferredVersion);
+        if (!sourceVersion) {
+            setMessage(t("templates.detailPage.noVersionsDescription"));
+            return;
+        }
+
+        setCloneTarget({ template, version: sourceVersion });
+    }
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:px-8 space-y-6">
@@ -224,6 +260,8 @@ export default function TemplatesPage() {
                         {filteredTemplates.map((template) => {
                             const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
                             const isExpanded = expandedRowId === template.id;
+                            const printableVersion = resolveTemplatePrintVersion(template);
+                            const cloneVersion = resolveTemplateCloneSourceVersion(template);
                             
                             return (
                                 <React.Fragment key={template.id}>
@@ -273,6 +311,25 @@ export default function TemplatesPage() {
                                             <Link href={`/templates/${template.id}`} className="plms-button-compact">
                                                 {text.open}
                                             </Link>
+                                            <button
+                                                type="button"
+                                                className="plms-button-compact"
+                                                onClick={() => handlePrintVersion(template, printableVersion)}
+                                                disabled={!printableVersion}
+                                                title={!printableVersion ? text.activeVersionRequired : undefined}
+                                            >
+                                                {text.print}
+                                            </button>
+                                            {canCreate ? (
+                                                <button
+                                                    type="button"
+                                                    className="plms-button-compact"
+                                                    onClick={() => handleClone(template, cloneVersion)}
+                                                    disabled={!cloneVersion}
+                                                >
+                                                    {text.clone}
+                                                </button>
+                                            ) : null}
                                             {canArchive ? (
                                                 <button type="button" className="plms-button-compact" onClick={() => setArchiveTarget(template)}>
                                                     {text.archive}
@@ -302,6 +359,7 @@ export default function TemplatesPage() {
                                                             <th className="px-5 py-3">{text.createdBy}</th>
                                                             <th className="px-5 py-3">{text.date}</th>
                                                             <th className="px-5 py-3">{text.notes}</th>
+                                                            <th className="px-5 py-3">{text.actions}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-[color:var(--plms-border)]">
@@ -314,6 +372,21 @@ export default function TemplatesPage() {
                                                                 <td className="px-5 py-3 font-medium text-slate-300">{v.createdBy || "-"}</td>
                                                                 <td className="px-5 py-3">{formatDate(v.createdAt)}</td>
                                                                 <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
+                                                                <td className="px-5 py-3">
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className="plms-button-compact">
+                                                                            {text.preview}
+                                                                        </Link>
+                                                                        <button type="button" className="plms-button-compact" onClick={() => handlePrintVersion(template, v)}>
+                                                                            {text.print}
+                                                                        </button>
+                                                                        {canCreate ? (
+                                                                            <button type="button" className="plms-button-compact" onClick={() => handleClone(template, v)}>
+                                                                                {text.clone}
+                                                                            </button>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -393,6 +466,14 @@ export default function TemplatesPage() {
                 onCancel={() => setDeleteTarget(null)}
                 onConfirm={() => void handleDeleteConfirm()}
                 loading={submitting}
+            />
+
+            <TemplateCloneModal
+                open={cloneTarget !== null}
+                sourceTemplate={cloneTarget?.template || null}
+                sourceVersion={cloneTarget?.version || null}
+                onClose={() => setCloneTarget(null)}
+                onCloned={(templateId) => router.push(`/templates/${templateId}`)}
             />
         </RoleGuard>
     );
