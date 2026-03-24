@@ -147,8 +147,8 @@ export function EditorTopBar({
     }
 
     return (
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-3 xl:px-6">
-            <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+        <header className="flex shrink-0 flex-col gap-3 border-b border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-3 xl:px-6 2xl:flex-row 2xl:items-start 2xl:justify-between 2xl:gap-4">
+            <div className="flex min-w-0 items-center gap-3 overflow-hidden 2xl:flex-1">
                 <div className="min-w-0 flex-1">
                     <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.eyebrow}</div>
                     {editingName ? (
@@ -255,7 +255,7 @@ export function EditorTopBar({
                 )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto pb-1 2xl:pb-0">
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <EditorCommandButton icon={ArrowCounterClockwise} label={text.undo} onClick={onUndo} disabled={!canUndo} />
                     <EditorCommandButton icon={ArrowClockwise} label={text.redo} onClick={onRedo} disabled={!canRedo} />
@@ -265,11 +265,11 @@ export function EditorTopBar({
                     <EditorCommandButton icon={Trash} label={text.delete} onClick={onDelete} tone="danger" />
                 </div>
 
-                <div className="flex items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <EditorViewportControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onFit={onFit} onReset={onReset} />
                 </div>
 
-                <div className="flex items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     {previewHref ? (
                         <Link href={previewHref} className="inline-flex h-10 min-w-0 items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100 transition-colors hover:bg-cyan-500/15">
                             <Eye size={16} weight="bold" />
