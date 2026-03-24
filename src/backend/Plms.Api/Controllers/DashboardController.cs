@@ -6,6 +6,7 @@ using Plms.Api.Data;
 using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Dashboard;
+using System.Security.Claims;
 
 namespace Plms.Api.Controllers
 {
@@ -74,6 +75,7 @@ namespace Plms.Api.Controllers
         [HttpGet("activity")]
         public async Task<IActionResult> GetActivity()
         {
+            var currentUserId = GetCurrentUserId();
             var recentTemplates = await _context.TemplateVersions
                 .Include(v => v.Template)
                 .Where(v => v.VersionNumber == 1)
@@ -132,14 +134,44 @@ namespace Plms.Api.Controllers
                 })
                 .ToList();
 
+            var favoriteTemplates = currentUserId.HasValue
+                ? await _context.TemplateFavorites
+                    .Where(f => f.UserId == currentUserId.Value)
+                    .OrderByDescending(f => f.CreatedAt)
+                    .Take(4)
+                    .Select(f => new DashboardFeedItemDto
+                    {
+                        Id = f.TemplateId.ToString(),
+                        Type = "template-favorite",
+                        Title = f.Template!.Name,
+                        Subtitle = f.Template.Code,
+                        Status = f.Template.CurrentActiveVersion != null
+                            ? f.Template.CurrentActiveVersion.Status.ToString()
+                            : f.Template.Versions
+                                .OrderByDescending(v => v.VersionNumber)
+                                .Select(v => v.Status.ToString())
+                                .FirstOrDefault(),
+                        Timestamp = f.CreatedAt,
+                        Href = $"/templates/{f.TemplateId}"
+                    })
+                    .ToListAsync()
+                : new List<DashboardFeedItemDto>();
+
             var activity = new DashboardActivityDto
             {
                 RecentTemplates = recentTemplates,
                 RecentUsers = recentUsers,
-                RecentAuditItems = recentAuditItems
+                RecentAuditItems = recentAuditItems,
+                FavoriteTemplates = favoriteTemplates
             };
 
             return Ok(new { success = true, data = activity });
+        }
+
+        private Guid? GetCurrentUserId()
+        {
+            var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Guid.TryParse(rawUserId, out var userId) ? userId : null;
         }
     }
 }

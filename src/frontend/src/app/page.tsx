@@ -23,6 +23,7 @@ const emptyActivity: DashboardActivity = {
     recentTemplates: [],
     recentUsers: [],
     recentAuditItems: [],
+    favoriteTemplates: [],
 };
 
 export default function HomePage() {
@@ -45,7 +46,9 @@ export default function HomePage() {
         recentTemplates: "Son Sablonlar",
         recentUsers: "Son Kullanicilar",
         auditActivity: "Denetim Hareketleri",
-        todayAudits: "Bugunku Islem"
+        todayAudits: "Bugunku Islem",
+        favoriteTemplates: "Favori Sablonlar",
+        noFavoriteTemplates: "Henuz favori sablon yok."
     } : {
         templates: "Templates",
         assets: "Library",
@@ -58,7 +61,9 @@ export default function HomePage() {
         recentTemplates: "Recent Templates",
         recentUsers: "Recent Users",
         auditActivity: "Audit Activity",
-        todayAudits: "Today's Activity"
+        todayAudits: "Today's Activity",
+        favoriteTemplates: "Favorite Templates",
+        noFavoriteTemplates: "No favorite templates yet."
     };
 
     useEffect(() => {
@@ -83,6 +88,7 @@ export default function HomePage() {
                         recentTemplates: activityRes.data.recentTemplates || [],
                         recentUsers: activityRes.data.recentUsers || [],
                         recentAuditItems: activityRes.data.recentAuditItems || [],
+                        favoriteTemplates: activityRes.data.favoriteTemplates || [],
                     });
                 }
             } finally {
@@ -178,9 +184,10 @@ export default function HomePage() {
             </div>
 
             {/* FEEDS GRID */}
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-6 xl:grid-cols-3">
                 <ActivityFeed title={translations.recentTemplates} items={activity.recentTemplates} />
                 <ActivityFeed title={translations.recentUsers} items={activity.recentUsers} />
+                <ActivityFeed title={translations.favoriteTemplates} items={activity.favoriteTemplates} emptyText={translations.noFavoriteTemplates} />
             </div>
 
             <div>

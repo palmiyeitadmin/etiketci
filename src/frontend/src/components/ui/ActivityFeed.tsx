@@ -17,9 +17,11 @@ function toTone(status?: string) {
 export function ActivityFeed({
     title,
     items,
+    emptyText,
 }: {
     title: string;
     items: DashboardFeedItem[];
+    emptyText?: string;
 }) {
     const { formatDateTime, t, locale } = useI18n();
     const localizedItems = items.map((item) => localizeDashboardFeedItem(locale, item));
@@ -35,7 +37,7 @@ export function ActivityFeed({
             <div className="space-y-3">
                 {items.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-[color:var(--plms-border-strong)] px-4 py-8 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                        {t("activity.empty")}
+                        {emptyText || t("activity.empty")}
                     </div>
                 ) : (
                     localizedItems.map((item) => {

@@ -45,6 +45,7 @@ namespace Plms.Api.DTOs.Template
         public bool IsArchived { get; set; }
         public DateTime? ArchivedAt { get; set; }
         public string? ArchivedBy { get; set; }
+        public bool IsFavorite { get; set; }
         public Guid TemplateCategoryId { get; set; }
         public string TemplateCategoryCode { get; set; } = string.Empty;
         public string TemplateCategoryName { get; set; } = string.Empty;

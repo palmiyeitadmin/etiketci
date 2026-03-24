@@ -33,4 +33,5 @@ export interface DashboardActivity {
     recentTemplates: DashboardFeedItem[];
     recentUsers: DashboardFeedItem[];
     recentAuditItems: DashboardFeedItem[];
+    favoriteTemplates: DashboardFeedItem[];
 }

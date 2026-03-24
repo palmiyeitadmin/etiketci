@@ -32,7 +32,11 @@ export function resolveTemplateCloneSourceVersion(template: LabelTemplate, prefe
 }
 
 export function resolveTemplatePrintVersion(template: LabelTemplate): TemplateVersion | undefined {
-  return template.currentActiveVersion;
+  return (
+    template.currentActiveVersion ||
+    template.latestVersion ||
+    [...(template.versions || [])].sort((left, right) => right.versionNumber - left.versionNumber)[0]
+  );
 }
 
 export function findTemplateVersion(template: LabelTemplate, versionId?: string | null): TemplateVersion | undefined {

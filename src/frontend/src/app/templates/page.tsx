@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { CaretRight, CaretDown } from "@phosphor-icons/react";
+import { CaretRight, CaretDown, Star } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,7 +14,7 @@ import { openPdfDocument } from "@/lib/pdf-print";
 import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion, resolveTemplateCloneSourceVersion, resolveTemplatePrintVersion } from "@/lib/template-versioning";
-import { LabelTemplate, TemplateVersion } from "@/types/template";
+import { LabelTemplate, TemplateStatus, TemplateVersion } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { DataTable } from "@/components/ui/DataTable";
@@ -23,6 +23,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
+
+type TemplateListStatusFilter = "all" | TemplateStatus | "DraftOnly";
 
 export default function TemplatesPage() {
     const { data: session } = useSession();
@@ -63,6 +65,16 @@ export default function TemplatesPage() {
             status: "Durum",
             date: "Tarih",
             notes: "Notlar",
+            filtersFavorites: "Favoriler",
+            filtersMine: "Benimkiler",
+            filtersReset: "Temizle",
+            allStatuses: "Tum durumlar",
+            allCategories: "Tum kategoriler",
+            favorite: "Favoriye ekle",
+            unfavorite: "Favoriden cikar",
+            favoriteAdded: "Sablon favorilere eklendi.",
+            favoriteRemoved: "Sablon favorilerden cikarildi.",
+            draftOnly: "Sadece taslak",
         }
         : {
             category: "Category",
@@ -91,6 +103,16 @@ export default function TemplatesPage() {
             status: "Status",
             date: "Date",
             notes: "Notes",
+            filtersFavorites: "Favorites",
+            filtersMine: "Mine",
+            filtersReset: "Reset",
+            allStatuses: "All statuses",
+            allCategories: "All categories",
+            favorite: "Add to favorites",
+            unfavorite: "Remove favorite",
+            favoriteAdded: "Template added to favorites.",
+            favoriteRemoved: "Template removed from favorites.",
+            draftOnly: "Draft only",
         };
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -104,11 +126,17 @@ export default function TemplatesPage() {
     const [submitting, setSubmitting] = useState(false);
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [cloneTarget, setCloneTarget] = useState<{ template: LabelTemplate; version: TemplateVersion } | null>(null);
+    const [statusFilter, setStatusFilter] = useState<TemplateListStatusFilter>("all");
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    const [favoritesOnly, setFavoritesOnly] = useState(false);
+    const [mineOnly, setMineOnly] = useState(false);
 
     const actionButtonClass =
         "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
     const actionDeleteButtonClass =
         "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-red-400/20 bg-red-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-red-200 transition-colors hover:bg-red-500/20";
+    const filterChipClass =
+        "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-2xl border px-3 text-[10px] font-black uppercase tracking-[0.18em] transition-colors";
 
     async function load() {
         setLoading(true);
@@ -126,18 +154,75 @@ export default function TemplatesPage() {
         void load();
     }, []);
 
+    const viewerIdentityCandidates = useMemo(() => {
+        const user = (session?.user as any) || {};
+        return [user.fullName, user.name, user.email]
+            .filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0)
+            .map((value) => value.trim().toLowerCase());
+    }, [session]);
+
+    const categoryOptions = useMemo(() => {
+        const map = new Map<string, { id: string; label: string }>();
+        templates.forEach((template) => {
+            if (template.templateCategoryId && !map.has(template.templateCategoryId)) {
+                map.set(template.templateCategoryId, {
+                    id: template.templateCategoryId,
+                    label: template.templateCategoryName
+                        ? `${template.templateCategoryCode || "-"} · ${template.templateCategoryName}`
+                        : template.templateCategoryCode || text.uncategorized,
+                });
+            }
+        });
+
+        return Array.from(map.values()).sort((left, right) => left.label.localeCompare(right.label));
+    }, [templates, text.uncategorized]);
+
     const filteredTemplates = useMemo(
         () =>
-            templates.filter((template) =>
-                [
+            templates.filter((template) => {
+                const searchMatches = [
                     template.code,
                     template.name,
                     template.description ?? "",
                     template.templateCategoryCode ?? "",
                     template.templateCategoryName ?? "",
-                ].join(" ").toLowerCase().includes(searchTerm.toLowerCase())
-            ),
-        [templates, searchTerm]
+                ].join(" ").toLowerCase().includes(searchTerm.toLowerCase());
+
+                if (!searchMatches) {
+                    return false;
+                }
+
+                const effectiveStatus =
+                    template.currentActiveVersion?.status ||
+                    template.latestVersion?.status ||
+                    [...(template.versions || [])].sort((left, right) => right.versionNumber - left.versionNumber)[0]?.status;
+
+                if (statusFilter === "DraftOnly") {
+                    if (template.currentActiveVersion || effectiveStatus !== "Draft") {
+                        return false;
+                    }
+                } else if (statusFilter !== "all" && effectiveStatus !== statusFilter) {
+                    return false;
+                }
+
+                if (categoryFilter !== "all" && template.templateCategoryId !== categoryFilter) {
+                    return false;
+                }
+
+                if (favoritesOnly && !template.isFavorite) {
+                    return false;
+                }
+
+                if (mineOnly) {
+                    const createdBy = template.createdBy?.trim().toLowerCase();
+                    if (!createdBy || !viewerIdentityCandidates.includes(createdBy)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }),
+        [categoryFilter, favoritesOnly, mineOnly, searchTerm, statusFilter, templates, viewerIdentityCandidates]
     );
 
     const previewVersion: TemplateVersion | undefined = selectedTemplate?.currentActiveVersion || selectedTemplate?.latestVersion || selectedTemplate?.versions?.[0];
@@ -215,6 +300,35 @@ export default function TemplatesPage() {
         setCloneTarget({ template, version: sourceVersion });
     }
 
+    function updateLocalTemplateFavorite(templateId: string, isFavorite: boolean) {
+        setTemplates((current) => current.map((template) => template.id === templateId ? { ...template, isFavorite } : template));
+        setSelectedTemplate((current) => current && current.id === templateId ? { ...current, isFavorite } : current);
+    }
+
+    async function handleToggleFavorite(template: LabelTemplate) {
+        const nextFavoriteState = !template.isFavorite;
+        updateLocalTemplateFavorite(template.id, nextFavoriteState);
+
+        const res = await apiFetch(`/api/Templates/${template.id}/favorite`, {
+            method: nextFavoriteState ? "POST" : "DELETE",
+        });
+
+        if (!res.success) {
+            updateLocalTemplateFavorite(template.id, !nextFavoriteState);
+            setMessage(res.error.message);
+            return;
+        }
+
+        setMessage(nextFavoriteState ? text.favoriteAdded : text.favoriteRemoved);
+    }
+
+    function resetFilters() {
+        setStatusFilter("all");
+        setCategoryFilter("all");
+        setFavoritesOnly(false);
+        setMineOnly(false);
+    }
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
             <div className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 xl:px-8 space-y-6">
@@ -253,6 +367,42 @@ export default function TemplatesPage() {
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
                     }
+                    right={
+                        <>
+                            <select className="plms-select min-w-[170px]" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TemplateListStatusFilter)}>
+                                <option value="all">{text.allStatuses}</option>
+                                <option value="Draft">{t("status.generic.Draft")}</option>
+                                <option value="InReview">{t("status.generic.InReview")}</option>
+                                <option value="Approved">{t("status.generic.Approved")}</option>
+                                <option value="Published">{t("status.generic.Published")}</option>
+                                <option value="Deprecated">{t("status.generic.Deprecated")}</option>
+                                <option value="DraftOnly">{text.draftOnly}</option>
+                            </select>
+                            <select className="plms-select min-w-[190px]" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                                <option value="all">{text.allCategories}</option>
+                                {categoryOptions.map((category) => (
+                                    <option key={category.id} value={category.id}>{category.label}</option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                className={`${filterChipClass} ${favoritesOnly ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : "border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)]"}`}
+                                onClick={() => setFavoritesOnly((current) => !current)}
+                            >
+                                {text.filtersFavorites}
+                            </button>
+                            <button
+                                type="button"
+                                className={`${filterChipClass} ${mineOnly ? "border-blue-400/40 bg-blue-500/15 text-white" : "border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)]"}`}
+                                onClick={() => setMineOnly((current) => !current)}
+                            >
+                                {text.filtersMine}
+                            </button>
+                            <button type="button" className="plms-button-compact" onClick={resetFilters}>
+                                {text.filtersReset}
+                            </button>
+                        </>
+                    }
                 />
 
                 {loading ? (
@@ -267,7 +417,12 @@ export default function TemplatesPage() {
                 ) : (
                     <DataTable columns={["", t("templates.table.code"), t("templates.table.template"), text.activeLifecycle, text.ownership, text.actions]}>
                         {filteredTemplates.map((template) => {
-                            const status = template.currentActiveVersion ? "Published" : template.inReviewCount ? "InReview" : "DraftOnly";
+                            const effectiveStatus =
+                                template.currentActiveVersion?.status ||
+                                template.latestVersion?.status ||
+                                [...(template.versions || [])].sort((left, right) => right.versionNumber - left.versionNumber)[0]?.status ||
+                                "Draft";
+                            const status = !template.currentActiveVersion && effectiveStatus === "Draft" ? "DraftOnly" : effectiveStatus;
                             const isExpanded = expandedRowId === template.id;
                             const printableVersion = resolveTemplatePrintVersion(template);
                             const cloneVersion = resolveTemplateCloneSourceVersion(template);
@@ -297,10 +452,25 @@ export default function TemplatesPage() {
                                     </td>
                                     <td className="px-4 py-4">
                                         <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">
-                                            {template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}
+                                            {template.currentActiveVersion
+                                                ? `v${template.currentActiveVersion.versionNumber}`
+                                                : template.latestVersion
+                                                    ? `v${template.latestVersion.versionNumber}`
+                                                    : "-"}
                                         </div>
                                         <div className="mt-2">
-                                        <StatusBadge label={status} tone={template.currentActiveVersion ? "success" : template.inReviewCount ? "info" : "warning"} />
+                                        <StatusBadge
+                                            label={status}
+                                            tone={
+                                                status === "Published"
+                                                    ? "success"
+                                                    : status === "Approved" || status === "InReview"
+                                                        ? "info"
+                                                        : status === "Deprecated" || status === "Archived"
+                                                            ? "danger"
+                                                            : "warning"
+                                            }
+                                        />
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 min-w-[170px]">
@@ -321,6 +491,15 @@ export default function TemplatesPage() {
                                     </td>
                                     <td className="px-4 py-4 w-[1%]">
                                         <div className="flex items-center gap-1.5 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                                            <button
+                                                type="button"
+                                                className={`${actionButtonClass} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                                                onClick={() => void handleToggleFavorite(template)}
+                                                title={template.isFavorite ? text.unfavorite : text.favorite}
+                                                aria-label={template.isFavorite ? text.unfavorite : text.favorite}
+                                            >
+                                                <Star size={14} weight={template.isFavorite ? "fill" : "regular"} />
+                                            </button>
                                             <Link href={`/templates/${template.id}`} className={actionButtonClass}>
                                                 {text.open}
                                             </Link>

@@ -32,5 +32,6 @@ namespace Plms.Api.Domain.Entities
         public LabelTemplateVersion? CurrentActiveVersion { get; set; }
 
         public ICollection<LabelTemplateVersion> Versions { get; set; } = new List<LabelTemplateVersion>();
+        public ICollection<TemplateFavorite> FavoritedBy { get; set; } = new List<TemplateFavorite>();
     }
 }

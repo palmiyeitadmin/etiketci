@@ -7,6 +7,7 @@ using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Template;
 using Plms.Api.Models.Canonical;
 using Plms.Api.Services;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -33,6 +34,7 @@ namespace Plms.Api.Controllers
         [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetTemplates()
         {
+            var currentUserId = GetCurrentUserId();
             var items = await _context.Templates
                 .Include(t => t.TemplateCategory)
                 .Include(t => t.CurrentActiveVersion)
@@ -48,6 +50,7 @@ namespace Plms.Api.Controllers
                     IsArchived = t.IsArchived,
                     ArchivedAt = t.ArchivedAt,
                     ArchivedBy = t.ArchivedBy,
+                    IsFavorite = currentUserId.HasValue && _context.TemplateFavorites.Any(f => f.TemplateId == t.Id && f.UserId == currentUserId.Value),
                     TemplateCategoryId = t.TemplateCategoryId,
                     TemplateCategoryCode = t.TemplateCategory != null ? t.TemplateCategory.Code : string.Empty,
                     TemplateCategoryName = t.TemplateCategory != null ? t.TemplateCategory.Name : string.Empty,
@@ -163,6 +166,8 @@ namespace Plms.Api.Controllers
             }).ToList();
 
             var currentActiveVersion = versions.FirstOrDefault(v => v.Id == t.CurrentActiveVersionId);
+            var currentUserId = GetCurrentUserId();
+            var isFavorite = currentUserId.HasValue && await _context.TemplateFavorites.AnyAsync(f => f.TemplateId == t.Id && f.UserId == currentUserId.Value);
 
             return Ok(new
             {
@@ -177,6 +182,7 @@ namespace Plms.Api.Controllers
                     IsArchived = t.IsArchived,
                     ArchivedAt = t.ArchivedAt,
                     ArchivedBy = t.ArchivedBy,
+                    IsFavorite = isFavorite,
                     TemplateCategoryId = t.TemplateCategoryId,
                     TemplateCategoryCode = t.TemplateCategory?.Code ?? string.Empty,
                     TemplateCategoryName = t.TemplateCategory?.Name ?? string.Empty,
@@ -208,6 +214,7 @@ namespace Plms.Api.Controllers
         [Authorize(Policy = "RequireViewer")]
         public async Task<IActionResult> GetArchivedTemplates()
         {
+            var currentUserId = GetCurrentUserId();
             var items = await _context.Templates
                 .Include(t => t.TemplateCategory)
                 .Include(t => t.Versions)
@@ -222,6 +229,7 @@ namespace Plms.Api.Controllers
                     IsArchived = t.IsArchived,
                     ArchivedAt = t.ArchivedAt,
                     ArchivedBy = t.ArchivedBy,
+                    IsFavorite = currentUserId.HasValue && _context.TemplateFavorites.Any(f => f.TemplateId == t.Id && f.UserId == currentUserId.Value),
                     TemplateCategoryId = t.TemplateCategoryId,
                     TemplateCategoryCode = t.TemplateCategory != null ? t.TemplateCategory.Code : string.Empty,
                     TemplateCategoryName = t.TemplateCategory != null ? t.TemplateCategory.Name : string.Empty,
@@ -472,12 +480,95 @@ namespace Plms.Api.Controllers
                 success = true,
                 data = new
                 {
-                    template = MapTemplateDto(clonedTemplate, category, clonedVersion),
+                    template = MapTemplateDto(clonedTemplate, category, clonedVersion, false),
                     version = MapTemplateVersionDto(clonedVersion),
                     sourceTemplateId = sourceTemplate.Id,
                     sourceVersionId = sourceVersion.Id
                 }
             });
+        }
+
+        [HttpPost("{id}/favorite")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> AddFavorite(Guid id)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (!currentUserId.HasValue)
+            {
+                return Unauthorized(new { success = false, error = "Current user could not be resolved." });
+            }
+
+            var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            var exists = await _context.TemplateFavorites.AnyAsync(f => f.TemplateId == id && f.UserId == currentUserId.Value);
+            if (!exists)
+            {
+                _context.TemplateFavorites.Add(new TemplateFavorite
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = id,
+                    UserId = currentUserId.Value,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Timestamp = DateTime.UtcNow,
+                    Action = "TemplateFavorited",
+                    EntityId = id.ToString(),
+                    EntityType = "LabelTemplate",
+                    UserId = User.Identity?.Name ?? "System",
+                    Details = $"Template {template.Code} marked as favorite.",
+                    CorrelationId = HttpContext.TraceIdentifier
+                });
+
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { success = true });
+        }
+
+        [HttpDelete("{id}/favorite")]
+        [Authorize(Policy = "RequireViewer")]
+        public async Task<IActionResult> RemoveFavorite(Guid id)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (!currentUserId.HasValue)
+            {
+                return Unauthorized(new { success = false, error = "Current user could not be resolved." });
+            }
+
+            var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
+            if (template == null)
+            {
+                return NotFound(new { success = false, error = "Template not found." });
+            }
+
+            var favorite = await _context.TemplateFavorites.FirstOrDefaultAsync(f => f.TemplateId == id && f.UserId == currentUserId.Value);
+            if (favorite != null)
+            {
+                _context.TemplateFavorites.Remove(favorite);
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Timestamp = DateTime.UtcNow,
+                    Action = "TemplateUnfavorited",
+                    EntityId = id.ToString(),
+                    EntityType = "LabelTemplate",
+                    UserId = User.Identity?.Name ?? "System",
+                    Details = $"Template {template.Code} removed from favorites.",
+                    CorrelationId = HttpContext.TraceIdentifier
+                });
+
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { success = true });
         }
 
         [HttpPost("{id}/archive")]
@@ -1216,7 +1307,7 @@ namespace Plms.Api.Controllers
             };
         }
 
-        private static TemplateDto MapTemplateDto(LabelTemplate template, TemplateCategory category, LabelTemplateVersion latestVersion)
+        private static TemplateDto MapTemplateDto(LabelTemplate template, TemplateCategory category, LabelTemplateVersion latestVersion, bool isFavorite)
         {
             var latestVersionDto = MapTemplateVersionDto(latestVersion);
 
@@ -1230,6 +1321,7 @@ namespace Plms.Api.Controllers
                 IsArchived = template.IsArchived,
                 ArchivedAt = template.ArchivedAt,
                 ArchivedBy = template.ArchivedBy,
+                IsFavorite = isFavorite,
                 TemplateCategoryId = template.TemplateCategoryId,
                 TemplateCategoryCode = category.Code,
                 TemplateCategoryName = category.Name,
@@ -1246,6 +1338,12 @@ namespace Plms.Api.Controllers
                 UpdatedAt = template.UpdatedAt,
                 Versions = new List<TemplateVersionDto> { latestVersionDto }
             };
+        }
+
+        private Guid? GetCurrentUserId()
+        {
+            var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Guid.TryParse(rawUserId, out var userId) ? userId : null;
         }
 
         private static TemplateRestorationRequestDto MapRestorationRequest(TemplateRestorationRequest request, LabelTemplateVersion version)

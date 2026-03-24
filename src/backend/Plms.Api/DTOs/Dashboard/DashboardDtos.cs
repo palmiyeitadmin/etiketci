@@ -43,5 +43,6 @@ namespace Plms.Api.DTOs.Dashboard
         public List<DashboardFeedItemDto> RecentTemplates { get; set; } = new();
         public List<DashboardFeedItemDto> RecentUsers { get; set; } = new();
         public List<DashboardFeedItemDto> RecentAuditItems { get; set; } = new();
+        public List<DashboardFeedItemDto> FavoriteTemplates { get; set; } = new();
     }
 }

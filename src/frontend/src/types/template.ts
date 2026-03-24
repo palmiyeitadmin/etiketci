@@ -28,6 +28,7 @@ export interface LabelTemplate {
     isArchived?: boolean;
     archivedAt?: string;
     archivedBy?: string;
+    isFavorite?: boolean;
     templateCategoryId?: string;
     templateCategoryCode?: string;
     templateCategoryName?: string;

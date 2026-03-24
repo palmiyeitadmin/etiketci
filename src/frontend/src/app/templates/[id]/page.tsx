@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Star } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -47,6 +48,7 @@ export default function TemplateDetailPage() {
   const roles = ((session?.user as any)?.roles || []) as string[];
   const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canCreate = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesCreate]);
+  const favoriteButtonClass = "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
 
   const [template, setTemplate] = useState<LabelTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,6 +150,25 @@ export default function TemplateDetailPage() {
     }
   }
 
+  async function handleToggleFavorite() {
+    if (!template) return;
+
+    const nextFavoriteState = !template.isFavorite;
+    setTemplate({ ...template, isFavorite: nextFavoriteState });
+
+    const res = await apiFetch(`/api/Templates/${template.id}/favorite`, {
+      method: nextFavoriteState ? "POST" : "DELETE",
+    });
+
+    if (!res.success) {
+      setTemplate({ ...template, isFavorite: !nextFavoriteState });
+      setMessage(res.error.message);
+      return;
+    }
+
+    setMessage(nextFavoriteState ? t("templates.favoriteAdded") : t("templates.favoriteRemoved"));
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>;
   }
@@ -165,6 +186,15 @@ export default function TemplateDetailPage() {
           description={template.description || t("templates.detailPage.descriptionFallback")}
           actions={
             <>
+              <button
+                type="button"
+                className={`${favoriteButtonClass} ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                onClick={handleToggleFavorite}
+                title={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
+                aria-label={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
+              >
+                <Star size={18} weight={template.isFavorite ? "fill" : "regular"} />
+              </button>
               <Link href="/templates/archived" className="plms-button-secondary">{t("templates.detailPage.archiveLibrary")}</Link>
               <Link href={`/templates/${template.id}/compare`} className="plms-button-secondary">{t("templates.detailPage.compareVersions")}</Link>
               <RoleGuard allowedRoles={["Admin", "Operator"]}>

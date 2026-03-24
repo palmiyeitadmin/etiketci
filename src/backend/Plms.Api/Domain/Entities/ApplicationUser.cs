@@ -11,5 +11,6 @@ namespace Plms.Api.Domain.Entities
         public DateTime? LastLoginAt { get; set; }
         public DateTime? InvitedAt { get; set; }
         public string? InvitedBy { get; set; }
+        public ICollection<TemplateFavorite> FavoriteTemplates { get; set; } = new List<TemplateFavorite>();
     }
 }

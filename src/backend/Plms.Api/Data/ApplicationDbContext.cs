@@ -22,6 +22,7 @@ namespace Plms.Api.Data
         public DbSet<TemplateCategory> TemplateCategories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<LabelTemplate> Templates { get; set; }
+        public DbSet<TemplateFavorite> TemplateFavorites { get; set; }
         public DbSet<LabelTemplateVersion> TemplateVersions { get; set; }
         public DbSet<TemplateRestorationRequest> TemplateRestorationRequests { get; set; }
         public DbSet<ProductTemplate> ProductTemplates { get; set; }
@@ -161,6 +162,20 @@ namespace Plms.Api.Data
                 .HasOne(t => t.CurrentActiveVersion)
                 .WithMany()
                 .HasForeignKey(t => t.CurrentActiveVersionId);
+
+            modelBuilder.Entity<TemplateFavorite>(entity =>
+            {
+                entity.HasKey(f => f.Id);
+                entity.HasIndex(f => new { f.TemplateId, f.UserId }).IsUnique();
+                entity.HasOne(f => f.Template)
+                    .WithMany(t => t.FavoritedBy)
+                    .HasForeignKey(f => f.TemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(f => f.User)
+                    .WithMany(u => u.FavoriteTemplates)
+                    .HasForeignKey(f => f.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<TemplateRestorationRequest>(entity =>
             {
