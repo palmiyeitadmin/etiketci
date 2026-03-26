@@ -1,6 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  AlignCenterHorizontalSimple,
+  CopySimple,
+  ImageSquare,
+  Rows,
+  SelectionPlus,
+  SelectionSlash,
+  Square,
+  TextT,
+  TrashSimple,
+  type Icon,
+} from "@phosphor-icons/react";
 import { EditorAlignmentReference, ImageFit, TextAlign, TextTransform } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 
@@ -180,18 +192,18 @@ export function SelectionToolbar({
     >
       <div className="min-w-[23rem] max-w-[34rem] rounded-2xl border border-white/12 bg-[#0f1b2f]/96 px-3 py-3 shadow-[0_26px_80px_rgba(2,6,23,0.62)] ring-1 ring-white/6 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="max-w-[10rem] truncate rounded-xl border border-blue-300/35 bg-[#19345d] px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <div className="max-w-[9rem] truncate rounded-xl border border-blue-300/35 bg-[#19345d] px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" title={summary}>
             {summary}
           </div>
-          <ToolbarButton active={openMenu === "arrange"} onClick={() => setOpenMenu((current) => current === "arrange" ? null : "arrange")}>{text.arrange}</ToolbarButton>
-          <ToolbarButton active={openMenu === "align"} onClick={() => setOpenMenu((current) => current === "align" ? null : "align")}>{text.align}</ToolbarButton>
-          {textStyle ? <ToolbarButton active={openMenu === "text"} onClick={() => setOpenMenu((current) => current === "text" ? null : "text")}>{text.text}</ToolbarButton> : null}
-          {imageStyle ? <ToolbarButton active={openMenu === "image"} onClick={() => setOpenMenu((current) => current === "image" ? null : "image")}>{text.image}</ToolbarButton> : null}
-          {shapeStyle ? <ToolbarButton active={openMenu === "shape"} onClick={() => setOpenMenu((current) => current === "shape" ? null : "shape")}>{text.shape}</ToolbarButton> : null}
-          {canUngroup ? <ToolbarButton onClick={onUngroup}>{text.ungroup}</ToolbarButton> : null}
-          {canGroup ? <ToolbarButton onClick={onGroup}>{text.group}</ToolbarButton> : null}
-          <ToolbarButton onClick={onDuplicate}>{text.duplicate}</ToolbarButton>
-          <ToolbarButton tone="danger" onClick={onDelete}>{text.delete}</ToolbarButton>
+          <ToolbarButton icon={Rows} label={text.arrange} active={openMenu === "arrange"} onClick={() => setOpenMenu((current) => current === "arrange" ? null : "arrange")} />
+          <ToolbarButton icon={AlignCenterHorizontalSimple} label={text.align} active={openMenu === "align"} onClick={() => setOpenMenu((current) => current === "align" ? null : "align")} />
+          {textStyle ? <ToolbarButton icon={TextT} label={text.text} active={openMenu === "text"} onClick={() => setOpenMenu((current) => current === "text" ? null : "text")} /> : null}
+          {imageStyle ? <ToolbarButton icon={ImageSquare} label={text.image} active={openMenu === "image"} onClick={() => setOpenMenu((current) => current === "image" ? null : "image")} /> : null}
+          {shapeStyle ? <ToolbarButton icon={Square} label={text.shape} active={openMenu === "shape"} onClick={() => setOpenMenu((current) => current === "shape" ? null : "shape")} /> : null}
+          {canUngroup ? <ToolbarButton icon={SelectionSlash} label={text.ungroup} onClick={onUngroup} /> : null}
+          {canGroup ? <ToolbarButton icon={SelectionPlus} label={text.group} onClick={onGroup} /> : null}
+          <ToolbarButton icon={CopySimple} label={text.duplicate} onClick={onDuplicate} />
+          <ToolbarButton icon={TrashSimple} label={text.delete} tone="danger" onClick={onDelete} />
         </div>
 
         {openMenu ? (
@@ -309,12 +321,14 @@ export function SelectionToolbar({
 }
 
 function ToolbarButton({
-  children,
+  icon: IconComponent,
+  label,
   onClick,
   active = false,
   tone = "default",
 }: {
-  children: React.ReactNode;
+  icon: Icon;
+  label: string;
   onClick: () => void;
   active?: boolean;
   tone?: "default" | "danger";
@@ -326,8 +340,14 @@ function ToolbarButton({
       : "border-white/10 bg-[#16263f] text-slate-100 hover:border-white/20 hover:bg-[#203452] hover:text-white";
 
   return (
-    <button type="button" className={`inline-flex h-11 items-center rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.18em] transition-colors ${toneClass}`} onClick={onClick}>
-      {children}
+    <button
+      type="button"
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-colors ${toneClass}`}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+    >
+      <IconComponent size={18} weight={active ? "fill" : "bold"} />
     </button>
   );
 }
