@@ -1,25 +1,33 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useOrderedLayers } from "@/components/Editor/editor-selectors";
+import { useOrderedLayers, useSelectedGroup } from "@/components/Editor/editor-selectors";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { useI18n } from "@/lib/i18n";
 import { LabelElement } from "@/types/canvas";
 
-function makeGroupId() {
-    return `grp-${Math.random().toString(36).slice(2, 8)}`;
+interface LayerGroup {
+    key: string;
+    name: string;
+    groupId?: string;
+    items: LabelElement[];
 }
 
 export function EditorLayersPanel({ className = "" }: { className?: string }) {
     const { locale } = useI18n();
     const layers = useOrderedLayers();
-    const selectedElementId = useEditorStore((state) => state.selection.selectedElementId);
-    const setSelectedElementId = useEditorStore((state) => state.setSelectedElementId);
-    const model = useEditorStore((state) => state.model);
+    const selectedIds = useEditorStore((state) => state.selection.selectedElementIds);
+    const activeEditingGroupId = useEditorStore((state) => state.selection.activeEditingGroupId);
+    const selectOnly = useEditorStore((state) => state.selectOnly);
+    const toggleSelectedElement = useEditorStore((state) => state.toggleSelectedElement);
     const updateElement = useEditorStore((state) => state.updateElement);
-    const duplicateElement = useEditorStore((state) => state.duplicateElement);
-    const removeElement = useEditorStore((state) => state.removeElement);
-    const reorderElement = useEditorStore((state) => state.reorderElement);
+    const groupSelected = useEditorStore((state) => state.groupSelected);
+    const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
+    const renameSelectedGroup = useEditorStore((state) => state.renameSelectedGroup);
+    const setSelectedGroupVisibility = useEditorStore((state) => state.setSelectedGroupVisibility);
+    const setSelectedGroupLocked = useEditorStore((state) => state.setSelectedGroupLocked);
+    const setActiveEditingGroup = useEditorStore((state) => state.setActiveEditingGroup);
+    const selectedGroup = useSelectedGroup();
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
     const text = locale === "tr"
@@ -31,17 +39,12 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
             show: "Goster",
             lock: "Kilitle",
             unlock: "Kilidi Ac",
-            forward: "Ileri",
-            back: "Geri",
-            front: "One",
-            toBack: "Arkaya",
-            duplicate: "Cogalt",
-            delete: "Sil",
-            newGroup: "Yeni Grup",
-            ungroup: "Gruptan Cikar",
-            groupLabel: "Grup",
+            group: "Grupla",
+            ungroup: "Gruplamayi Kaldir",
+            editGroup: "Grubu Duzenle",
+            exitGroup: "Grup Modundan Cik",
+            groupName: "Grup Adi",
             ungrouped: "Gruplanmamis",
-            renameGroup: "Grup adi",
         }
         : {
             layers: "Layers",
@@ -51,46 +54,36 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
             show: "Show",
             lock: "Lock",
             unlock: "Unlock",
-            forward: "Forward",
-            back: "Back",
-            front: "Front",
-            toBack: "To Back",
-            duplicate: "Duplicate",
-            delete: "Delete",
-            newGroup: "New Group",
+            group: "Group",
             ungroup: "Ungroup",
-            groupLabel: "Group",
+            editGroup: "Edit Group",
+            exitGroup: "Exit Group",
+            groupName: "Group Name",
             ungrouped: "Ungrouped",
-            renameGroup: "Group name",
         };
 
-    const existingGroups = useMemo(() => {
-        const map = new Map<string, string>();
-        model.elements.forEach((element) => {
-            if (element.groupId) {
-                map.set(element.groupId, element.groupName || element.groupId);
-            }
-        });
-        return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-    }, [model.elements]);
-
-    const groupedLayers = useMemo(() => {
-        const groups: Array<{ key: string; name: string; items: LabelElement[]; groupId?: string }> = [];
-        const byGroup = new Map<string, { key: string; name: string; items: LabelElement[]; groupId?: string }>();
+    const layerGroups = useMemo<LayerGroup[]>(() => {
+        const groups: LayerGroup[] = [];
+        const map = new Map<string, LayerGroup>();
 
         layers.forEach((layer) => {
-            const key = layer.groupId || `ungrouped:${layer.id}`;
-            const name = layer.groupId ? (layer.groupName || layer.groupId) : text.ungrouped;
-            if (!byGroup.has(key)) {
-                const group = { key, name, items: [], groupId: layer.groupId };
-                byGroup.set(key, group);
+            const key = layer.groupId ? `group:${layer.groupId}` : `element:${layer.id}`;
+            if (!map.has(key)) {
+                const group = {
+                    key,
+                    name: layer.groupName || layer.groupId || layer.name || layer.type,
+                    groupId: layer.groupId,
+                    items: [],
+                };
+                map.set(key, group);
                 groups.push(group);
             }
-            byGroup.get(key)!.items.push(layer);
+
+            map.get(key)!.items.push(layer);
         });
 
         return groups;
-    }, [layers, text.ungrouped]);
+    }, [layers]);
 
     return (
         <aside className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col overflow-hidden overscroll-none border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] ${className}`}>
@@ -101,101 +94,86 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
                     <div className="shrink-0 rounded-xl border border-[color:var(--plms-border)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{layers.length}</div>
                 </div>
             </div>
+
             <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pr-2 pb-6" style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
                 <div className="space-y-3">
-                {layers.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-10 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">{text.empty}</div>
-                ) : groupedLayers.map((group) => (
-                    <div key={group.key} className="space-y-2">
-                        {group.groupId ? (
-                            <button
-                                type="button"
-                                className="flex w-full items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3 text-left"
-                                onClick={() => setCollapsedGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}
-                            >
-                                <div>
-                                    <div className="text-sm font-black text-white">{group.name}</div>
-                                    <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{group.items.length} {text.layers.toLowerCase()}</div>
-                                </div>
-                                <div className="text-xs font-black text-[color:var(--plms-text-subtle)]">{collapsedGroups[group.key] ? "+" : "-"}</div>
-                            </button>
-                        ) : null}
-                        {!collapsedGroups[group.key] ? group.items.map((layer) => {
-                            const isSelected = layer.id === selectedElementId;
-                            return (
-                                <div key={layer.id} className={`w-full min-w-0 rounded-2xl border p-4 ${isSelected ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)]"}`}>
-                                    <button type="button" onClick={() => setSelectedElementId(layer.id)} className="w-full text-left">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="min-w-0 flex-1">
-                                                <div className="truncate text-sm font-black text-white">{layer.name || layer.type}</div>
-                                                <div className="mt-1 truncate text-[10px] font-mono uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{layer.type}</div>
-                                            </div>
-                                            <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                                                <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { visible: !(layer.visible !== false) }); }}>
-                                                    {layer.visible !== false ? text.hide : text.show}
-                                                </button>
-                                                <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { locked: !(layer.locked === true) }); }}>
-                                                    {layer.locked ? text.unlock : text.lock}
-                                                </button>
-                                            </div>
+                    {layers.length === 0 ? <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-10 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">{text.empty}</div> : null}
+
+                    {layerGroups.map((group) => {
+                        const isCollapsed = collapsedGroups[group.key];
+                        const isGroupSelected = Boolean(group.groupId && selectedGroup?.groupId === group.groupId);
+                        const isEditingGroup = Boolean(group.groupId && activeEditingGroupId === group.groupId);
+
+                        return (
+                            <div key={group.key} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)]">
+                                {group.groupId ? (
+                                    <div className={`border-b border-[color:var(--plms-border)] px-4 py-3 ${isGroupSelected ? "bg-blue-500/10" : ""}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <button type="button" className="min-w-0 flex-1 text-left" onClick={() => selectOnly(group.items.map((item) => item.id), { primaryId: group.items[0]?.id ?? null, activeEditingGroupId: null })}>
+                                                <div className="truncate text-sm font-black text-white">{group.name}</div>
+                                                <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{group.items.length} items{isEditingGroup ? " • editing" : ""}</div>
+                                            </button>
+                                            <button type="button" className="text-xs font-black text-[color:var(--plms-text-subtle)]" onClick={() => setCollapsedGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}>{isCollapsed ? "+" : "-"}</button>
                                         </div>
-                                    </button>
-                                    <div className="mt-3 min-w-0 space-y-3">
-                                        <input className="plms-input py-2" value={layer.name || ""} onChange={(event) => updateElement(layer.id, { name: event.target.value }, { recordHistory: false })} />
-                                        {isSelected ? (
-                                            <>
-                                                <div>
-                                                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{text.groupLabel}</label>
-                                                    <select
-                                                        className="plms-select w-full"
-                                                        value={layer.groupId || ""}
-                                                        onChange={(event) => {
-                                                            const nextGroupId = event.target.value;
-                                                            if (!nextGroupId) {
-                                                                updateElement(layer.id, { groupId: undefined, groupName: undefined });
-                                                                return;
-                                                            }
-                                                            const selectedGroup = existingGroups.find((item) => item.id === nextGroupId);
-                                                            updateElement(layer.id, { groupId: nextGroupId, groupName: selectedGroup?.name || nextGroupId });
-                                                        }}
-                                                    >
-                                                        <option value="">{text.ungrouped}</option>
-                                                        {existingGroups.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                                                    </select>
+                                        {isGroupSelected ? (
+                                            <div className="mt-3 space-y-2">
+                                                <input className="plms-input py-2" value={selectedGroup?.groupName || group.name} onChange={(event) => renameSelectedGroup(event.target.value)} placeholder={text.groupName} />
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button type="button" className="plms-button-compact" onClick={() => setSelectedGroupVisibility(false)}>{text.hide}</button>
+                                                    <button type="button" className="plms-button-compact" onClick={() => setSelectedGroupVisibility(true)}>{text.show}</button>
+                                                    <button type="button" className="plms-button-compact" onClick={() => setSelectedGroupLocked(true)}>{text.lock}</button>
+                                                    <button type="button" className="plms-button-compact" onClick={() => setSelectedGroupLocked(false)}>{text.unlock}</button>
+                                                    <button type="button" className="plms-button-compact" onClick={() => setActiveEditingGroup(isEditingGroup ? null : group.groupId || null)}>{isEditingGroup ? text.exitGroup : text.editGroup}</button>
+                                                    <button type="button" className="plms-button-compact" onClick={ungroupSelectedGroup}>{text.ungroup}</button>
                                                 </div>
-                                                {layer.groupId ? (
-                                                    <input
-                                                        className="plms-input py-2"
-                                                        placeholder={text.renameGroup}
-                                                        value={layer.groupName || ""}
-                                                        onChange={(event) => {
-                                                            const nextName = event.target.value;
-                                                            model.elements
-                                                                .filter((element) => element.groupId === layer.groupId)
-                                                                .forEach((element) => updateElement(element.id, { groupName: nextName }, { recordHistory: false }));
-                                                        }}
-                                                    />
-                                                ) : null}
-                                            </>
+                                            </div>
                                         ) : null}
                                     </div>
-                                    {isSelected ? (
-                                        <div className="mt-3 grid min-w-0 grid-cols-2 gap-2">
-                                            <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "forward")}>{text.forward}</button>
-                                            <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "backward")}>{text.back}</button>
-                                            <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "front")}>{text.front}</button>
-                                            <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "back")}>{text.toBack}</button>
-                                            <button type="button" className="plms-button-compact" onClick={() => duplicateElement(layer.id)}>{text.duplicate}</button>
-                                            <button type="button" className="inline-flex min-w-0 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white" onClick={() => removeElement(layer.id)}>{text.delete}</button>
-                                            <button type="button" className="plms-button-compact col-span-2" onClick={() => updateElement(layer.id, { groupId: makeGroupId(), groupName: layer.groupName || layer.name || layer.type })}>{text.newGroup}</button>
-                                            {layer.groupId ? <button type="button" className="plms-button-compact col-span-2" onClick={() => updateElement(layer.id, { groupId: undefined, groupName: undefined })}>{text.ungroup}</button> : null}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            );
-                        }) : null}
-                    </div>
-                ))}
+                                ) : null}
+
+                                {!isCollapsed ? (
+                                    <div className="space-y-2 p-3">
+                                        {group.items.map((layer) => {
+                                            const isSelected = selectedIds.includes(layer.id);
+                                            return (
+                                                <button
+                                                    key={layer.id}
+                                                    type="button"
+                                                    className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${isSelected ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] hover:bg-white/5"}`}
+                                                    onClick={(event) => {
+                                                        if (event.shiftKey || event.ctrlKey || event.metaKey) {
+                                                            toggleSelectedElement(layer.id, group.groupId && !activeEditingGroupId ? group.items.map((item) => item.id) : undefined);
+                                                            return;
+                                                        }
+
+                                                        selectOnly(group.groupId && !activeEditingGroupId ? group.items.map((item) => item.id) : [layer.id], {
+                                                            primaryId: layer.id,
+                                                            activeEditingGroupId: activeEditingGroupId ?? null,
+                                                        });
+                                                    }}
+                                                >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="truncate text-sm font-black text-white">{layer.name || layer.type}</div>
+                                                            <div className="mt-1 truncate text-[10px] font-mono uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{layer.type}</div>
+                                                        </div>
+                                                        <div className="flex shrink-0 flex-wrap gap-2">
+                                                            <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { visible: !(layer.visible !== false) }); }}>{layer.visible !== false ? text.hide : text.show}</button>
+                                                            <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { locked: !(layer.locked === true) }); }}>{layer.locked ? text.unlock : text.lock}</button>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+
+                    {selectedIds.length >= 2 && !selectedGroup ? (
+                        <button type="button" className="plms-button-compact w-full" onClick={groupSelected}>{text.group}</button>
+                    ) : null}
                 </div>
             </div>
         </aside>

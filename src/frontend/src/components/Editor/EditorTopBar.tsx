@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, ArrowCounterClockwise, ArrowUDownLeft, ArrowUDownRight, Check, Copy, Eye, FloppyDisk, Trash, X } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, Check, Eye, FloppyDisk, X } from "@phosphor-icons/react";
 import { EditorCommandButton } from "@/components/Editor/EditorIconButton";
 import { EditorViewportControls } from "@/components/Editor/EditorViewportControls";
 import { useI18n } from "@/lib/i18n";
@@ -22,10 +22,6 @@ export function EditorTopBar({
     canRedo,
     onUndo,
     onRedo,
-    onDuplicate,
-    onDelete,
-    onRotateLeft,
-    onRotateRight,
     onRenameTemplate,
     onResizeCanvas,
 }: {
@@ -43,10 +39,6 @@ export function EditorTopBar({
     canRedo: boolean;
     onUndo: () => void;
     onRedo: () => void;
-    onDuplicate: () => void;
-    onDelete: () => void;
-    onRotateLeft: () => void;
-    onRotateRight: () => void;
     onRenameTemplate: (name: string) => Promise<void>;
     onResizeCanvas: (dimensions: { widthMm: number; heightMm: number }) => Promise<void>;
 }) {
@@ -63,10 +55,6 @@ export function EditorTopBar({
             eyebrow: "Birlesik editor",
             undo: "Geri al",
             redo: "Yinele",
-            rotateLeft: "Sola dondur",
-            rotateRight: "Saga dondur",
-            duplicate: "Cogalt",
-            delete: "Sil",
             preview: "Onizleme",
             saved: "Kaydedildi",
             saveDraft: "Taslak Kaydet",
@@ -80,10 +68,6 @@ export function EditorTopBar({
             eyebrow: "Unified editor",
             undo: "Undo",
             redo: "Redo",
-            rotateLeft: "Rotate Left",
-            rotateRight: "Rotate Right",
-            duplicate: "Duplicate",
-            delete: "Delete",
             preview: "Preview",
             saved: "Saved",
             saveDraft: "Save Draft",
@@ -259,10 +243,6 @@ export function EditorTopBar({
                 <div className="flex items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                     <EditorCommandButton icon={ArrowCounterClockwise} label={text.undo} onClick={onUndo} disabled={!canUndo} />
                     <EditorCommandButton icon={ArrowClockwise} label={text.redo} onClick={onRedo} disabled={!canRedo} />
-                    <EditorCommandButton icon={ArrowUDownLeft} label={text.rotateLeft} onClick={onRotateLeft} />
-                    <EditorCommandButton icon={ArrowUDownRight} label={text.rotateRight} onClick={onRotateRight} />
-                    <EditorCommandButton icon={Copy} label={text.duplicate} onClick={onDuplicate} />
-                    <EditorCommandButton icon={Trash} label={text.delete} onClick={onDelete} tone="danger" />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">

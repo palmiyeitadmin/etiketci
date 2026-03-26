@@ -57,7 +57,12 @@ function createElement(type: ElementType): LabelElement {
 
 export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, onSave, previewHref }) => {
     const [model, setModel] = useState<CanonicalLabelModel>(cloneModel(initialModel));
-    const [selection, setSelection] = useState<EditorSelectionState>({ selectedElementId: initialModel.elements[0]?.id ?? null });
+    const [selection, setSelection] = useState<EditorSelectionState>({
+        selectedElementIds: initialModel.elements[0]?.id ? [initialModel.elements[0].id] : [],
+        primarySelectedElementId: initialModel.elements[0]?.id ?? null,
+        activeEditingGroupId: null,
+        alignmentReference: "selection",
+    });
     const [history, setHistory] = useState<EditorHistoryState>({ past: [], future: [] });
     const [zoom, setZoom] = useState(1);
     const [hasChanges, setHasChanges] = useState(false);
@@ -66,8 +71,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
     const historyCaptureRef = useRef(0);
 
     const selectedElement = useMemo(
-        () => model.elements.find((element) => element.id === selection.selectedElementId) || null,
-        [model.elements, selection.selectedElementId]
+        () => model.elements.find((element) => element.id === selection.primarySelectedElementId) || null,
+        [model.elements, selection.primarySelectedElementId]
     );
 
     const pushHistory = (previous: CanonicalLabelModel) => {
@@ -117,15 +122,15 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         const next = cloneModel(model);
         next.elements.push(element);
         applyModel(next);
-        setSelection({ selectedElementId: element.id });
+        setSelection({ selectedElementIds: [element.id], primarySelectedElementId: element.id, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
     const deleteSelected = () => {
-        if (!selection.selectedElementId) return;
+        if (!selection.primarySelectedElementId) return;
         const next = cloneModel(model);
-        next.elements = next.elements.filter((element) => element.id !== selection.selectedElementId);
+        next.elements = next.elements.filter((element) => element.id !== selection.primarySelectedElementId);
         applyModel(next);
-        setSelection({ selectedElementId: next.elements[0]?.id ?? null });
+        setSelection({ selectedElementIds: next.elements[0]?.id ? [next.elements[0].id] : [], primarySelectedElementId: next.elements[0]?.id ?? null, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
     const duplicateSelected = () => {
@@ -139,7 +144,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         const next = cloneModel(model);
         next.elements.push(duplicate);
         applyModel(next);
-        setSelection({ selectedElementId: duplicate.id });
+        setSelection({ selectedElementIds: [duplicate.id], primarySelectedElementId: duplicate.id, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
     const undo = () => {
@@ -261,8 +266,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
                                     {model.elements.map((element) => (
                                         <button
                                             key={element.id}
-                                            onClick={() => setSelection({ selectedElementId: element.id })}
-                                            className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${selection.selectedElementId === element.id ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] hover:bg-white/5"}`}
+                                            onClick={() => setSelection({ selectedElementIds: [element.id], primarySelectedElementId: element.id, activeEditingGroupId: null, alignmentReference: "selection" })}
+                                            className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${selection.primarySelectedElementId === element.id ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] hover:bg-white/5"}`}
                                         >
                                             <div className="text-xs font-black uppercase tracking-[0.18em] text-white">{element.type}</div>
                                             <div className="mt-1 text-[10px] font-mono text-[color:var(--plms-text-subtle)]">{element.id}</div>
@@ -305,7 +310,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
                         ) : null}
                     </div>
                     <div className="custom-scrollbar flex-1 overflow-auto p-8">
-                        <Canvas model={model} selectedId={selection.selectedElementId} onSelect={(id) => setSelection({ selectedElementId: id })} onUpdateElement={updateElement} zoom={zoom} />
+                        <Canvas model={model} selectedId={selection.primarySelectedElementId} onSelect={(id) => setSelection({ selectedElementIds: id ? [id] : [], primarySelectedElementId: id, activeEditingGroupId: null, alignmentReference: "selection" })} onUpdateElement={updateElement} zoom={zoom} />
                     </div>
                 </section>
 

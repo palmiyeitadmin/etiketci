@@ -86,7 +86,11 @@ export function createDefaultElement(type: ElementType, index: number, position?
         font: DEFAULT_FONT,
         fontSizePt: 12,
         textAlign: "left",
+        verticalAlign: "middle",
         fontWeight: "normal",
+        lineHeight: 1,
+        letterSpacingPt: 0,
+        textTransform: "none",
         fill: "#0f172a",
       } satisfies TextElement;
     case "barcode":
@@ -108,6 +112,12 @@ export function createDefaultElement(type: ElementType, index: number, position?
         type,
         content: "",
         imageFit: "contain",
+        cornerRadiusMm: 0,
+        frameFill: null,
+        frameStroke: null,
+        frameStrokeWidthMm: 0,
+        imageAlignX: "center",
+        imageAlignY: "middle",
         assetId: undefined,
         assetSource: undefined,
         assetKey: undefined,
@@ -178,6 +188,12 @@ export function normalizeElement(rawElement: Partial<LabelElement>, index: numbe
 
   if (merged.type === "image") {
     merged.imageFit = merged.imageFit ?? "contain";
+    merged.cornerRadiusMm = clampNumber(merged.cornerRadiusMm, 0);
+    merged.frameFill = merged.frameFill ?? null;
+    merged.frameStroke = merged.frameStroke ?? null;
+    merged.frameStrokeWidthMm = clampNumber(merged.frameStrokeWidthMm, 0);
+    merged.imageAlignX = merged.imageAlignX ?? "center";
+    merged.imageAlignY = merged.imageAlignY ?? "middle";
     merged.assetId = typeof merged.assetId === "string" && merged.assetId ? merged.assetId : undefined;
     merged.assetSource = merged.assetSource === "upload" || merged.assetSource === "phosphor" ? merged.assetSource as AssetSource : undefined;
     merged.assetKey = typeof merged.assetKey === "string" && merged.assetKey ? merged.assetKey : undefined;
@@ -187,7 +203,11 @@ export function normalizeElement(rawElement: Partial<LabelElement>, index: numbe
     merged.font = merged.font || DEFAULT_FONT;
     merged.fontSizePt = clampNumber(merged.fontSizePt, 12);
     merged.textAlign = merged.textAlign ?? "left";
+    merged.verticalAlign = merged.verticalAlign ?? "middle";
     merged.fontWeight = merged.fontWeight ?? "normal";
+    merged.lineHeight = clampNumber(merged.lineHeight, 1);
+    merged.letterSpacingPt = clampNumber(merged.letterSpacingPt, 0);
+    merged.textTransform = merged.textTransform ?? "none";
     merged.fill = merged.fill || "#0f172a";
   }
 

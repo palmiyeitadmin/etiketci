@@ -1,10 +1,14 @@
 export type ElementType = "text" | "barcode" | "qr" | "image" | "rect" | "ellipse" | "line";
 export type TextAlign = "left" | "center" | "right";
+export type VerticalAlign = "top" | "middle" | "bottom";
 export type FontWeight = "normal" | "bold";
+export type TextTransform = "none" | "uppercase" | "lowercase";
 export type ImageFit = "contain" | "cover" | "stretch";
+export type ImageAlign = "left" | "center" | "right" | "top" | "middle" | "bottom";
 export type LineDirection = "horizontal" | "vertical";
 export type DiscreteRotation = 0 | 90 | 180 | 270;
 export type AssetSource = "upload" | "phosphor";
+export type EditorAlignmentReference = "selection" | "canvas";
 
 export interface BaseLabelElement {
     id: string;
@@ -23,12 +27,22 @@ export interface BaseLabelElement {
     font?: string;
     fontSizePt?: number;
     textAlign?: TextAlign;
+    verticalAlign?: VerticalAlign;
     fontWeight?: FontWeight;
+    lineHeight?: number;
+    letterSpacingPt?: number;
+    textTransform?: TextTransform;
     fill?: string | null;
     stroke?: string | null;
     strokeWidthMm?: number;
     barcodeType?: string;
     imageFit?: ImageFit;
+    cornerRadiusMm?: number;
+    frameFill?: string | null;
+    frameStroke?: string | null;
+    frameStrokeWidthMm?: number;
+    imageAlignX?: Extract<ImageAlign, "left" | "center" | "right">;
+    imageAlignY?: Extract<ImageAlign, "top" | "middle" | "bottom">;
     lineDirection?: LineDirection;
 }
 
@@ -37,7 +51,11 @@ export interface TextElement extends BaseLabelElement {
     font?: string;
     fontSizePt?: number;
     textAlign?: TextAlign;
+    verticalAlign?: VerticalAlign;
     fontWeight?: FontWeight;
+    lineHeight?: number;
+    letterSpacingPt?: number;
+    textTransform?: TextTransform;
     fill?: string | null;
 }
 
@@ -53,6 +71,12 @@ export interface QrElement extends BaseLabelElement {
 export interface ImageElement extends BaseLabelElement {
     type: "image";
     imageFit?: ImageFit;
+    cornerRadiusMm?: number;
+    frameFill?: string | null;
+    frameStroke?: string | null;
+    frameStrokeWidthMm?: number;
+    imageAlignX?: Extract<ImageAlign, "left" | "center" | "right">;
+    imageAlignY?: Extract<ImageAlign, "top" | "middle" | "bottom">;
     assetId?: string;
     assetSource?: AssetSource;
     assetKey?: string;
@@ -95,12 +119,15 @@ export interface CanonicalLabelModel {
 
 export interface EditorState {
     model: CanonicalLabelModel;
-    selectedElementId: string | null;
+    selectedElementIds: string[];
     zoom: number;
 }
 
 export interface EditorSelectionState {
-    selectedElementId: string | null;
+    selectedElementIds: string[];
+    primarySelectedElementId: string | null;
+    activeEditingGroupId?: string | null;
+    alignmentReference: EditorAlignmentReference;
 }
 
 export interface EditorHistoryState {
@@ -114,6 +141,13 @@ export interface EditorViewport {
     zoom: number;
     offsetX: number;
     offsetY: number;
+}
+
+export interface SelectionBounds {
+    xMm: number;
+    yMm: number;
+    widthMm: number;
+    heightMm: number;
 }
 
 export interface VariableCatalogItem {

@@ -34,12 +34,22 @@ namespace Plms.Api.Models.Canonical
         public string? Font { get; set; }
         public float? FontSizePt { get; set; }
         public string? TextAlign { get; set; }
+        public string? VerticalAlign { get; set; }
         public string? FontWeight { get; set; }
+        public float? LineHeight { get; set; }
+        public float? LetterSpacingPt { get; set; }
+        public string? TextTransform { get; set; }
         public string? Fill { get; set; }
         public string? Stroke { get; set; }
         public float? StrokeWidthMm { get; set; }
         public string? BarcodeType { get; set; }
         public string? ImageFit { get; set; }
+        public float? CornerRadiusMm { get; set; }
+        public string? FrameFill { get; set; }
+        public string? FrameStroke { get; set; }
+        public float? FrameStrokeWidthMm { get; set; }
+        public string? ImageAlignX { get; set; }
+        public string? ImageAlignY { get; set; }
         public string? LineDirection { get; set; }
         public string? AssetId { get; set; }
         public string? AssetSource { get; set; }

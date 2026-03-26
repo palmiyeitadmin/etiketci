@@ -47,7 +47,8 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   const isDirty = useEditorStore((state) => state.isDirty);
   const setTool = useEditorStore((state) => state.setTool);
   const setViewport = useEditorStore((state) => state.setViewport);
-  const setSelectedElementId = useEditorStore((state) => state.setSelectedElementId);
+  const clearSelection = useEditorStore((state) => state.clearSelection);
+  const setActiveEditingGroup = useEditorStore((state) => state.setActiveEditingGroup);
   const setSpacePanning = useEditorStore((state) => state.setSpacePanning);
   const duplicateSelected = useEditorStore((state) => state.duplicateSelected);
   const removeSelected = useEditorStore((state) => state.removeSelected);
@@ -59,6 +60,8 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   const applyModel = useEditorStore((state) => state.applyModel);
   const insertElement = useEditorStore((state) => state.insertElement);
   const rotateSelected = useEditorStore((state) => state.rotateSelected);
+  const groupSelected = useEditorStore((state) => state.groupSelected);
+  const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
 
   const [savePending, setSavePending] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("layers");
@@ -70,10 +73,10 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   }, [initialModel, initialize]);
 
   useEffect(() => {
-    if (selection.selectedElementId) {
+    if (selection.selectedElementIds.length > 0) {
       setRightPanelTab("properties");
     }
-  }, [selection.selectedElementId]);
+  }, [selection.selectedElementIds.length]);
 
   const fitCanvas = useCallback(() => {
     const labelWidthPx = UnitConverter.mmToProfile(model.dimensions.widthMm, ScreenPreviewProfile, 1);
@@ -160,6 +163,18 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         return;
       }
 
+      if (meta && event.key.toLowerCase() === "g" && !event.shiftKey) {
+        event.preventDefault();
+        groupSelected();
+        return;
+      }
+
+      if (meta && event.shiftKey && event.key.toLowerCase() === "g") {
+        event.preventDefault();
+        ungroupSelectedGroup();
+        return;
+      }
+
       if (interactive) {
         return;
       }
@@ -178,7 +193,11 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
 
       if (event.key === "Escape") {
         event.preventDefault();
-        setSelectedElementId(null);
+        if (selection.activeEditingGroupId) {
+          setActiveEditingGroup(null);
+        } else {
+          clearSelection();
+        }
         setTool("select");
         return;
       }
@@ -228,7 +247,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [duplicateSelected, handleSave, nudgeSelected, redo, removeSelected, reorderSelected, rotateSelected, setSelectedElementId, setSpacePanning, setTool, undo]);
+  }, [clearSelection, duplicateSelected, groupSelected, handleSave, nudgeSelected, redo, removeSelected, reorderSelected, rotateSelected, selection.activeEditingGroupId, setActiveEditingGroup, setSpacePanning, setTool, undo, ungroupSelectedGroup]);
 
   const insertImageFromLibrary = useCallback((payload: { name: string; content: string; assetId?: string; assetSource?: "upload" | "phosphor"; assetKey?: string }) => {
     const nextIndex = model.elements.filter((element) => element.type === "image").length + 1;
@@ -247,7 +266,6 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     setLibraryOpen(false);
   }, [insertElement, model.dimensions.heightMm, model.dimensions.widthMm, model.elements]);
 
-  const selectedLabel = useMemo(() => model.elements.find((element) => element.id === selection.selectedElementId) ?? null, [model.elements, selection.selectedElementId]);
   const layoutClassName = panelsCollapsed
     ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)]"
     : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem]";
@@ -270,10 +288,6 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         canRedo={history.future.length > 0}
         onUndo={undo}
         onRedo={redo}
-        onDuplicate={duplicateSelected}
-        onDelete={removeSelected}
-        onRotateLeft={() => rotateSelected("left")}
-        onRotateRight={() => rotateSelected("right")}
         onRenameTemplate={handleRenameTemplate}
         onResizeCanvas={handleResizeCanvas}
       />
@@ -291,11 +305,6 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
                     ? (locale === "tr" ? "Secim modu" : "Select mode")
                     : (locale === "tr" ? `Tuvale ${ui.activeTool} yerlestirmek icin tiklayin` : `Click canvas to place ${ui.activeTool}`)}
               </div>
-              {selectedLabel ? (
-                <div className="mt-2 max-w-full truncate rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
-                  {selectedLabel.name || selectedLabel.type} | {selectedLabel.xMm}mm / {selectedLabel.yMm}mm
-                </div>
-              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button

@@ -5,9 +5,12 @@ import Konva from "konva";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ellipse as KonvaEllipse, Group, Image as KonvaImage, Layer, Rect, Stage, Text as KonvaText, Transformer } from "react-konva";
 import { EditorRulers } from "@/components/Editor/EditorRulers";
-import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides";
+import { computeSelectionBounds, getGroupMemberIds, selectionMatchesGroup, updateElementInModel } from "@/components/Editor/editor-actions";
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
+import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides";
+import { SelectionToolbar } from "@/components/Editor/SelectionToolbar";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
+import { cloneCanonicalModel } from "@/lib/editor-canonical";
 import { EDITOR_SNAP_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
 
@@ -119,6 +122,7 @@ function useElementImage(element: LabelElement) {
 
         async function load() {
             if (typeof window === "undefined") return;
+
             if ((element.type === "barcode" || element.type === "qr") && element.content) {
                 try {
                     let source = generatedCodeCache.get(sourceKey);
@@ -165,6 +169,17 @@ function useElementImage(element: LabelElement) {
     return image;
 }
 
+function applyTextTransform(content: string, transform?: LabelElement["textTransform"]) {
+    switch (transform) {
+        case "uppercase":
+            return content.toUpperCase();
+        case "lowercase":
+            return content.toLowerCase();
+        default:
+            return content;
+    }
+}
+
 function computeImagePlacement(element: ImageElement, frameWidth: number, frameHeight: number, image: HTMLImageElement) {
     if (element.imageFit === "stretch") {
         return { x: 0, y: 0, width: frameWidth, height: frameHeight };
@@ -183,12 +198,27 @@ function computeImagePlacement(element: ImageElement, frameWidth: number, frameH
         width = frameHeight * imageRatio;
     }
 
-    return {
-        x: (frameWidth - width) / 2,
-        y: (frameHeight - height) / 2,
-        width,
-        height,
-    };
+    const horizontalOffset = element.imageAlignX === "left"
+        ? 0
+        : element.imageAlignX === "right"
+            ? frameWidth - width
+            : (frameWidth - width) / 2;
+
+    const verticalOffset = element.imageAlignY === "top"
+        ? 0
+        : element.imageAlignY === "bottom"
+            ? frameHeight - height
+            : (frameHeight - height) / 2;
+
+    return { x: horizontalOffset, y: verticalOffset, width, height };
+}
+
+function getCommonValue<T>(values: T[]) {
+    if (values.length === 0) {
+        return undefined;
+    }
+
+    return values.every((value) => value === values[0]) ? values[0] : undefined;
 }
 
 function ElementNode({
@@ -198,8 +228,10 @@ function ElementNode({
     width,
     height,
     selected,
+    dimmed,
     draggable,
     onSelect,
+    onDoubleSelect,
     onDragStart,
     onDragMove,
     onDragEnd,
@@ -212,11 +244,13 @@ function ElementNode({
     width: number;
     height: number;
     selected: boolean;
+    dimmed: boolean;
     draggable: boolean;
-    onSelect: () => void;
+    onSelect: (event: Konva.KonvaEventObject<MouseEvent>) => void;
+    onDoubleSelect: () => void;
     onDragStart: () => void;
     onDragMove: (event: Konva.KonvaEventObject<DragEvent>) => void;
-    onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => void;
+    onDragEnd: () => void;
     registerRef: (node: Konva.Group | null) => void;
     viewport: EditorViewport;
 }) {
@@ -224,6 +258,12 @@ function ElementNode({
     const rotation = element.rotation ?? 0;
     const strokeWidthPx = element.stroke && (element.strokeWidthMm ?? 0) > 0
         ? UnitConverter.mmToProfile(element.strokeWidthMm || 0.4, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+    const frameStrokeWidthPx = element.type === "image" && (element.frameStrokeWidthMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(element.frameStrokeWidthMm || 0, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+    const cornerRadiusPx = element.type === "image" && (element.cornerRadiusMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(element.cornerRadiusMm || 0, ScreenPreviewProfile, viewport.zoom)
         : 0;
 
     return (
@@ -235,10 +275,13 @@ function ElementNode({
             height={height}
             offsetX={width / 2}
             offsetY={height / 2}
+            opacity={dimmed ? 0.3 : 1}
             rotation={rotation}
             draggable={draggable}
-            onClick={(event) => { event.cancelBubble = true; onSelect(); }}
-            onTap={(event) => { event.cancelBubble = true; onSelect(); }}
+            onClick={(event) => { event.cancelBubble = true; onSelect(event); }}
+            onTap={(event) => { event.cancelBubble = true; onSelect(event as unknown as Konva.KonvaEventObject<MouseEvent>); }}
+            onDblClick={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
+            onDblTap={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
             onDragStart={onDragStart}
             onDragMove={onDragMove}
             onDragEnd={onDragEnd}
@@ -247,24 +290,20 @@ function ElementNode({
                 <KonvaText
                     width={width}
                     height={height}
-                    text={element.content || "Text"}
+                    text={applyTextTransform(element.content || "Text", element.textTransform)}
                     fontFamily={element.font || "Arial"}
                     fontSize={UnitConverter.mmToProfile((element.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
                     fontStyle={element.fontWeight === "bold" ? "bold" : "normal"}
                     fill={element.fill || "#0f172a"}
                     align={element.textAlign || "left"}
-                    verticalAlign="middle"
+                    verticalAlign={element.verticalAlign || "middle"}
+                    lineHeight={element.lineHeight || 1}
+                    letterSpacing={UnitConverter.mmToProfile((element.letterSpacingPt || 0) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
                 />
             ) : null}
 
             {element.type === "rect" ? (
-                <Rect
-                    width={width}
-                    height={height}
-                    fill={element.fill ?? undefined}
-                    stroke={element.stroke ?? undefined}
-                    strokeWidth={strokeWidthPx}
-                />
+                <Rect width={width} height={height} fill={element.fill ?? undefined} stroke={element.stroke ?? undefined} strokeWidth={strokeWidthPx} cornerRadius={4} />
             ) : null}
 
             {element.type === "ellipse" ? (
@@ -282,9 +321,9 @@ function ElementNode({
             {element.type === "line" ? (
                 element.stroke && (element.strokeWidthMm ?? 0) > 0 ? (
                     element.lineDirection === "vertical" ? (
-                        <Rect x={width / 2 - Math.max(2, width) / 2} width={Math.max(2, width)} height={height} fill={element.stroke} />
+                        <Rect x={width / 2 - Math.max(2, strokeWidthPx) / 2} width={Math.max(2, strokeWidthPx)} height={height} fill={element.stroke} />
                     ) : (
-                        <Rect y={height / 2 - Math.max(2, height) / 2} width={width} height={Math.max(2, height)} fill={element.stroke} />
+                        <Rect y={height / 2 - Math.max(2, strokeWidthPx) / 2} width={width} height={Math.max(2, strokeWidthPx)} fill={element.stroke} />
                     )
                 ) : (
                     <Rect width={width} height={height} fill="#00000000" strokeEnabled={false} />
@@ -296,13 +335,25 @@ function ElementNode({
             ) : null}
 
             {element.type === "image" ? (
-                image ? (() => {
-                    const placement = computeImagePlacement(element as ImageElement, width, height, image);
-                    return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} />;
-                })() : <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} />
+                <>
+                    {(element.frameFill || element.frameStroke) ? (
+                        <Rect
+                            width={width}
+                            height={height}
+                            fill={element.frameFill ?? undefined}
+                            stroke={element.frameStroke ?? undefined}
+                            strokeWidth={frameStrokeWidthPx}
+                            cornerRadius={cornerRadiusPx}
+                        />
+                    ) : null}
+                    {image ? (() => {
+                        const placement = computeImagePlacement(element as ImageElement, width, height, image);
+                        return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} cornerRadius={cornerRadiusPx} />;
+                    })() : <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} cornerRadius={cornerRadiusPx} />}
+                </>
             ) : null}
 
-            {selected ? <Rect width={width} height={height} stroke="#3b82f6" strokeWidth={1} dash={[6, 4]} listening={false} /> : null}
+            {selected ? <Rect width={width} height={height} stroke="#3b82f6" strokeWidth={1} dash={[6, 4]} listening={false} cornerRadius={element.type === "image" ? cornerRadiusPx : 0} /> : null}
         </Group>
     );
 }
@@ -312,30 +363,45 @@ export function EditorCanvasStage() {
     const stageRef = useRef<Konva.Stage | null>(null);
     const transformerRef = useRef<Konva.Transformer | null>(null);
     const elementRefs = useRef<Record<string, Konva.Group | null>>({});
-    const panStateRef = useRef<{ dragging: boolean; x: number; y: number; offsetX: number; offsetY: number }>({
-        dragging: false,
-        x: 0,
-        y: 0,
-        offsetX: 0,
-        offsetY: 0,
-    });
+    const panStateRef = useRef({ dragging: false, x: 0, y: 0, offsetX: 0, offsetY: 0 });
     const dragSnapshotTakenRef = useRef(false);
     const lastAutoFitRef = useRef<{ width: number; height: number; labelWidthPx: number; labelHeightPx: number } | null>(null);
+    const dragSessionRef = useRef<{
+        elementId: string;
+        selectedIds: string[];
+        positions: Record<string, { xMm: number; yMm: number }>;
+    } | null>(null);
 
     const [guides, setGuides] = useState<GuideLine[]>([]);
     const [guideHint, setGuideHint] = useState<string | null>(null);
+    const [marquee, setMarquee] = useState<{ x: number; y: number; width: number; height: number; additive: boolean } | null>(null);
 
     const model = useEditorStore((state) => state.model);
-    const selectedElementId = useEditorStore((state) => state.selection.selectedElementId);
+    const selection = useEditorStore((state) => state.selection);
     const activeTool = useEditorStore((state) => state.ui.activeTool);
     const isSpacePanning = useEditorStore((state) => state.ui.isSpacePanning);
     const viewport = useEditorStore((state) => state.viewport);
     const setViewport = useEditorStore((state) => state.setViewport);
-    const setSelectedElementId = useEditorStore((state) => state.setSelectedElementId);
     const setCanvasSize = useEditorStore((state) => state.setCanvasSize);
     const addElement = useEditorStore((state) => state.addElement);
+    const applyModel = useEditorStore((state) => state.applyModel);
+    const updateSelectedElements = useEditorStore((state) => state.updateSelectedElements);
     const updateElement = useEditorStore((state) => state.updateElement);
     const captureHistory = useEditorStore((state) => state.captureHistory);
+    const selectOnly = useEditorStore((state) => state.selectOnly);
+    const toggleSelectedElement = useEditorStore((state) => state.toggleSelectedElement);
+    const clearSelection = useEditorStore((state) => state.clearSelection);
+    const selectInBounds = useEditorStore((state) => state.selectInBounds);
+    const setAlignmentReference = useEditorStore((state) => state.setAlignmentReference);
+    const alignSelected = useEditorStore((state) => state.alignSelected);
+    const distributeSelected = useEditorStore((state) => state.distributeSelected);
+    const matchSelectedSize = useEditorStore((state) => state.matchSelectedSize);
+    const reorderSelected = useEditorStore((state) => state.reorderSelected);
+    const rotateSelected = useEditorStore((state) => state.rotateSelected);
+    const duplicateSelected = useEditorStore((state) => state.duplicateSelected);
+    const removeSelected = useEditorStore((state) => state.removeSelected);
+    const groupSelected = useEditorStore((state) => state.groupSelected);
+    const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
 
     const labelWidthPx = UnitConverter.mmToProfile(model.dimensions.widthMm, ScreenPreviewProfile, 1);
     const labelHeightPx = UnitConverter.mmToProfile(model.dimensions.heightMm, ScreenPreviewProfile, 1);
@@ -343,6 +409,86 @@ export function EditorCanvasStage() {
     const scaledLabelHeight = labelHeightPx * viewport.zoom;
     const labelX = (size.width - scaledLabelWidth) / 2 + viewport.offsetX;
     const labelY = (size.height - scaledLabelHeight) / 2 + viewport.offsetY;
+
+    const selectedSet = useMemo(() => new Set(selection.selectedElementIds), [selection.selectedElementIds]);
+    const selectedElements = useMemo(() => model.elements.filter((element) => selectedSet.has(element.id)), [model.elements, selectedSet]);
+    const selectedGroup = useMemo(() => selectionMatchesGroup(model, selection.selectedElementIds), [model, selection.selectedElementIds]);
+    const selectionBounds = useMemo(() => computeSelectionBounds(model, selection.selectedElementIds), [model, selection.selectedElementIds]);
+    const primarySelectedElement = useMemo(() => {
+        if (selection.selectedElementIds.length !== 1) {
+            return null;
+        }
+
+        const targetId = selection.primarySelectedElementId ?? selection.selectedElementIds[0];
+        return model.elements.find((element) => element.id === targetId) ?? null;
+    }, [model.elements, selection.primarySelectedElementId, selection.selectedElementIds]);
+
+    const selectionSummary = useMemo(() => {
+        if (selectedGroup) {
+            return `Group: ${selectedGroup.groupName}`;
+        }
+        if (selectedElements.length === 1) {
+            return selectedElements[0].name || selectedElements[0].type;
+        }
+        return `${selectedElements.length} elements`;
+    }, [selectedElements, selectedGroup]);
+
+    const toolbarAnchor = useMemo(() => {
+        if (!selectionBounds) {
+            return null;
+        }
+
+        const left = labelX + UnitConverter.mmToProfile(selectionBounds.xMm + selectionBounds.widthMm / 2, ScreenPreviewProfile, viewport.zoom);
+        const topEdge = labelY + UnitConverter.mmToProfile(selectionBounds.yMm, ScreenPreviewProfile, viewport.zoom);
+        const bottomEdge = labelY + UnitConverter.mmToProfile(selectionBounds.yMm + selectionBounds.heightMm, ScreenPreviewProfile, viewport.zoom);
+        const placement = topEdge > 112 ? "top" : "bottom";
+
+        return {
+            left,
+            top: placement === "top" ? topEdge : bottomEdge,
+            placement,
+        } as const;
+    }, [labelX, labelY, selectionBounds, viewport.zoom]);
+
+    const textStyleState = useMemo(() => {
+        if (selectedElements.length === 0 || !selectedElements.every((element) => element.type === "text")) {
+            return null;
+        }
+
+        return {
+            fontSizePt: getCommonValue(selectedElements.map((element) => element.fontSizePt)),
+            fontWeight: getCommonValue(selectedElements.map((element) => element.fontWeight)),
+            textAlign: getCommonValue(selectedElements.map((element) => element.textAlign)),
+            lineHeight: getCommonValue(selectedElements.map((element) => element.lineHeight)),
+            letterSpacingPt: getCommonValue(selectedElements.map((element) => element.letterSpacingPt)),
+            textTransform: getCommonValue(selectedElements.map((element) => element.textTransform)),
+        };
+    }, [selectedElements]);
+
+    const imageStyleState = useMemo(() => {
+        if (selectedElements.length === 0 || !selectedElements.every((element) => element.type === "image")) {
+            return null;
+        }
+
+        return {
+            imageFit: getCommonValue(selectedElements.map((element) => element.imageFit)),
+            imageAlignX: getCommonValue(selectedElements.map((element) => element.imageAlignX)),
+            imageAlignY: getCommonValue(selectedElements.map((element) => element.imageAlignY)),
+            cornerRadiusMm: getCommonValue(selectedElements.map((element) => element.cornerRadiusMm)),
+        };
+    }, [selectedElements]);
+
+    const shapeStyleState = useMemo(() => {
+        if (selectedElements.length === 0 || !selectedElements.every((element) => element.type === "rect" || element.type === "ellipse" || element.type === "line")) {
+            return null;
+        }
+
+        return {
+            fill: getCommonValue(selectedElements.map((element) => element.fill ?? null)),
+            stroke: getCommonValue(selectedElements.map((element) => element.stroke ?? null)),
+            strokeWidthMm: getCommonValue(selectedElements.map((element) => element.strokeWidthMm)),
+        };
+    }, [selectedElements]);
 
     const setFitViewport = useCallback(() => {
         const next = fitViewportToContainer(labelWidthPx, labelHeightPx, size.width, size.height, FIT_PADDING);
@@ -355,14 +501,14 @@ export function EditorCanvasStage() {
 
     useEffect(() => {
         if (!transformerRef.current) return;
-        const node = selectedElementId ? elementRefs.current[selectedElementId] : null;
+        const node = primarySelectedElement ? elementRefs.current[primarySelectedElement.id] : null;
         if (node) {
             transformerRef.current.nodes([node]);
         } else {
             transformerRef.current.nodes([]);
         }
         transformerRef.current.getLayer()?.batchDraw();
-    }, [selectedElementId, model.elements.length]);
+    }, [primarySelectedElement, model.elements.length]);
 
     useEffect(() => {
         const previous = lastAutoFitRef.current;
@@ -375,12 +521,7 @@ export function EditorCanvasStage() {
             setFitViewport();
         }
 
-        lastAutoFitRef.current = {
-            width: size.width,
-            height: size.height,
-            labelWidthPx,
-            labelHeightPx,
-        };
+        lastAutoFitRef.current = { width: size.width, height: size.height, labelWidthPx, labelHeightPx };
     }, [labelHeightPx, labelWidthPx, setFitViewport, size.height, size.width]);
 
     const handleWheel = (event: Konva.KonvaEventObject<WheelEvent>) => {
@@ -393,15 +534,48 @@ export function EditorCanvasStage() {
         const scaleBy = 1.05;
         const nextZoom = event.evt.deltaY > 0 ? viewport.zoom / scaleBy : viewport.zoom * scaleBy;
         const clampedZoom = Math.max(0.2, Math.min(4, nextZoom));
-        const mousePointTo = {
-            x: (pointer.x - labelX) / viewport.zoom,
-            y: (pointer.y - labelY) / viewport.zoom,
-        };
+        const mousePointTo = { x: (pointer.x - labelX) / viewport.zoom, y: (pointer.y - labelY) / viewport.zoom };
 
         const nextOffsetX = pointer.x - (size.width - labelWidthPx * clampedZoom) / 2 - mousePointTo.x * clampedZoom;
         const nextOffsetY = pointer.y - (size.height - labelHeightPx * clampedZoom) / 2 - mousePointTo.y * clampedZoom;
         setViewport({ zoom: clampedZoom, offsetX: nextOffsetX, offsetY: nextOffsetY });
     };
+
+    const stopPan = () => {
+        panStateRef.current = { dragging: false, x: 0, y: 0, offsetX: 0, offsetY: 0 };
+    };
+
+    const finalizeMarquee = useCallback(() => {
+        if (!marquee) return;
+
+        const width = Math.abs(marquee.width);
+        const height = Math.abs(marquee.height);
+        const x = marquee.width >= 0 ? marquee.x : marquee.x + marquee.width;
+        const y = marquee.height >= 0 ? marquee.y : marquee.y + marquee.height;
+        setMarquee(null);
+
+        if (width < 4 || height < 4) {
+            clearSelection();
+            return;
+        }
+
+        const minX = Math.max(labelX, x);
+        const minY = Math.max(labelY, y);
+        const maxX = Math.min(labelX + scaledLabelWidth, x + width);
+        const maxY = Math.min(labelY + scaledLabelHeight, y + height);
+
+        if (maxX <= minX || maxY <= minY) {
+            clearSelection();
+            return;
+        }
+
+        selectInBounds({
+            xMm: UnitConverter.profileToMm((minX - labelX) / viewport.zoom, ScreenPreviewProfile, 1),
+            yMm: UnitConverter.profileToMm((minY - labelY) / viewport.zoom, ScreenPreviewProfile, 1),
+            widthMm: UnitConverter.profileToMm((maxX - minX) / viewport.zoom, ScreenPreviewProfile, 1),
+            heightMm: UnitConverter.profileToMm((maxY - minY) / viewport.zoom, ScreenPreviewProfile, 1),
+        }, { additive: marquee.additive });
+    }, [clearSelection, labelX, labelY, marquee, scaledLabelHeight, scaledLabelWidth, selectInBounds, viewport.zoom]);
 
     const handleStagePointerDown = (event: Konva.KonvaEventObject<MouseEvent>) => {
         const shouldPan = activeTool === "pan" || isSpacePanning || event.evt.button === 1;
@@ -426,31 +600,72 @@ export function EditorCanvasStage() {
         if (!pointer) return;
 
         const withinLabel = pointer.x >= labelX && pointer.x <= labelX + scaledLabelWidth && pointer.y >= labelY && pointer.y <= labelY + scaledLabelHeight;
-        if (activeTool === "select" || !withinLabel) {
-            setSelectedElementId(null);
+        if (!withinLabel) {
+            clearSelection();
             return;
         }
 
-        const xMm = UnitConverter.profileToMm((pointer.x - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
-        const yMm = UnitConverter.profileToMm((pointer.y - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
-        addElement(activeTool, {
-            xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
-            yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
+        if (activeTool !== "select") {
+            const xMm = UnitConverter.profileToMm((pointer.x - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
+            const yMm = UnitConverter.profileToMm((pointer.y - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
+            addElement(activeTool, {
+                xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
+                yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
+            });
+            return;
+        }
+
+        setMarquee({
+            x: pointer.x,
+            y: pointer.y,
+            width: 0,
+            height: 0,
+            additive: event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey,
         });
     };
 
     const handleStagePointerMove = (event: Konva.KonvaEventObject<MouseEvent>) => {
-        if (!panStateRef.current.dragging) return;
-        const dx = event.evt.clientX - panStateRef.current.x;
-        const dy = event.evt.clientY - panStateRef.current.y;
-        setViewport({
-            offsetX: panStateRef.current.offsetX + dx,
-            offsetY: panStateRef.current.offsetY + dy,
-        });
+        if (panStateRef.current.dragging) {
+            const dx = event.evt.clientX - panStateRef.current.x;
+            const dy = event.evt.clientY - panStateRef.current.y;
+            setViewport({ offsetX: panStateRef.current.offsetX + dx, offsetY: panStateRef.current.offsetY + dy });
+            return;
+        }
+
+        if (!marquee) return;
+        const pointer = stageRef.current?.getPointerPosition();
+        if (!pointer) return;
+
+        setMarquee((current) => current ? { ...current, width: pointer.x - current.x, height: pointer.y - current.y } : current);
     };
 
-    const stopPan = () => {
-        panStateRef.current = { dragging: false, x: 0, y: 0, offsetX: 0, offsetY: 0 };
+    const handleStagePointerUp = () => {
+        stopPan();
+        finalizeMarquee();
+    };
+
+    const handleElementSelect = (element: LabelElement, event: Konva.KonvaEventObject<MouseEvent>) => {
+        const relatedIds = element.groupId && !selection.activeEditingGroupId ? getGroupMemberIds(model, element.groupId) : [element.id];
+        const additive = event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey;
+
+        if (selection.activeEditingGroupId && element.groupId !== selection.activeEditingGroupId) {
+            return;
+        }
+
+        if (additive) {
+            toggleSelectedElement(element.id, relatedIds);
+            return;
+        }
+
+        selectOnly(relatedIds, { primaryId: element.id, activeEditingGroupId: selection.activeEditingGroupId ?? null });
+    };
+
+    const handleElementDoubleSelect = (element: LabelElement) => {
+        if (!element.groupId) {
+            return;
+        }
+
+        selectOnly([element.id], { primaryId: element.id, activeEditingGroupId: element.groupId });
     };
 
     const renderableElements = useMemo(() => model.elements.filter((element) => element.visible !== false), [model.elements]);
@@ -464,8 +679,8 @@ export function EditorCanvasStage() {
                 height={size.height}
                 onMouseDown={handleStagePointerDown}
                 onMouseMove={handleStagePointerMove}
-                onMouseUp={stopPan}
-                onMouseLeave={stopPan}
+                onMouseUp={handleStagePointerUp}
+                onMouseLeave={handleStagePointerUp}
                 onWheel={handleWheel}
             >
                 <Layer>
@@ -485,27 +700,9 @@ export function EditorCanvasStage() {
 
                     {guides.map((guide, index) => (
                         guide.orientation === "vertical" ? (
-                            <Rect
-                                key={`guide-v-${index}`}
-                                x={labelX + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)}
-                                y={labelY}
-                                width={1}
-                                height={scaledLabelHeight}
-                                fill="#38bdf8"
-                                opacity={0.8}
-                                listening={false}
-                            />
+                            <Rect key={`guide-v-${index}`} x={labelX + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)} y={labelY} width={1} height={scaledLabelHeight} fill="#38bdf8" opacity={0.8} listening={false} />
                         ) : (
-                            <Rect
-                                key={`guide-h-${index}`}
-                                x={labelX}
-                                y={labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)}
-                                width={scaledLabelWidth}
-                                height={1}
-                                fill="#38bdf8"
-                                opacity={0.8}
-                                listening={false}
-                            />
+                            <Rect key={`guide-h-${index}`} x={labelX} y={labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)} width={scaledLabelWidth} height={1} fill="#38bdf8" opacity={0.8} listening={false} />
                         )
                     ))}
 
@@ -514,7 +711,6 @@ export function EditorCanvasStage() {
                         const y = labelY + UnitConverter.mmToProfile(element.yMm, ScreenPreviewProfile, viewport.zoom);
                         const width = Math.max(4, UnitConverter.mmToProfile(element.widthMm, ScreenPreviewProfile, viewport.zoom));
                         const height = Math.max(4, UnitConverter.mmToProfile(element.heightMm, ScreenPreviewProfile, viewport.zoom));
-                        const draggable = activeTool === "select" && !isSpacePanning && !element.locked;
 
                         return (
                             <ElementNode
@@ -524,43 +720,71 @@ export function EditorCanvasStage() {
                                 y={y}
                                 width={width}
                                 height={height}
-                                selected={selectedElementId === element.id}
-                                draggable={draggable}
+                                selected={selectedSet.has(element.id)}
+                                dimmed={Boolean(selection.activeEditingGroupId && element.groupId !== selection.activeEditingGroupId)}
+                                draggable={activeTool === "select" && !isSpacePanning && element.locked !== true && selectedSet.has(element.id)}
                                 viewport={viewport}
                                 registerRef={(node) => { elementRefs.current[element.id] = node; }}
-                                onSelect={() => setSelectedElementId(element.id)}
+                                onSelect={(evt) => handleElementSelect(element, evt)}
+                                onDoubleSelect={() => handleElementDoubleSelect(element)}
                                 onDragStart={() => {
+                                    const movingIds = selectedSet.has(element.id) ? selection.selectedElementIds : [element.id];
+                                    dragSessionRef.current = {
+                                        elementId: element.id,
+                                        selectedIds: movingIds,
+                                        positions: Object.fromEntries(model.elements.filter((item) => movingIds.includes(item.id)).map((item) => [item.id, { xMm: item.xMm, yMm: item.yMm }])),
+                                    };
+
                                     if (!dragSnapshotTakenRef.current) {
                                         captureHistory();
                                         dragSnapshotTakenRef.current = true;
                                     }
                                 }}
                                 onDragMove={(evt) => {
-                                    const current = model.elements.find((item) => item.id === element.id);
-                                    if (!current) return;
+                                    const session = dragSessionRef.current;
+                                    if (!session) return;
+
+                                    const draggedOrigin = session.positions[element.id];
+                                    if (!draggedOrigin) return;
+
                                     const proposedXmm = UnitConverter.profileToMm((evt.target.x() - width / 2 - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
                                     const proposedYmm = UnitConverter.profileToMm((evt.target.y() - height / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
-                                    const snapResult = computeElementSnap({
-                                        model,
-                                        element: current,
-                                        proposedXmm,
-                                        proposedYmm,
+
+                                    let deltaX = proposedXmm - draggedOrigin.xMm;
+                                    let deltaY = proposedYmm - draggedOrigin.yMm;
+
+                                    if (session.selectedIds.length === 1) {
+                                        const current = model.elements.find((item) => item.id === element.id);
+                                        if (!current) return;
+                                        const snapResult = computeElementSnap({ model, element: current, proposedXmm, proposedYmm });
+                                        deltaX = snapResult.xMm - draggedOrigin.xMm;
+                                        deltaY = snapResult.yMm - draggedOrigin.yMm;
+                                        evt.target.position({
+                                            x: labelX + UnitConverter.mmToProfile(snapResult.xMm, ScreenPreviewProfile, viewport.zoom) + width / 2,
+                                            y: labelY + UnitConverter.mmToProfile(snapResult.yMm, ScreenPreviewProfile, viewport.zoom) + height / 2,
+                                        });
+                                        setGuides(snapResult.guides);
+                                        setGuideHint(snapResult.hint ?? null);
+                                    } else {
+                                        setGuides([]);
+                                        setGuideHint(null);
+                                    }
+
+                                    let nextModel = cloneCanonicalModel(model);
+                                    session.selectedIds.forEach((id) => {
+                                        const origin = session.positions[id];
+                                        if (!origin) return;
+                                        nextModel = updateElementInModel(nextModel, id, {
+                                            xMm: UnitConverter.toPersisted(origin.xMm + deltaX),
+                                            yMm: UnitConverter.toPersisted(origin.yMm + deltaY),
+                                        });
                                     });
-                                    const snappedX = labelX + UnitConverter.mmToProfile(snapResult.xMm, ScreenPreviewProfile, viewport.zoom) + width / 2;
-                                    const snappedY = labelY + UnitConverter.mmToProfile(snapResult.yMm, ScreenPreviewProfile, viewport.zoom) + height / 2;
-                                    evt.target.position({ x: snappedX, y: snappedY });
-                                    setGuides(snapResult.guides);
-                                    setGuideHint(snapResult.hint ?? null);
-                                    updateElement(element.id, { xMm: UnitConverter.toPersisted(snapResult.xMm), yMm: UnitConverter.toPersisted(snapResult.yMm) }, { recordHistory: false });
+
+                                    applyModel(nextModel, { recordHistory: false });
                                 }}
-                                onDragEnd={(evt) => {
-                                    const posX = UnitConverter.profileToMm((evt.target.x() - width / 2 - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
-                                    const posY = UnitConverter.profileToMm((evt.target.y() - height / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
-                                    updateElement(element.id, {
-                                        xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posX, EDITOR_SNAP_MM)),
-                                        yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(posY, EDITOR_SNAP_MM)),
-                                    }, { recordHistory: false });
+                                onDragEnd={() => {
                                     dragSnapshotTakenRef.current = false;
+                                    dragSessionRef.current = null;
                                     setGuides([]);
                                     setGuideHint(null);
                                 }}
@@ -568,19 +792,41 @@ export function EditorCanvasStage() {
                         );
                     })}
 
+                    {selectionBounds && selection.selectedElementIds.length > 1 ? (
+                        <Rect
+                            x={labelX + UnitConverter.mmToProfile(selectionBounds.xMm, ScreenPreviewProfile, viewport.zoom)}
+                            y={labelY + UnitConverter.mmToProfile(selectionBounds.yMm, ScreenPreviewProfile, viewport.zoom)}
+                            width={UnitConverter.mmToProfile(selectionBounds.widthMm, ScreenPreviewProfile, viewport.zoom)}
+                            height={UnitConverter.mmToProfile(selectionBounds.heightMm, ScreenPreviewProfile, viewport.zoom)}
+                            stroke="#3b82f6"
+                            strokeWidth={1}
+                            dash={[8, 4]}
+                            listening={false}
+                        />
+                    ) : null}
+
+                    {marquee ? (
+                        <Rect
+                            x={marquee.width >= 0 ? marquee.x : marquee.x + marquee.width}
+                            y={marquee.height >= 0 ? marquee.y : marquee.y + marquee.height}
+                            width={Math.abs(marquee.width)}
+                            height={Math.abs(marquee.height)}
+                            fill="rgba(59,130,246,0.12)"
+                            stroke="#60a5fa"
+                            dash={[6, 4]}
+                            listening={false}
+                        />
+                    ) : null}
+
                     <Transformer
                         ref={transformerRef}
                         rotateEnabled={false}
-                        enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]}
-                        boundBoxFunc={(oldBox, newBox) => ({
-                            ...newBox,
-                            width: Math.max(8, newBox.width),
-                            height: Math.max(8, newBox.height),
-                        })}
+                        enabledAnchors={selection.selectedElementIds.length === 1 ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"] : []}
+                        boundBoxFunc={(oldBox, newBox) => ({ ...newBox, width: Math.max(8, newBox.width), height: Math.max(8, newBox.height) })}
                         onTransformStart={() => captureHistory()}
                         onTransformEnd={() => {
-                            if (!selectedElementId) return;
-                            const node = elementRefs.current[selectedElementId];
+                            if (!primarySelectedElement) return;
+                            const node = elementRefs.current[primarySelectedElement.id];
                             if (!node) return;
                             const scaleX = node.scaleX();
                             const scaleY = node.scaleY();
@@ -590,16 +836,45 @@ export function EditorCanvasStage() {
                             const yMm = UnitConverter.toPersisted(UnitConverter.snapToGrid(UnitConverter.profileToMm((node.y() - (node.height() * scaleY) / 2 - labelY) / viewport.zoom, ScreenPreviewProfile, 1), EDITOR_SNAP_MM));
                             node.scaleX(1);
                             node.scaleY(1);
-                            updateElement(selectedElementId, {
-                                xMm: Math.max(0, xMm),
-                                yMm: Math.max(0, yMm),
-                                widthMm: Math.max(1, widthMm),
-                                heightMm: Math.max(1, heightMm),
-                            }, { recordHistory: false });
+                            updateElement(primarySelectedElement.id, { xMm: Math.max(0, xMm), yMm: Math.max(0, yMm), widthMm: Math.max(1, widthMm), heightMm: Math.max(1, heightMm) }, { recordHistory: false });
                         }}
                     />
                 </Layer>
             </Stage>
+
+            {toolbarAnchor && selectedElements.length > 0 ? (
+                <SelectionToolbar
+                    anchor={toolbarAnchor}
+                    summary={selectionSummary}
+                    canGroup={selection.selectedElementIds.length > 1 && !selectedGroup}
+                    canUngroup={Boolean(selectedGroup)}
+                    canDistribute={selectedElements.length >= 3}
+                    canRotate={selectedElements.length === 1}
+                    isHidden={selectedElements.every((element) => element.visible === false)}
+                    isLocked={selectedElements.every((element) => element.locked === true)}
+                    alignmentReference={selection.alignmentReference}
+                    textStyle={textStyleState}
+                    imageStyle={imageStyleState}
+                    shapeStyle={shapeStyleState}
+                    onSetAlignmentReference={setAlignmentReference}
+                    onAlign={alignSelected}
+                    onDistribute={distributeSelected}
+                    onMatchSize={matchSelectedSize}
+                    onReorder={reorderSelected}
+                    onToggleVisibility={() => updateSelectedElements({ visible: selectedElements.every((element) => element.visible !== false) ? false : true })}
+                    onToggleLock={() => updateSelectedElements({ locked: selectedElements.every((element) => element.locked === true) ? false : true })}
+                    onRotateLeft={() => rotateSelected("left")}
+                    onRotateRight={() => rotateSelected("right")}
+                    onGroup={groupSelected}
+                    onUngroup={ungroupSelectedGroup}
+                    onDuplicate={duplicateSelected}
+                    onDelete={removeSelected}
+                    onUpdateTextStyle={(updates) => updateSelectedElements(updates)}
+                    onUpdateImageStyle={(updates) => updateSelectedElements(updates)}
+                    onUpdateShapeStyle={(updates) => updateSelectedElements(updates)}
+                />
+            ) : null}
+
             {guideHint ? (
                 <div className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-100">
                     {guideHint}

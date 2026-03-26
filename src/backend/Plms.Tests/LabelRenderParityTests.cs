@@ -115,4 +115,57 @@ public class LabelRenderParityTests
         Assert.InRange(width, expectedWidth - 0.75d, expectedWidth + 0.75d);
         Assert.InRange(height, expectedHeight - 0.75d, expectedHeight + 0.75d);
     }
+
+    [Fact]
+    public void GeneratePdf_WithAdvancedTextAndImageStyling_ShouldSucceed()
+    {
+        var service = new LabelRenderService();
+        var model = new CanonicalLabelModel
+        {
+            Name = "Styled",
+            Dimensions = new LabelDimensions { WidthMm = 100, HeightMm = 80 },
+            Elements =
+            [
+                new LabelElement
+                {
+                    Id = "text-1",
+                    Type = "text",
+                    XMm = 5,
+                    YMm = 5,
+                    WidthMm = 40,
+                    HeightMm = 20,
+                    Content = "Styled Text",
+                    TextAlign = "center",
+                    VerticalAlign = "bottom",
+                    LineHeight = 1.2f,
+                    LetterSpacingPt = 0.4f,
+                    TextTransform = "uppercase",
+                    FontWeight = "bold",
+                    Fill = "#111827"
+                },
+                new LabelElement
+                {
+                    Id = "image-1",
+                    Type = "image",
+                    XMm = 50,
+                    YMm = 10,
+                    WidthMm = 25,
+                    HeightMm = 25,
+                    Content = OnePixelPngDataUri,
+                    ImageFit = "cover",
+                    ImageAlignX = "right",
+                    ImageAlignY = "bottom",
+                    CornerRadiusMm = 2,
+                    FrameFill = "#e2e8f0",
+                    FrameStroke = "#0f172a",
+                    FrameStrokeWidthMm = 0.4f
+                }
+            ]
+        };
+
+        var pdf = service.GeneratePdf(model);
+
+        Assert.NotNull(pdf);
+        Assert.True(pdf.Length > 1024, $"Expected styled PDF to be non-trivial, got {pdf.Length} bytes.");
+    }
 }
