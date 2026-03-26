@@ -72,9 +72,11 @@ public class LabelRenderParityTests
         };
 
         var pdf = service.GeneratePdf(model);
+        var text = Encoding.ASCII.GetString(pdf);
 
         Assert.NotNull(pdf);
         Assert.True(pdf.Length > 1024, $"Expected generated PDF to be non-trivial, got {pdf.Length} bytes.");
+        Assert.Matches(@"/Subtype\s*/Image", text);
     }
 
     [Fact]
@@ -164,8 +166,10 @@ public class LabelRenderParityTests
         };
 
         var pdf = service.GeneratePdf(model);
+        var text = Encoding.ASCII.GetString(pdf);
 
         Assert.NotNull(pdf);
         Assert.True(pdf.Length > 1024, $"Expected styled PDF to be non-trivial, got {pdf.Length} bytes.");
+        Assert.Matches(@"/Subtype\s*/Image", text);
     }
 }

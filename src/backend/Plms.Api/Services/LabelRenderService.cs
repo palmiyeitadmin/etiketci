@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
 using Plms.Api.Models.Canonical;
 using SkiaSharp;
-using System.Globalization;
-using System.Security;
 using System.Text;
 using ZXing;
 using ZXing.Common;
@@ -204,25 +202,36 @@ namespace Plms.Api.Services
 
         private void RenderImage(IContainer container, LabelElement element)
         {
-            if (TryResolveAssetImage(element, out var assetMediaType, out var assetBytes))
+            if (TryResolveImageSource(element, out var mediaType, out var bytes))
             {
-                container.Svg(BuildImageFrameSvg(
-                    $"data:{assetMediaType};base64,{Convert.ToBase64String(assetBytes)}",
-                    element));
-                return;
-            }
+                var framedContainer = ApplyImageFrame(container, element);
+                var alignedContainer = ApplyHorizontalAlignment(
+                    ApplyVerticalAlignment(framedContainer, NormalizeImageAlignY(element.ImageAlignY)),
+                    NormalizeImageAlignX(element.ImageAlignX));
 
-            if (TryDecodeDataUri(element.Content, out var mediaType, out var bytes))
-            {
-                container.Svg(BuildImageFrameSvg(
-                    string.Equals(mediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase)
-                        ? $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}"
-                        : element.Content,
-                    element));
+                if (string.Equals(mediaType, "image/svg+xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    var svg = alignedContainer.Svg(Encoding.UTF8.GetString(bytes));
+                    ApplyImageFit(svg, element.ImageFit);
+                    return;
+                }
+
+                var image = alignedContainer.Image(bytes);
+                ApplyImageFit(image, element.ImageFit);
                 return;
             }
 
             RenderFallback(container, "IMAGE", Colors.Blue.Medium);
+        }
+
+        private bool TryResolveImageSource(LabelElement element, out string mediaType, out byte[] bytes)
+        {
+            if (TryResolveAssetImage(element, out mediaType, out bytes))
+            {
+                return true;
+            }
+
+            return TryDecodeDataUri(element.Content, out mediaType, out bytes);
         }
 
         private bool TryResolveAssetImage(LabelElement element, out string mediaType, out byte[] bytes)
@@ -259,6 +268,60 @@ namespace Plms.Api.Services
             };
         }
 
+        private static void ApplyImageFit(dynamic descriptor, string? imageFit)
+        {
+            switch ((imageFit ?? "contain").ToLowerInvariant())
+            {
+                case "stretch":
+                    descriptor.FitUnproportionally();
+                    break;
+                case "cover":
+                    descriptor.FitWidth();
+                    break;
+                default:
+                    descriptor.FitArea();
+                    break;
+            }
+        }
+
+        private static IContainer ApplyImageFrame(IContainer container, LabelElement element)
+        {
+            var framed = container;
+
+            if (!string.IsNullOrWhiteSpace(element.FrameFill))
+            {
+                framed = framed.Background(element.FrameFill!);
+            }
+
+            if (!string.IsNullOrWhiteSpace(element.FrameStroke) && (element.FrameStrokeWidthMm ?? 0) > 0)
+            {
+                framed = framed.Border(element.FrameStrokeWidthMm!.Value, Unit.Millimetre)
+                    .BorderColor(element.FrameStroke!);
+            }
+
+            return framed;
+        }
+
+        private static string NormalizeImageAlignX(string? imageAlignX)
+        {
+            return (imageAlignX ?? "center").ToLowerInvariant() switch
+            {
+                "left" => "left",
+                "right" => "right",
+                _ => "center",
+            };
+        }
+
+        private static string NormalizeImageAlignY(string? imageAlignY)
+        {
+            return (imageAlignY ?? "middle").ToLowerInvariant() switch
+            {
+                "top" => "top",
+                "bottom" => "bottom",
+                _ => "middle",
+            };
+        }
+
         private static IContainer ApplyVerticalAlignment(IContainer container, string? verticalAlign)
         {
             return (verticalAlign ?? "middle").ToLowerInvariant() switch
@@ -276,54 +339,6 @@ namespace Plms.Api.Services
                 "uppercase" => content.ToUpperInvariant(),
                 "lowercase" => content.ToLowerInvariant(),
                 _ => content,
-            };
-        }
-
-        private static string BuildImageFrameSvg(string href, LabelElement element)
-        {
-            var width = element.WidthMm.ToString(CultureInfo.InvariantCulture);
-            var height = element.HeightMm.ToString(CultureInfo.InvariantCulture);
-            var radius = Math.Max(0, element.CornerRadiusMm ?? 0).ToString(CultureInfo.InvariantCulture);
-            var strokeWidth = Math.Max(0, element.FrameStrokeWidthMm ?? 0).ToString(CultureInfo.InvariantCulture);
-            var fill = string.IsNullOrWhiteSpace(element.FrameFill) ? "none" : element.FrameFill;
-            var stroke = string.IsNullOrWhiteSpace(element.FrameStroke) ? "none" : element.FrameStroke;
-            var preserveAspectRatio = BuildPreserveAspectRatio(element);
-            var clipId = $"clip-{element.Id}";
-            var clip = (element.CornerRadiusMm ?? 0) > 0
-                ? $"<defs><clipPath id=\"{clipId}\"><rect x=\"0\" y=\"0\" width=\"{width}\" height=\"{height}\" rx=\"{radius}\" ry=\"{radius}\" /></clipPath></defs>"
-                : string.Empty;
-            var clipAttribute = (element.CornerRadiusMm ?? 0) > 0 ? $" clip-path=\"url(#{clipId})\"" : string.Empty;
-
-            return $"""
-                <svg xmlns="http://www.w3.org/2000/svg" width="{width}mm" height="{height}mm" viewBox="0 0 {width} {height}">
-                  {clip}
-                  <rect x="0" y="0" width="{width}" height="{height}" rx="{radius}" ry="{radius}" fill="{fill}" stroke="{stroke}" stroke-width="{strokeWidth}" />
-                  <image href="{SecurityElement.Escape(href)}" x="0" y="0" width="{width}" height="{height}" preserveAspectRatio="{preserveAspectRatio}"{clipAttribute} />
-                </svg>
-                """;
-        }
-
-        private static string BuildPreserveAspectRatio(LabelElement element)
-        {
-            var alignX = (element.ImageAlignX ?? "center").ToLowerInvariant() switch
-            {
-                "left" => "Min",
-                "right" => "Max",
-                _ => "Mid",
-            };
-
-            var alignY = (element.ImageAlignY ?? "middle").ToLowerInvariant() switch
-            {
-                "top" => "Min",
-                "bottom" => "Max",
-                _ => "Mid",
-            };
-
-            return (element.ImageFit ?? "contain").ToLowerInvariant() switch
-            {
-                "stretch" => "none",
-                "cover" => $"x{alignX}Y{alignY} slice",
-                _ => $"x{alignX}Y{alignY} meet",
             };
         }
 
