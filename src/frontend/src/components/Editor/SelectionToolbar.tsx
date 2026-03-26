@@ -178,9 +178,9 @@ export function SelectionToolbar({
       className={`absolute z-30 -translate-x-1/2 ${placementClass}`}
       style={{ left: anchor.left, top: anchor.top }}
     >
-      <div className="min-w-[23rem] max-w-[34rem] rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)]/95 px-3 py-3 shadow-[0_22px_70px_rgba(2,6,23,0.45)] backdrop-blur-md">
+      <div className="min-w-[23rem] max-w-[34rem] rounded-2xl border border-white/12 bg-[#0f1b2f]/96 px-3 py-3 shadow-[0_26px_80px_rgba(2,6,23,0.62)] ring-1 ring-white/6 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="max-w-[10rem] truncate rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-blue-100">
+          <div className="max-w-[10rem] truncate rounded-xl border border-blue-300/35 bg-[#19345d] px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             {summary}
           </div>
           <ToolbarButton active={openMenu === "arrange"} onClick={() => setOpenMenu((current) => current === "arrange" ? null : "arrange")}>{text.arrange}</ToolbarButton>
@@ -195,7 +195,7 @@ export function SelectionToolbar({
         </div>
 
         {openMenu ? (
-          <div className="mt-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-3">
+          <div className="mt-3 rounded-2xl border border-white/10 bg-[#13233b] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             {openMenu === "arrange" ? (
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 <ToolbarMiniButton onClick={() => onReorder("forward")}>{text.forward}</ToolbarMiniButton>
@@ -320,13 +320,13 @@ function ToolbarButton({
   tone?: "default" | "danger";
 }) {
   const toneClass = tone === "danger"
-    ? "border-red-500/20 bg-red-500/10 text-red-100 hover:bg-red-500/15"
+    ? "border-red-400/35 bg-[#3d1722] text-red-50 hover:border-red-300/50 hover:bg-[#542030]"
     : active
-      ? "border-blue-400/30 bg-blue-500/10 text-white"
-      : "border-[color:var(--plms-border)] bg-white/[0.03] text-[color:var(--plms-text-muted)] hover:bg-white/[0.06] hover:text-white";
+      ? "border-blue-300/40 bg-[#2258d6] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+      : "border-white/10 bg-[#16263f] text-slate-100 hover:border-white/20 hover:bg-[#203452] hover:text-white";
 
   return (
-    <button type="button" className={`inline-flex h-10 items-center rounded-xl border px-3 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${toneClass}`} onClick={onClick}>
+    <button type="button" className={`inline-flex h-11 items-center rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.18em] transition-colors ${toneClass}`} onClick={onClick}>
       {children}
     </button>
   );
@@ -348,10 +348,10 @@ function ToolbarMiniButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex h-10 min-w-0 items-center justify-center rounded-xl border px-3 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${
+      className={`inline-flex h-11 min-w-0 items-center justify-center rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
         active
-          ? "border-blue-400/30 bg-blue-500/10 text-white"
-          : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-muted)] hover:bg-white/5 hover:text-white"
+          ? "border-blue-300/40 bg-[#2258d6] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-white/10 bg-[#172842] text-slate-100 hover:border-white/20 hover:bg-[#203452] hover:text-white"
       } disabled:cursor-not-allowed disabled:opacity-40`}
     >
       {children}
@@ -362,7 +362,7 @@ function ToolbarMiniButton({
 function InlineField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="space-y-2">
-      <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[color:var(--plms-text-subtle)]">{label}</span>
+      <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">{label}</span>
       {children}
     </label>
   );
