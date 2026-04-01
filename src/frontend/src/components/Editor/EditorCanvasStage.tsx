@@ -305,7 +305,6 @@ function ElementNode({
                     verticalAlign={element.verticalAlign || "middle"}
                     lineHeight={element.lineHeight || 1}
                     letterSpacing={UnitConverter.mmToProfile((element.letterSpacingPt || 0) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
-                    listening={false}
                 />
             ) : null}
 
@@ -317,7 +316,6 @@ function ElementNode({
                     stroke={element.stroke ?? undefined} 
                     strokeWidth={strokeWidthPx} 
                     cornerRadius={cornerRadiusPx || 4} 
-                    listening={false}
                 />
             ) : null}
 
@@ -330,27 +328,26 @@ function ElementNode({
                     fill={element.fill ?? undefined}
                     stroke={element.stroke ?? undefined}
                     strokeWidth={strokeWidthPx}
-                    listening={false}
                 />
             ) : null}
 
             {element.type === "line" ? (
                 element.stroke && (element.strokeWidthMm ?? 0) > 0 ? (
                     element.lineDirection === "vertical" ? (
-                        <Rect x={width / 2 - Math.max(2, strokeWidthPx) / 2} width={Math.max(2, strokeWidthPx)} height={height} fill={element.stroke} listening={false} />
+                        <Rect x={width / 2 - Math.max(2, strokeWidthPx) / 2} width={Math.max(2, strokeWidthPx)} height={height} fill={element.stroke} />
                     ) : (
-                        <Rect y={height / 2 - Math.max(2, strokeWidthPx) / 2} width={width} height={Math.max(2, strokeWidthPx)} fill={element.stroke} listening={false} />
+                        <Rect y={height / 2 - Math.max(2, strokeWidthPx) / 2} width={width} height={Math.max(2, strokeWidthPx)} fill={element.stroke} />
                     )
                 ) : (
-                    <Rect width={width} height={height} fill="transparent" strokeEnabled={false} listening={false} />
+                    <Rect width={width} height={height} fill="transparent" strokeEnabled={false} />
                 )
             ) : null}
 
             {(element.type === "barcode" || element.type === "qr") ? (
                 image ? (
-                    <KonvaImage image={image} width={width} height={height} listening={false} />
+                    <KonvaImage image={image} width={width} height={height} />
                 ) : (
-                    <Rect width={width} height={height} fill="#f8fafc" stroke="#94a3b8" dash={[4, 4]} listening={false} />
+                    <Rect width={width} height={height} fill="#f8fafc" stroke="#94a3b8" dash={[4, 4]} />
                 )
             ) : null}
 
@@ -364,14 +361,13 @@ function ElementNode({
                             stroke={element.frameStroke ?? undefined}
                             strokeWidth={frameStrokeWidthPx}
                             cornerRadius={cornerRadiusPx}
-                            listening={false}
                         />
                     ) : null}
                     {image ? (() => {
                         const placement = computeImagePlacement(element as ImageElement, width, height, image);
-                        return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} cornerRadius={cornerRadiusPx} listening={false} />;
+                        return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} cornerRadius={cornerRadiusPx} />;
                     })() : (
-                        <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} cornerRadius={cornerRadiusPx} listening={false} />
+                        <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} cornerRadius={cornerRadiusPx} />
                     )}
                 </>
             ) : null}

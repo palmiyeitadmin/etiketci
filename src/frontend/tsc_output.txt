@@ -1,0 +1,175 @@
+src/app/auth/login/page.test.tsx(5,18): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(6,21): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(7,21): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(8,24): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(9,20): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(10,29): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(12,1): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(23,1): error TS2304: Cannot find name 'vi'.
+src/app/auth/login/page.test.tsx(28,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/app/auth/login/page.test.tsx(29,3): error TS2304: Cannot find name 'beforeEach'.
+src/app/auth/login/page.test.tsx(40,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/app/auth/login/page.test.tsx(43,5): error TS2304: Cannot find name 'expect'.
+src/app/auth/login/page.test.tsx(44,5): error TS2304: Cannot find name 'expect'.
+src/app/auth/login/page.test.tsx(45,5): error TS2304: Cannot find name 'expect'.
+src/app/auth/login/page.test.tsx(46,5): error TS2304: Cannot find name 'expect'.
+src/app/auth/login/page.test.tsx(49,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/app/auth/login/page.test.tsx(55,7): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(6,25): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(7,29): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(8,24): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(9,22): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(10,21): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(12,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(17,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(23,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(25,12): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(28,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(32,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(36,1): error TS2304: Cannot find name 'vi'.
+src/components/AppShell.test.tsx(40,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(41,3): error TS2304: Cannot find name 'beforeEach'.
+src/components/AppShell.test.tsx(60,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(68,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(69,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(70,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(71,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(72,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(75,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(81,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(82,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(83,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(86,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(93,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(94,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(97,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(107,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(110,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/AppShell.test.tsx(113,5): error TS2304: Cannot find name 'expect'.
+src/components/AppShell.test.tsx(114,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(4,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(5,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(12,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(22,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(30,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(31,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(36,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(37,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(40,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(50,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(51,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(54,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(62,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(63,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(66,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(67,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(68,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(71,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-actions.test.ts(81,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(82,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-actions.test.ts(83,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(5,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-align.test.ts(6,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-align.test.ts(18,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(19,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(22,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-align.test.ts(34,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(37,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(38,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(42,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-align.test.ts(43,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/components/Editor/editor-align.test.ts(57,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(58,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(60,58): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/components/Editor/editor-align.test.ts(61,5): error TS2304: Cannot find name 'expect'.
+src/components/Editor/editor-align.test.ts(62,5): error TS2304: Cannot find name 'expect'.
+src/lib/api-base-url.test.ts(3,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/api-base-url.test.ts(4,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/api-base-url.test.ts(5,5): error TS2304: Cannot find name 'expect'.
+src/lib/api-base-url.test.ts(6,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(8,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(9,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(10,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(11,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(12,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(15,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(16,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(17,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(18,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(19,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(20,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(23,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(24,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(27,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(28,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(33,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(39,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(40,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(43,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/auth-routing.test.ts(44,5): error TS2304: Cannot find name 'expect'.
+src/lib/auth-routing.test.ts(45,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(3,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useI18n.test.ts(4,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useI18n.test.ts(5,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(6,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(9,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useI18n.test.ts(10,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(13,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useI18n.test.ts(14,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(15,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(16,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useI18n.test.ts(17,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(3,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useLanguageStore.test.ts(4,3): error TS2304: Cannot find name 'beforeEach'.
+src/lib/i18n/useLanguageStore.test.ts(10,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useLanguageStore.test.ts(13,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(14,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(15,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(16,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(19,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/i18n/useLanguageStore.test.ts(24,5): error TS2304: Cannot find name 'expect'.
+src/lib/i18n/useLanguageStore.test.ts(25,5): error TS2304: Cannot find name 'expect'.
+src/lib/pdf-print.test.ts(3,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/pdf-print.test.ts(4,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/pdf-print.test.ts(5,20): error TS2304: Cannot find name 'vi'.
+src/lib/pdf-print.test.ts(9,5): error TS2304: Cannot find name 'expect'.
+src/lib/pdf-print.test.ts(10,5): error TS2304: Cannot find name 'expect'.
+src/lib/pdf-print.test.ts(17,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/pdf-print.test.ts(18,20): error TS2304: Cannot find name 'vi'.
+src/lib/pdf-print.test.ts(22,5): error TS2304: Cannot find name 'expect'.
+src/lib/pdf-print.test.ts(25,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/pdf-print.test.ts(26,20): error TS2304: Cannot find name 'vi'.
+src/lib/pdf-print.test.ts(30,5): error TS2304: Cannot find name 'expect'.
+src/lib/pdf-print.test.ts(31,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(4,22): error TS2304: Cannot find name 'vi'.
+src/lib/template-versioning.test.ts(6,1): error TS2304: Cannot find name 'vi'.
+src/lib/template-versioning.test.ts(45,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(46,3): error TS2304: Cannot find name 'beforeEach'.
+src/lib/template-versioning.test.ts(50,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(54,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(55,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(58,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(65,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(66,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(69,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(77,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(78,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(81,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(92,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(93,5): error TS2304: Cannot find name 'expect'.
+src/lib/template-versioning.test.ts(101,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/template-versioning.test.ts(105,11): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(3,1): error TS2582: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/unit-converter.test.ts(4,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/unit-converter.test.ts(5,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(8,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/unit-converter.test.ts(9,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(10,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(11,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(14,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/unit-converter.test.ts(15,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(16,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(19,3): error TS2582: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha`.
+src/lib/unit-converter.test.ts(20,5): error TS2304: Cannot find name 'expect'.
+src/lib/unit-converter.test.ts(21,5): error TS2304: Cannot find name 'expect'.
