@@ -1,7 +1,7 @@
 "use client";
 
 import { EditorShell } from "@/components/Editor/EditorShell";
-import { EditorWorkspace as LegacyEditorWorkspace } from "@/components/Editor/LegacyEditorWorkspace";
+import { EditorWorkspace as LegacyEditorWorkspace } from "@/components/Editor/legacy/LegacyEditorWorkspace";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { CanonicalLabelModel } from "@/types/canvas";
 

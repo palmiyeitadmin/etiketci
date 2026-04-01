@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, ArrowCounterClockwise, Check, Eye, FloppyDisk, X } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, Check, Eye, FloppyDisk, Question, X } from "@phosphor-icons/react";
 import { EditorCommandButton } from "@/components/Editor/EditorIconButton";
 import { EditorViewportControls } from "@/components/Editor/EditorViewportControls";
 import { useI18n } from "@/lib/i18n";
@@ -17,6 +17,7 @@ export function EditorTopBar({
     onZoomIn,
     onZoomOut,
     onFit,
+    onFitSelection,
     onReset,
     canUndo,
     canRedo,
@@ -24,6 +25,9 @@ export function EditorTopBar({
     onRedo,
     onRenameTemplate,
     onResizeCanvas,
+    onToggleHelp,
+    previewMode,
+    onSetPreviewMode,
 }: {
     name: string;
     dimensions: { widthMm: number; heightMm: number };
@@ -34,13 +38,17 @@ export function EditorTopBar({
     onZoomIn: () => void;
     onZoomOut: () => void;
     onFit: () => void;
+    onFitSelection: () => void;
     onReset: () => void;
     canUndo: boolean;
     canRedo: boolean;
     onUndo: () => void;
     onRedo: () => void;
-    onRenameTemplate: (name: string) => Promise<void>;
-    onResizeCanvas: (dimensions: { widthMm: number; heightMm: number }) => Promise<void>;
+    onRenameTemplate?: (name: string) => Promise<void>;
+    onResizeCanvas?: (dimensions: { widthMm: number; heightMm: number }) => Promise<void>;
+    onToggleHelp: () => void;
+    previewMode: "light" | "dark" | "checkerboard";
+    onSetPreviewMode: (mode: "light" | "dark" | "checkerboard") => void;
 }) {
     const { locale } = useI18n();
     const [editingName, setEditingName] = useState(false);
@@ -56,89 +64,75 @@ export function EditorTopBar({
             undo: "Geri al",
             redo: "Yinele",
             preview: "Onizleme",
+            saveDraft: "Taslagi kaydet",
             saved: "Kaydedildi",
-            saveDraft: "Taslak Kaydet",
-            renameHint: "Duzenlemek icin cift tiklayin",
-            invalidName: "Sablon adi bos olamaz.",
-            invalidDimensions: "Genislik ve yukseklik 10 ile 1000 mm arasinda olmalidir.",
-            renameFailed: "Sablon adi kaydedilemedi.",
-            resizeFailed: "Sablon boyutu kaydedilemedi.",
+            renameHint: "Yeniden adlandirmak icin cift tiklayin",
+            invalidDimensions: "Gecersiz boyutlar",
+            invalidName: "Gecersiz isim",
         }
         : {
-            eyebrow: "Unified editor",
+            eyebrow: "Unifed editor",
             undo: "Undo",
             redo: "Redo",
             preview: "Preview",
+            saveDraft: "Save draft",
             saved: "Saved",
-            saveDraft: "Save Draft",
-            renameHint: "Double click to edit",
-            invalidName: "Template name cannot be empty.",
-            invalidDimensions: "Width and height must stay between 10 and 1000 mm.",
-            renameFailed: "Template name could not be saved.",
-            resizeFailed: "Template size could not be saved.",
+            renameHint: "Double-click to rename",
+            invalidDimensions: "Invalid dimensions",
+            invalidName: "Invalid name",
         };
 
     useEffect(() => {
-        if (!editingName) {
-            setDraftName(name);
-        }
-    }, [editingName, name]);
+        setDraftName(name);
+    }, [name]);
 
     useEffect(() => {
-        if (!editingDimensions) {
-            setDraftWidth(String(dimensions.widthMm));
-            setDraftHeight(String(dimensions.heightMm));
-        }
-    }, [dimensions.heightMm, dimensions.widthMm, editingDimensions]);
+        setDraftWidth(String(dimensions.widthMm));
+        setDraftHeight(String(dimensions.heightMm));
+    }, [dimensions]);
 
-    async function confirmName() {
-        const nextName = draftName.trim();
-        if (!nextName) {
-            setInlineError(text.invalidName);
-            return;
-        }
-
+    const confirmName = async () => {
+        if (!draftName.trim() || !onRenameTemplate) return;
+        setPendingField("name");
         try {
-            setPendingField("name");
-            setInlineError(null);
-            await onRenameTemplate(nextName);
+            await onRenameTemplate(draftName);
             setEditingName(false);
-        } catch (error) {
-            setInlineError((error as Error).message || text.renameFailed);
+        } catch (err: any) {
+            setInlineError(err.message || text.invalidName);
         } finally {
             setPendingField(null);
         }
-    }
+    };
 
-    async function confirmDimensions() {
-        const widthMm = Number(draftWidth);
-        const heightMm = Number(draftHeight);
-        if (!Number.isFinite(widthMm) || !Number.isFinite(heightMm) || widthMm < 10 || widthMm > 1000 || heightMm < 10 || heightMm > 1000) {
+    const confirmDimensions = async () => {
+        const w = parseFloat(draftWidth);
+        const h = parseFloat(draftHeight);
+        if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0 || !onResizeCanvas) {
             setInlineError(text.invalidDimensions);
             return;
         }
-
+        setPendingField("dimensions");
         try {
-            setPendingField("dimensions");
-            setInlineError(null);
-            await onResizeCanvas({ widthMm, heightMm });
+            await onResizeCanvas({ widthMm: w, heightMm: h });
             setEditingDimensions(false);
-        } catch (error) {
-            setInlineError((error as Error).message || text.resizeFailed);
+        } catch (err: any) {
+            setInlineError(err.message || text.invalidDimensions);
         } finally {
             setPendingField(null);
         }
-    }
+    };
 
     return (
-        <header className="flex shrink-0 flex-col gap-3 border-b border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-3 xl:px-6 2xl:flex-row 2xl:items-start 2xl:justify-between 2xl:gap-4">
-            <div className="flex min-w-0 items-center gap-3 overflow-hidden 2xl:flex-1">
-                <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.eyebrow}</div>
+        <header className="flex h-20 w-full shrink-0 items-center justify-between border-b border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-8 shadow-sm">
+            <div className="flex min-w-0 items-center gap-6">
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)]">
+                        {text.eyebrow}
+                    </span>
                     {editingName ? (
-                        <div className="mt-1 flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <input
-                                className="h-10 min-w-[240px] rounded-xl border border-blue-400/30 bg-[#0b1220] px-3 text-lg font-black tracking-[-0.04em] text-white outline-none"
+                                className="h-10 w-48 rounded-xl border border-blue-400/30 bg-[#0b1220] px-3 font-semibold text-white outline-none"
                                 value={draftName}
                                 onChange={(event) => setDraftName(event.target.value)}
                                 onKeyDown={(event) => {
@@ -246,7 +240,20 @@ export function EditorTopBar({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                    <EditorViewportControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onFit={onFit} onReset={onReset} />
+                    <EditorViewportControls
+                        zoom={zoom}
+                        onZoomIn={onZoomIn}
+                        onZoomOut={onZoomOut}
+                        onFit={onFit}
+                        onFitSelection={onFitSelection}
+                        onReset={onReset}
+                        previewMode={previewMode}
+                        onSetPreviewMode={onSetPreviewMode}
+                    />
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <EditorCommandButton icon={Question} label={locale === "tr" ? "Yardim" : "Help"} onClick={onToggleHelp} />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">

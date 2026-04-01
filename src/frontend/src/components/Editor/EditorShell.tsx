@@ -8,8 +8,12 @@ import { EditorLayersPanel } from "@/components/Editor/EditorLayersPanel";
 import { EditorToolRail } from "@/components/Editor/EditorToolRail";
 import { EditorTopBar } from "@/components/Editor/EditorTopBar";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
-import { fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
+import { computeSelectionBounds, fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
+import { EditorContextMenu } from "@/components/Editor/EditorContextMenu";
+import { ShortcutsHelpModal } from "@/components/Editor/ShortcutsHelpModal";
+import { TemplatesLibraryDrawer } from "@/components/Editor/TemplatesLibraryDrawer";
+import { EditorHistoryPanel } from "@/components/Editor/EditorHistoryPanel";
 import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
@@ -28,7 +32,7 @@ interface EditorShellProps {
   onRenameTemplate?: (name: string, model: CanonicalLabelModel) => Promise<void>;
 }
 
-type RightPanelTab = "layers" | "properties";
+type RightPanelTab = "layers" | "properties" | "history";
 
 function isInteractiveTarget(target: EventTarget | null) {
   const element = target as HTMLElement | null;
@@ -56,17 +60,24 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   const nudgeSelected = useEditorStore((state) => state.nudgeSelected);
   const undo = useEditorStore((state) => state.undo);
   const redo = useEditorStore((state) => state.redo);
+  const copySelected = useEditorStore((state) => state.copySelected);
+  const pasteClipboard = useEditorStore((state) => state.pasteClipboard);
+  const setHelpOpen = useEditorStore((state) => state.setHelpOpen);
   const markSaved = useEditorStore((state) => state.markSaved);
   const applyModel = useEditorStore((state) => state.applyModel);
+  const setShowGrid = useEditorStore((state) => state.setShowGrid);
   const insertElement = useEditorStore((state) => state.insertElement);
   const rotateSelected = useEditorStore((state) => state.rotateSelected);
   const groupSelected = useEditorStore((state) => state.groupSelected);
   const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
+  const previewMode = useEditorStore((state) => state.ui.previewMode);
+  const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
 
   const [savePending, setSavePending] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("layers");
   const [panelsCollapsed, setPanelsCollapsed] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   useEffect(() => {
     initialize(normalizeCanonicalLabelModel(initialModel, initialModel.name || "Untitled Template"));
@@ -84,6 +95,37 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     setViewport(fitViewportToContainer(labelWidthPx, labelHeightPx, ui.canvasSize.width, ui.canvasSize.height, 48));
   }, [model.dimensions.heightMm, model.dimensions.widthMm, setViewport, ui.canvasSize.height, ui.canvasSize.width]);
 
+  const fitSelection = useCallback(() => {
+    if (selection.selectedElementIds.length === 0) return fitCanvas();
+    const bounds = computeSelectionBounds(model, selection.selectedElementIds);
+    if (!bounds) return fitCanvas();
+
+    const padding = 48; // px padding
+    const availableWidth = Math.max(100, ui.canvasSize.width - padding * 2);
+    const availableHeight = Math.max(100, ui.canvasSize.height - padding * 2);
+
+    const boundsWidthPx = UnitConverter.mmToProfile(bounds.widthMm, ScreenPreviewProfile, 1);
+    const boundsHeightPx = UnitConverter.mmToProfile(bounds.heightMm, ScreenPreviewProfile, 1);
+
+    const zoom = Math.max(0.2, Math.min(4, Math.min(availableWidth / Math.max(1, boundsWidthPx), availableHeight / Math.max(1, boundsHeightPx))));
+
+    const labelWidthPxZoomed = UnitConverter.mmToProfile(model.dimensions.widthMm, ScreenPreviewProfile, zoom);
+    const labelHeightPxZoomed = UnitConverter.mmToProfile(model.dimensions.heightMm, ScreenPreviewProfile, zoom);
+    
+    // Bounds center in mm
+    const boundsCenterXMm = bounds.xMm + bounds.widthMm / 2;
+    const boundsCenterYMm = bounds.yMm + bounds.heightMm / 2;
+    
+    // Bounds center relative to label origin (0,0) with new zoom
+    const centerX = UnitConverter.mmToProfile(boundsCenterXMm, ScreenPreviewProfile, zoom);
+    const centerY = UnitConverter.mmToProfile(boundsCenterYMm, ScreenPreviewProfile, zoom);
+
+    const offsetX = labelWidthPxZoomed / 2 - centerX;
+    const offsetY = labelHeightPxZoomed / 2 - centerY;
+
+    setViewport({ zoom, offsetX, offsetY });
+  }, [model, selection.selectedElementIds, setViewport, ui.canvasSize.height, ui.canvasSize.width, fitCanvas]);
+
   const resetViewport = useCallback(() => {
     setViewport({ zoom: 1, offsetX: 0, offsetY: 0 });
   }, [setViewport]);
@@ -92,6 +134,9 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   const zoomOut = useCallback(() => setViewport({ zoom: Math.max(0.2, viewport.zoom - 0.1) }), [setViewport, viewport.zoom]);
 
   const handleSave = useCallback(async () => {
+    // Prevent overlapping saves
+    if (savePending) return;
+    
     setSavePending(true);
     try {
       const result = await onSave(model);
@@ -101,7 +146,18 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     } finally {
       setSavePending(false);
     }
-  }, [markSaved, model, onSave]);
+  }, [markSaved, model, onSave, savePending]);
+
+  // Debounced auto-save (5 seconds)
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handler = setTimeout(() => {
+        void handleSave();
+    }, 5000);
+
+    return () => clearTimeout(handler);
+  }, [isDirty, model, handleSave]);
 
   const handleRenameTemplate = useCallback(async (name: string) => {
     const nextModel = renameModel(model, name);
@@ -145,6 +201,22 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         return;
       }
 
+      if (meta && event.key.toLowerCase() === "c") {
+        if (!interactive) {
+          event.preventDefault();
+          copySelected();
+          return;
+        }
+      }
+
+      if (meta && event.key.toLowerCase() === "v") {
+        if (!interactive) {
+          event.preventDefault();
+          pasteClipboard();
+          return;
+        }
+      }
+
       if (meta && event.key.toLowerCase() === "z" && !event.shiftKey) {
         event.preventDefault();
         undo();
@@ -175,6 +247,12 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         return;
       }
 
+      if (meta && event.key === "1") {
+        event.preventDefault();
+        fitSelection();
+        return;
+      }
+
       if (interactive) {
         return;
       }
@@ -193,6 +271,14 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
 
       if (event.key === "Escape") {
         event.preventDefault();
+        if (ui.contextMenu) {
+            useEditorStore.getState().setContextMenu(null);
+            return;
+        }
+        if (ui.isHelpOpen) {
+            setHelpOpen(false);
+            return;
+        }
         if (selection.activeEditingGroupId) {
           setActiveEditingGroup(null);
         } else {
@@ -232,6 +318,14 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       if (event.key === "]") {
         event.preventDefault();
         reorderSelected(event.shiftKey ? "front" : "forward");
+        return;
+      }
+
+      if (event.key === "?" || event.key === "F1") {
+        if (!interactive) {
+          event.preventDefault();
+          setHelpOpen(true);
+        }
       }
     };
 
@@ -247,7 +341,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [clearSelection, duplicateSelected, groupSelected, handleSave, nudgeSelected, redo, removeSelected, reorderSelected, rotateSelected, selection.activeEditingGroupId, setActiveEditingGroup, setSpacePanning, setTool, undo, ungroupSelectedGroup]);
+  }, [clearSelection, duplicateSelected, groupSelected, handleSave, nudgeSelected, redo, removeSelected, reorderSelected, rotateSelected, selection.activeEditingGroupId, setActiveEditingGroup, setSpacePanning, setTool, undo, ungroupSelectedGroup, copySelected, pasteClipboard, setHelpOpen, ui.contextMenu, ui.isHelpOpen]);
 
   const insertImageFromLibrary = useCallback((payload: { name: string; content: string; assetId?: string; assetSource?: "upload" | "phosphor"; assetKey?: string }) => {
     const nextIndex = model.elements.filter((element) => element.type === "image").length + 1;
@@ -273,6 +367,9 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-[#08111f] text-white">
       <AssetLibraryDrawer open={libraryOpen} onClose={() => setLibraryOpen(false)} onInsertImage={insertImageFromLibrary} />
+      <TemplatesLibraryDrawer open={templatesOpen} onClose={() => setTemplatesOpen(false)} />
+      <EditorContextMenu />
+      <ShortcutsHelpModal isOpen={ui.isHelpOpen} onClose={() => setHelpOpen(false)} />
       <EditorTopBar
         name={model.name}
         dimensions={model.dimensions}
@@ -283,17 +380,25 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onFit={fitCanvas}
+        onFitSelection={fitSelection}
         onReset={resetViewport}
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}
         onUndo={undo}
         onRedo={redo}
-        onRenameTemplate={handleRenameTemplate}
         onResizeCanvas={handleResizeCanvas}
+        onToggleHelp={() => setHelpOpen(!ui.isHelpOpen)}
+        previewMode={previewMode}
+        onSetPreviewMode={setPreviewMode}
       />
 
       <div className={layoutClassName}>
-        <EditorToolRail activeTool={ui.activeTool} onSelectTool={setTool} onOpenLibrary={() => setLibraryOpen(true)} />
+        <EditorToolRail 
+          activeTool={ui.activeTool} 
+          onSelectTool={setTool} 
+          onOpenLibrary={() => setLibraryOpen(true)} 
+          onOpenTemplates={() => setTemplatesOpen(true)}
+        />
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#0b1220]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--plms-border)] px-4 py-3 xl:px-6">
@@ -307,6 +412,14 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${ui.showGrid ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                onClick={() => setShowGrid(!ui.showGrid)}
+                title={locale === "tr" ? "Izgarayi goster/gizle" : "Toggle grid"}
+              >
+                {locale === "tr" ? "Izgara" : "Grid"}
+              </button>
               <button
                 type="button"
                 className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${!panelsCollapsed && rightPanelTab === "layers" ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
@@ -329,6 +442,16 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
               </button>
               <button
                 type="button"
+                className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${!panelsCollapsed && rightPanelTab === "history" ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                onClick={() => {
+                  setPanelsCollapsed(false);
+                  setRightPanelTab("history");
+                }}
+              >
+                {locale === "tr" ? "Gecmis" : "History"}
+              </button>
+              <button
+                type="button"
                 className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)] transition-colors hover:bg-white/5 hover:text-white"
                 onClick={() => setPanelsCollapsed((current) => !current)}
               >
@@ -343,15 +466,20 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
 
         {!panelsCollapsed ? (
           <>
+            {/* XL Breakpoint: Single panel visible */}
             <div className="hidden h-full min-h-0 overflow-hidden overscroll-none xl:block 2xl:hidden">
-              {rightPanelTab === "layers" ? (
-                <EditorLayersPanel className="h-full w-[22rem]" />
-              ) : (
-                <EditorInspector className="h-full w-[22rem]" />
-              )}
+              {rightPanelTab === "layers" && <EditorLayersPanel className="h-full w-[22rem]" />}
+              {rightPanelTab === "properties" && <EditorInspector className="h-full w-[22rem]" />}
+              {rightPanelTab === "history" && <EditorHistoryPanel />}
             </div>
+
+            {/* 2XL Breakpoint: Dual panels visible */}
             <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
-              <EditorLayersPanel className="h-full w-[20rem]" />
+              {rightPanelTab === "history" ? (
+                <EditorHistoryPanel />
+              ) : (
+                <EditorLayersPanel className="h-full w-[20rem]" />
+              )}
             </div>
             <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
               <EditorInspector className="h-full w-[22rem]" />

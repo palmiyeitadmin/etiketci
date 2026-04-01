@@ -45,3 +45,4 @@ stitch/
 *.sql
 agent.md
 git_status_full.txt
+src/frontend/src/components/Editor/legacy/

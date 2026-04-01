@@ -141,6 +141,15 @@ export function SelectionToolbar({
         lineHeight: "Satır",
         letterSpacing: "Harf",
         transform: "Dönüşüm",
+        alignLeft: "Sola",
+        alignCenter: "Merkez",
+        alignRight: "Sağa",
+        alignTop: "Üste",
+        alignMiddle: "Ortaya",
+        alignBottom: "Alta",
+        textAlignLeft: "Sola",
+        textAlignCenter: "Orta",
+        textAlignRight: "Sağa",
       }
     : {
         arrange: "Arrange",
@@ -181,6 +190,15 @@ export function SelectionToolbar({
         lineHeight: "Line height",
         letterSpacing: "Letter",
         transform: "Transform",
+        alignLeft: "Left",
+        alignCenter: "Center",
+        alignRight: "Right",
+        alignTop: "Top",
+        alignMiddle: "Middle",
+        alignBottom: "Bottom",
+        textAlignLeft: "Left",
+        textAlignCenter: "Center",
+        textAlignRight: "Right",
       }, [locale]);
 
   const placementClass = anchor.placement === "top" ? "bottom-full mb-3" : "top-full mt-3";
@@ -228,12 +246,12 @@ export function SelectionToolbar({
                   <ToolbarMiniButton active={alignmentReference === "canvas"} onClick={() => onSetAlignmentReference("canvas")}>{text.canvas}</ToolbarMiniButton>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <ToolbarMiniButton onClick={() => onAlign("left")}>Left</ToolbarMiniButton>
-                  <ToolbarMiniButton onClick={() => onAlign("center-horizontal")}>Center</ToolbarMiniButton>
-                  <ToolbarMiniButton onClick={() => onAlign("right")}>Right</ToolbarMiniButton>
-                  <ToolbarMiniButton onClick={() => onAlign("top")}>Top</ToolbarMiniButton>
-                  <ToolbarMiniButton onClick={() => onAlign("middle")}>Middle</ToolbarMiniButton>
-                  <ToolbarMiniButton onClick={() => onAlign("bottom")}>Bottom</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("left")}>{text.alignLeft}</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("center-horizontal")}>{text.alignCenter}</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("right")}>{text.alignRight}</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("top")}>{text.alignTop}</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("middle")}>{text.alignMiddle}</ToolbarMiniButton>
+                  <ToolbarMiniButton onClick={() => onAlign("bottom")}>{text.alignBottom}</ToolbarMiniButton>
                   <ToolbarMiniButton onClick={() => onMatchSize("width")}>{text.matchWidth}</ToolbarMiniButton>
                   <ToolbarMiniButton onClick={() => onMatchSize("height")}>{text.matchHeight}</ToolbarMiniButton>
                   <div />
@@ -264,9 +282,9 @@ export function SelectionToolbar({
                 <div className="col-span-2 flex items-end gap-2 md:col-span-4">
                   <ToolbarMiniButton active={textStyle.fontWeight === "normal"} onClick={() => onUpdateTextStyle({ fontWeight: "normal" })}>{text.normal}</ToolbarMiniButton>
                   <ToolbarMiniButton active={textStyle.fontWeight === "bold"} onClick={() => onUpdateTextStyle({ fontWeight: "bold" })}>{text.bold}</ToolbarMiniButton>
-                  <ToolbarMiniButton active={textStyle.textAlign === "left"} onClick={() => onUpdateTextStyle({ textAlign: "left" })}>Left</ToolbarMiniButton>
-                  <ToolbarMiniButton active={textStyle.textAlign === "center"} onClick={() => onUpdateTextStyle({ textAlign: "center" })}>Center</ToolbarMiniButton>
-                  <ToolbarMiniButton active={textStyle.textAlign === "right"} onClick={() => onUpdateTextStyle({ textAlign: "right" })}>Right</ToolbarMiniButton>
+                  <ToolbarMiniButton active={textStyle.textAlign === "left"} onClick={() => onUpdateTextStyle({ textAlign: "left" })}>{text.textAlignLeft}</ToolbarMiniButton>
+                  <ToolbarMiniButton active={textStyle.textAlign === "center"} onClick={() => onUpdateTextStyle({ textAlign: "center" })}>{text.textAlignCenter}</ToolbarMiniButton>
+                  <ToolbarMiniButton active={textStyle.textAlign === "right"} onClick={() => onUpdateTextStyle({ textAlign: "right" })}>{text.textAlignRight}</ToolbarMiniButton>
                 </div>
               </div>
             ) : null}
@@ -303,14 +321,40 @@ export function SelectionToolbar({
             {openMenu === "shape" && shapeStyle ? (
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <InlineField label={text.fill}>
-                  <input className="h-10 w-full cursor-pointer rounded-xl border border-[color:var(--plms-border)] bg-transparent p-1" type="color" value={shapeStyle.fill || "#e2e8f0"} onChange={(event) => onUpdateShapeStyle({ fill: event.target.value.toUpperCase() })} />
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      className={`flex-none h-10 w-10 border rounded-xl flex items-center justify-center transition-colors ${shapeStyle.fill ? "border-blue-400/50 bg-[#2258d6]/30 text-blue-100" : "border-white/10 bg-[#16263f] hover:bg-[#203452] text-slate-400"}`}
+                      onClick={() => onUpdateShapeStyle({ fill: shapeStyle.fill ? null : "#E2E8F0" })}
+                      title={text.fill}
+                    >
+                      <Square size={16} weight="fill" />
+                    </button>
+                    {shapeStyle.fill ? (
+                      <input className="h-10 w-full min-w-0 cursor-pointer rounded-xl border border-white/10 bg-transparent p-1" type="color" value={shapeStyle.fill || "#e2e8f0"} onChange={(event) => onUpdateShapeStyle({ fill: event.target.value.toUpperCase() })} />
+                    ) : null}
+                  </div>
                 </InlineField>
                 <InlineField label={text.stroke}>
-                  <input className="h-10 w-full cursor-pointer rounded-xl border border-[color:var(--plms-border)] bg-transparent p-1" type="color" value={shapeStyle.stroke || "#0f172a"} onChange={(event) => onUpdateShapeStyle({ stroke: event.target.value.toUpperCase() })} />
+                  <div className="flex gap-1.5">
+                     <button
+                      type="button"
+                      className={`flex-none h-10 w-10 border rounded-xl flex items-center justify-center transition-colors ${shapeStyle.stroke ? "border-blue-400/50 bg-[#2258d6]/30 text-blue-100" : "border-white/10 bg-[#16263f] hover:bg-[#203452] text-slate-400"}`}
+                      onClick={() => onUpdateShapeStyle({ stroke: shapeStyle.stroke ? null : "#0F172A", strokeWidthMm: shapeStyle.stroke ? shapeStyle.strokeWidthMm : Math.max(shapeStyle.strokeWidthMm || 0.4, 0.4) })}
+                      title={text.stroke}
+                    >
+                      <Square size={16} weight="bold" />
+                    </button>
+                    {shapeStyle.stroke ? (
+                      <input className="h-10 w-full min-w-0 cursor-pointer rounded-xl border border-white/10 bg-transparent p-1" type="color" value={shapeStyle.stroke || "#0f172a"} onChange={(event) => onUpdateShapeStyle({ stroke: event.target.value.toUpperCase() })} />
+                    ) : null}
+                  </div>
                 </InlineField>
-                <InlineField label={text.strokeWidth}>
-                  <input className="plms-input h-10" type="number" step="0.1" value={shapeStyle.strokeWidthMm ?? 0.4} onChange={(event) => onUpdateShapeStyle({ strokeWidthMm: Number(event.target.value) })} />
-                </InlineField>
+                {shapeStyle.stroke ? (
+                  <InlineField label={text.strokeWidth}>
+                    <input className="plms-input h-10" type="number" step="0.1" value={shapeStyle.strokeWidthMm ?? 0.4} onChange={(event) => onUpdateShapeStyle({ strokeWidthMm: Number(event.target.value) })} />
+                  </InlineField>
+                ) : null}
               </div>
             ) : null}
           </div>

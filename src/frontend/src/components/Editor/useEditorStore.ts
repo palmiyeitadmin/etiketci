@@ -20,9 +20,29 @@ import {
   updateElementInModel,
   updateElementsInModel,
   renameGroupInModel,
+  copySelectedElements,
+  pasteElementsIntoModel,
 } from "@/components/Editor/editor-actions";
 import { cloneCanonicalModel, normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
-import { EditorAlignmentReference, EditorHistoryState, EditorSelectionState, EditorTool, EditorViewport, CanonicalLabelModel, LabelElement, SelectionBounds } from "@/types/canvas";
+import { EditorAlignmentReference, EditorHistoryState, EditorSelectionState, EditorTool, EditorViewport, CanonicalLabelModel, LabelElement, SelectionBounds, EditorGuide, EditorPreviewMode } from "@/types/canvas";
+
+const HISTORY_LIMIT = 50;
+const RECENT_COLORS_LIMIT = 12;
+
+function updateRecentColorsHelper(currentColors: string[], updates: Partial<LabelElement>): string[] {
+  const colorProps = ["fill", "stroke", "color"];
+  let nextRecentColors = [...currentColors];
+
+  colorProps.forEach((prop) => {
+    const color = (updates as any)[prop];
+    if (typeof color === "string" && color.startsWith("#")) {
+      const cleanColor = color.toUpperCase();
+      nextRecentColors = [cleanColor, ...nextRecentColors.filter((c) => c !== cleanColor)];
+    }
+  });
+
+  return nextRecentColors.slice(0, RECENT_COLORS_LIMIT);
+}
 
 interface EditorUiState {
   activeTool: EditorTool;
@@ -30,6 +50,11 @@ interface EditorUiState {
   variablePickerOpen: boolean;
   inspectorMessage?: string | null;
   canvasSize: { width: number; height: number };
+  editingTextElementId: string | null;
+  contextMenu: { x: number; y: number; elementIds: string[] } | null;
+  isHelpOpen: boolean;
+  showGrid: boolean;
+  previewMode: EditorPreviewMode;
 }
 
 interface SelectionOptions {
@@ -41,9 +66,12 @@ interface SelectionOptions {
 interface EditorStoreState {
   model: CanonicalLabelModel;
   selection: EditorSelectionState;
+  clipboard: LabelElement[];
   history: EditorHistoryState;
   viewport: EditorViewport;
   ui: EditorUiState;
+  recentColors: string[];
+  customGuides: EditorGuide[];
   isDirty: boolean;
   initialized: boolean;
   initialize: (model: CanonicalLabelModel) => void;
@@ -61,6 +89,13 @@ interface EditorStoreState {
   setVariablePickerOpen: (open: boolean) => void;
   setInspectorMessage: (message: string | null) => void;
   setCanvasSize: (width: number, height: number) => void;
+  setEditingTextElementId: (id: string | null) => void;
+  setContextMenu: (contextMenu: { x: number; y: number; elementIds: string[] } | null) => void;
+  setHelpOpen: (isOpen: boolean) => void;
+  setShowGrid: (show: boolean) => void;
+  setPreviewMode: (mode: EditorPreviewMode) => void;
+  copySelected: () => void;
+  pasteClipboard: () => void;
   captureHistory: () => void;
   applyModel: (nextModel: CanonicalLabelModel, options?: { recordHistory?: boolean; dirty?: boolean }) => void;
   addElement: (type: EditorTool, position?: { xMm: number; yMm: number }) => string | null;
@@ -86,7 +121,13 @@ interface EditorStoreState {
   matchSelectedSize: (mode: MatchSizeMode) => void;
   undo: () => void;
   redo: () => void;
+  restoreHistoryState: (type: "past" | "future", index: number) => void;
   markSaved: () => void;
+  addTemplate: (elements: LabelElement[]) => void;
+  addRecentColor: (color: string) => void;
+  addCustomGuide: (guide: Omit<EditorGuide, "id">) => void;
+  updateCustomGuide: (id: string, positionMm: number) => void;
+  removeCustomGuide: (id: string) => void;
 }
 
 const EMPTY_MODEL = normalizeCanonicalLabelModel(undefined, "Untitled Template");
@@ -137,9 +178,12 @@ function elementIntersectsBounds(element: LabelElement, bounds: SelectionBounds)
 export const useEditorStore = create<EditorStoreState>((set, get) => ({
   model: EMPTY_MODEL,
   selection: createSelectionState([]),
+  clipboard: [],
   history: { past: [], future: [] },
   viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
-  ui: { activeTool: "select", isSpacePanning: false, variablePickerOpen: false, inspectorMessage: null, canvasSize: { width: 1200, height: 800 } },
+  ui: { activeTool: "select", isSpacePanning: false, variablePickerOpen: false, inspectorMessage: null, canvasSize: { width: 1200, height: 800 }, editingTextElementId: null, contextMenu: null, isHelpOpen: false, showGrid: false, previewMode: "light" },
+  recentColors: ["#000000", "#FFFFFF", "#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#64748B"],
+  customGuides: [],
   isDirty: false,
   initialized: false,
   initialize: (model) => {
@@ -147,9 +191,10 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: normalized,
       selection: createSelectionState([]),
+      clipboard: get().clipboard,
       history: { past: [], future: [] },
       viewport: { zoom: 1, offsetX: 0, offsetY: 0 },
-      ui: { activeTool: "select", isSpacePanning: false, variablePickerOpen: false, inspectorMessage: null, canvasSize: { width: 1200, height: 800 } },
+      ui: { activeTool: "select", isSpacePanning: false, variablePickerOpen: false, inspectorMessage: null, canvasSize: { width: 1200, height: 800 }, editingTextElementId: null, contextMenu: null, isHelpOpen: false, showGrid: false, previewMode: "light" },
       isDirty: false,
       initialized: true,
     });
@@ -217,7 +262,27 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
   setVariablePickerOpen: (open) => set((state) => ({ ui: { ...state.ui, variablePickerOpen: open } })),
   setInspectorMessage: (message) => set((state) => ({ ui: { ...state.ui, inspectorMessage: message } })),
   setCanvasSize: (width, height) => set((state) => ({ ui: { ...state.ui, canvasSize: { width, height } } })),
-  captureHistory: () => set((state) => ({ history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] } })),
+  setEditingTextElementId: (id) => set((state) => ({ ui: { ...state.ui, editingTextElementId: id } })),
+  setContextMenu: (contextMenu) => set((state) => ({ ui: { ...state.ui, contextMenu } })),
+  setHelpOpen: (isOpen) => set((state) => ({ ui: { ...state.ui, isHelpOpen: isOpen } })),
+  setShowGrid: (show) => set((state) => ({ ui: { ...state.ui, showGrid: show } })),
+  setPreviewMode: (mode) => set((state) => ({ ui: { ...state.ui, previewMode: mode } })),
+  copySelected: () => set((state) => {
+    if (state.selection.selectedElementIds.length === 0) return state;
+    return { clipboard: copySelectedElements(state.model, state.selection.selectedElementIds) };
+  }),
+  pasteClipboard: () => set((state) => {
+    if (state.clipboard.length === 0) return state;
+    const result = pasteElementsIntoModel(state.model, state.clipboard);
+    return {
+      model: result.model,
+      selection: createSelectionState(result.elements.map((e) => e.id), { primaryId: result.elements[0].id, activeEditingGroupId: null }, state.selection),
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
+      clipboard: result.elements.map(cloneCanonicalModel),
+      isDirty: true,
+    };
+  }),
+  captureHistory: () => set((state) => ({ history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] } })),
   applyModel: (nextModel, options) => set((state) => {
     const normalizedSelectionIds = state.selection.selectedElementIds.filter((id) => nextModel.elements.some((element) => element.id === id));
     const activeEditingGroupId = state.selection.activeEditingGroupId && nextModel.elements.some((element) => element.groupId === state.selection.activeEditingGroupId)
@@ -226,7 +291,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
 
     return {
       model: cloneCanonicalModel(nextModel),
-      history: options?.recordHistory === false ? state.history : { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: options?.recordHistory === false ? state.history : { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       selection: createSelectionState(normalizedSelectionIds, { activeEditingGroupId }, state.selection),
       isDirty: options?.dirty ?? true,
     };
@@ -238,7 +303,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: result.model,
       selection: createSelectionState([result.element.id], { primaryId: result.element.id, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
       ui: { ...state.ui, activeTool: "select" },
     });
@@ -250,22 +315,30 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: result.model,
       selection: createSelectionState([result.element.id], { primaryId: result.element.id, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
       ui: { ...state.ui, activeTool: "select" },
     });
     return result.element.id;
   },
-  updateElement: (id, updates, options) => set((state) => ({
-    model: updateElementInModel(state.model, id, updates),
-    history: options?.recordHistory === false ? state.history : { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
-    isDirty: true,
-  })),
-  updateSelectedElements: (updates, options) => set((state) => ({
-    model: updateElementsInModel(state.model, state.selection.selectedElementIds, updates),
-    history: options?.recordHistory === false ? state.history : { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
-    isDirty: true,
-  })),
+  updateElement: (id, updates, options) => set((state) => {
+    const nextModel = updateElementInModel(state.model, id, updates);
+    return {
+      model: nextModel,
+      history: options?.recordHistory === false ? state.history : { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
+      isDirty: true,
+      recentColors: updateRecentColorsHelper(state.recentColors, updates),
+    };
+  }),
+  updateSelectedElements: (updates, options) => set((state) => {
+    const nextModel = updateElementsInModel(state.model, state.selection.selectedElementIds, updates);
+    return {
+      model: nextModel,
+      history: options?.recordHistory === false ? state.history : { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
+      isDirty: true,
+      recentColors: updateRecentColorsHelper(state.recentColors, updates),
+    };
+  }),
   removeElement: (id) => {
     const state = get();
     if (!state.model.elements.some((element) => element.id === id)) return;
@@ -273,7 +346,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: nextModel,
       selection: createSelectionState(findNextSelectionIds(state.model, [id]), { activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -284,7 +357,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: result.model,
       selection: createSelectionState(result.elements.map((element) => element.id), { primaryId: result.elements[0].id, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -293,7 +366,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (!state.model.elements.some((element) => element.id === id)) return;
     set({
       model: reorderElementsInModel(state.model, [id], mode),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -304,7 +377,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: nextModel,
       selection: createSelectionState(findNextSelectionIds(state.model, state.selection.selectedElementIds), { activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -316,7 +389,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: result.model,
       selection: createSelectionState(result.elements.map((element) => element.id), { primaryId: result.elements[0].id, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -325,7 +398,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (state.selection.selectedElementIds.length === 0) return;
     set({
       model: reorderElementsInModel(state.model, state.selection.selectedElementIds, mode),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -334,18 +407,18 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (state.selection.selectedElementIds.length === 0) return;
     set({
       model: nudgeElementsInModel(state.model, state.selection.selectedElementIds, deltaXmm, deltaYmm),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
   rotateSelected: (direction) => {
     const state = get();
-    if (state.selection.selectedElementIds.length !== 1) return;
+    if (state.selection.selectedElementIds !== undefined && state.selection.selectedElementIds.length !== 1) return;
     const selectedId = state.selection.primarySelectedElementId ?? state.selection.selectedElementIds[0];
     if (!selectedId) return;
     set({
       model: rotateElementInModel(state.model, selectedId, direction),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -358,7 +431,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: result.model,
       selection: createSelectionState(groupedIds, { primaryId: groupedIds[0] ?? null, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -370,7 +443,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     set({
       model: ungroupGroupInModel(state.model, groupId),
       selection: createSelectionState(memberIds, { primaryId: memberIds[0] ?? null, activeEditingGroupId: null }, state.selection),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -380,7 +453,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (!groupId) return;
     set({
       model: renameGroupInModel(state.model, groupId, name),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -390,7 +463,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (!groupId) return;
     set({
       model: setGroupVisibilityInModel(state.model, groupId, visible),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -400,7 +473,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (!groupId) return;
     set({
       model: setGroupLockedInModel(state.model, groupId, locked),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -410,7 +483,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (!groupId) return;
     set({
       model: reorderGroupInModel(state.model, groupId, mode),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -419,7 +492,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (state.selection.selectedElementIds.length === 0) return;
     set({
       model: alignSelection(state.model, state.selection.selectedElementIds, mode, state.selection.alignmentReference),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -428,7 +501,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (state.selection.selectedElementIds.length < 3) return;
     set({
       model: distributeSelection(state.model, state.selection.selectedElementIds, mode),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -437,7 +510,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (state.selection.selectedElementIds.length < 2) return;
     set({
       model: matchSelectionSize(state.model, state.selection.selectedElementIds, mode, state.selection.primarySelectedElementId),
-      history: { past: [...state.history.past.slice(-49), cloneCanonicalModel(state.model)], future: [] },
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
       isDirty: true,
     });
   },
@@ -449,7 +522,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
       model: cloneCanonicalModel(previous),
       history: {
         past: state.history.past.slice(0, -1),
-        future: [cloneCanonicalModel(state.model), ...state.history.future].slice(0, 50),
+        future: [cloneCanonicalModel(state.model), ...state.history.future].slice(0, HISTORY_LIMIT),
       },
       selection: createSelectionState(retainedIds, {
         primaryId: retainedIds.includes(state.selection.primarySelectedElementId || "") ? state.selection.primarySelectedElementId : retainedIds[0] ?? null,
@@ -467,7 +540,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     return {
       model: cloneCanonicalModel(next),
       history: {
-        past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-50),
+        past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT),
         future,
       },
       selection: createSelectionState(retainedIds, {
@@ -479,5 +552,63 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
       isDirty: true,
     };
   }),
+  restoreHistoryState: (type: "past" | "future", index: number) => set((state) => {
+    let targetModel: CanonicalLabelModel | undefined;
+    
+    if (type === "past") {
+      targetModel = state.history.past[index];
+    } else if (type === "future") {
+      targetModel = state.history.future[index];
+    } else {
+      return state;
+    }
+
+    if (!targetModel) return state;
+
+    const currentModel = cloneCanonicalModel(state.model);
+    let past: CanonicalLabelModel[] = [];
+    let future: CanonicalLabelModel[] = [];
+
+    if (type === "past") {
+      past = state.history.past.slice(0, index);
+      future = [...state.history.past.slice(index + 1), currentModel, ...state.history.future];
+    } else {
+      past = [...state.history.past, currentModel, ...state.history.future.slice(0, index)];
+      future = state.history.future.slice(index + 1);
+    }
+
+    return {
+      model: cloneCanonicalModel(targetModel),
+      history: {
+        past: past.slice(-HISTORY_LIMIT),
+        future: future.slice(0, HISTORY_LIMIT),
+      },
+      isDirty: true
+    };
+  }),
+  addTemplate: (elements) => set((state) => {
+    const result = pasteElementsIntoModel(state.model, elements);
+    return {
+      model: result.model,
+      selection: createSelectionState(result.elements.map((e) => e.id), { primaryId: result.elements[0].id, activeEditingGroupId: null }, state.selection),
+      history: { past: [...state.history.past, cloneCanonicalModel(state.model)].slice(-HISTORY_LIMIT), future: [] },
+      isDirty: true,
+    };
+  }),
+  addRecentColor: (color) => set((state) => {
+    if (!color || typeof color !== "string" || !color.startsWith("#")) return state;
+    const cleanColor = color.toUpperCase();
+    const next = [cleanColor, ...state.recentColors.filter((c) => c !== cleanColor)].slice(0, RECENT_COLORS_LIMIT);
+    return { recentColors: next };
+  }),
+  addCustomGuide: (guide) => set((state) => ({
+    customGuides: [...state.customGuides, { ...guide, id: Math.random().toString(36).substring(7) }],
+  })),
+  removeCustomGuide: (id) => set((state) => ({
+    customGuides: state.customGuides.filter((g) => g.id !== id),
+  })),
+  updateCustomGuide: (id, positionMm) => set((state) => ({
+    customGuides: state.customGuides.map((g) => g.id === id ? { ...g, positionMm } : g),
+  })),
   markSaved: () => set({ isDirty: false }),
 }));

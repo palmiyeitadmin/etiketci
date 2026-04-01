@@ -1,6 +1,6 @@
 "use client";
 
-import { Barcode, Circle, CursorClick, FolderOpen, HandPalm, ImageSquare, Minus, QrCode, Square, TextT } from "@phosphor-icons/react";
+import { Barcode, Circle, CursorClick, FolderOpen, HandPalm, ImageSquare, Minus, QrCode, Square, TextT, SquaresFour } from "@phosphor-icons/react";
 import { EditorToolButton } from "@/components/Editor/EditorIconButton";
 import { EditorTool } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
@@ -23,13 +23,16 @@ export function EditorToolRail({
     activeTool,
     onSelectTool,
     onOpenLibrary,
+    onOpenTemplates,
 }: {
     activeTool: EditorTool;
     onSelectTool: (tool: EditorTool) => void;
     onOpenLibrary: () => void;
+    onOpenTemplates: () => void;
 }) {
     const { locale } = useI18n();
-    const libraryLabel = locale === "tr" ? "Kutuphane" : "Library";
+    const libraryLabel = locale === "tr" ? "Varliklar" : "Assets";
+    const templatesLabel = locale === "tr" ? "Sablonlar" : "Templates";
 
     return (
         <aside className="h-full min-h-0 w-16 shrink-0 overflow-hidden border-r border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-2 py-3">
@@ -44,6 +47,7 @@ export function EditorToolRail({
                 />
             ))}
             <div className="my-1 h-px w-10 bg-[color:var(--plms-border)]" />
+            <EditorToolButton icon={SquaresFour} label={templatesLabel} onClick={onOpenTemplates} />
             <EditorToolButton icon={FolderOpen} label={libraryLabel} onClick={onOpenLibrary} />
             </div>
         </aside>

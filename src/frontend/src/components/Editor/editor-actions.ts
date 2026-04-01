@@ -155,6 +155,40 @@ export function duplicateElementsInModel(model: CanonicalLabelModel, ids: string
   return { model: next, elements: duplicates };
 }
 
+export function copySelectedElements(model: CanonicalLabelModel, ids: string[]): LabelElement[] {
+  const orderedIds = sortElementIdsInModelOrder(model, ids);
+  if (orderedIds.length === 0) return [];
+  const selectedSet = new Set(orderedIds);
+  return model.elements.filter((element) => selectedSet.has(element.id)).map(cloneCanonicalModel);
+}
+
+export function pasteElementsIntoModel(model: CanonicalLabelModel, clipboard: LabelElement[]): { model: CanonicalLabelModel; elements: LabelElement[] } {
+  if (clipboard.length === 0) {
+    return { model: cloneCanonicalModel(model), elements: [] };
+  }
+
+  const next = cloneCanonicalModel(model);
+  const duplicateGroupIds = new Map<string, string>();
+  const duplicates = clipboard.map((source) => {
+    const duplicate = cloneCanonicalModel(source);
+    duplicate.id = makeCopyId(source.id);
+    duplicate.xMm = Math.round((duplicate.xMm + 5) * 100) / 100;
+    duplicate.yMm = Math.round((duplicate.yMm + 5) * 100) / 100;
+    
+    if (source.groupId) {
+      if (!duplicateGroupIds.has(source.groupId)) {
+        duplicateGroupIds.set(source.groupId, makeGroupId());
+      }
+      duplicate.groupId = duplicateGroupIds.get(source.groupId);
+    }
+
+    return duplicate;
+  });
+
+  next.elements.push(...duplicates);
+  return { model: next, elements: duplicates };
+}
+
 export function findNextSelectionIds(model: CanonicalLabelModel, removedIds: string[]): string[] {
   const selected = new Set(uniqueIds(removedIds));
   const remaining = model.elements.filter((element) => !selected.has(element.id));

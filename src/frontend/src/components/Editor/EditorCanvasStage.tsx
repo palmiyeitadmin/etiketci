@@ -3,7 +3,7 @@
 import bwipjs from "bwip-js";
 import Konva from "konva";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Ellipse as KonvaEllipse, Group, Image as KonvaImage, Layer, Rect, Stage, Text as KonvaText, Transformer } from "react-konva";
+import { Ellipse as KonvaEllipse, Group, Image as KonvaImage, Layer, Rect, Stage, Text as KonvaText, Transformer, Label, Tag, Line } from "react-konva";
 import { EditorRulers } from "@/components/Editor/EditorRulers";
 import { computeSelectionBounds, getGroupMemberIds, selectionMatchesGroup, updateElementInModel } from "@/components/Editor/editor-actions";
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
@@ -12,7 +12,8 @@ import { SelectionToolbar } from "@/components/Editor/SelectionToolbar";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { cloneCanonicalModel } from "@/lib/editor-canonical";
 import { EDITOR_SNAP_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
-import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
+import { EditorViewport, ImageElement, LabelElement, EditorTool } from "@/types/canvas";
+import { MeasurementLabel, computeResizeSnap } from "@/components/Editor/editor-guides";
 
 const FIT_PADDING = 48;
 const LABEL_SURFACE_NAME = "label-surface";
@@ -237,6 +238,7 @@ function ElementNode({
     onDragEnd,
     registerRef,
     viewport,
+    activeTool,
 }: {
     element: LabelElement;
     x: number;
@@ -253,6 +255,7 @@ function ElementNode({
     onDragEnd: () => void;
     registerRef: (node: Konva.Group | null) => void;
     viewport: EditorViewport;
+    activeTool: EditorTool;
 }) {
     const image = useElementImage(element);
     const rotation = element.rotation ?? 0;
@@ -268,6 +271,8 @@ function ElementNode({
 
     return (
         <Group
+            id={element.id}
+            name="element-node"
             ref={registerRef}
             x={x + width / 2}
             y={y + height / 2}
@@ -275,22 +280,23 @@ function ElementNode({
             height={height}
             offsetX={width / 2}
             offsetY={height / 2}
-            opacity={dimmed ? 0.3 : 1}
+            opacity={element.visible === false ? 0 : (dimmed ? 0.3 : 1)}
             rotation={rotation}
             draggable={draggable}
-            onClick={(event) => { event.cancelBubble = true; onSelect(event); }}
-            onTap={(event) => { event.cancelBubble = true; onSelect(event as unknown as Konva.KonvaEventObject<MouseEvent>); }}
+            onClick={(event) => { if (activeTool === "select") { event.cancelBubble = true; onSelect(event); } }}
+            onTap={(event) => { if (activeTool === "select") { event.cancelBubble = true; onSelect(event as unknown as Konva.KonvaEventObject<MouseEvent>); } }}
             onDblClick={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
             onDblTap={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
             onDragStart={onDragStart}
             onDragMove={onDragMove}
             onDragEnd={onDragEnd}
+            listening={(!element.locked || selected) && element.visible !== false}
         >
             {element.type === "text" ? (
                 <KonvaText
                     width={width}
                     height={height}
-                    text={applyTextTransform(element.content || "Text", element.textTransform)}
+                    text={applyTextTransform(element.content || "", element.textTransform)}
                     fontFamily={element.font || "Arial"}
                     fontSize={UnitConverter.mmToProfile((element.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
                     fontStyle={element.fontWeight === "bold" ? "bold" : "normal"}
@@ -299,11 +305,20 @@ function ElementNode({
                     verticalAlign={element.verticalAlign || "middle"}
                     lineHeight={element.lineHeight || 1}
                     letterSpacing={UnitConverter.mmToProfile((element.letterSpacingPt || 0) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
+                    listening={false}
                 />
             ) : null}
 
             {element.type === "rect" ? (
-                <Rect width={width} height={height} fill={element.fill ?? undefined} stroke={element.stroke ?? undefined} strokeWidth={strokeWidthPx} cornerRadius={4} />
+                <Rect 
+                    width={width} 
+                    height={height} 
+                    fill={element.fill ?? undefined} 
+                    stroke={element.stroke ?? undefined} 
+                    strokeWidth={strokeWidthPx} 
+                    cornerRadius={cornerRadiusPx || 4} 
+                    listening={false}
+                />
             ) : null}
 
             {element.type === "ellipse" ? (
@@ -315,23 +330,28 @@ function ElementNode({
                     fill={element.fill ?? undefined}
                     stroke={element.stroke ?? undefined}
                     strokeWidth={strokeWidthPx}
+                    listening={false}
                 />
             ) : null}
 
             {element.type === "line" ? (
                 element.stroke && (element.strokeWidthMm ?? 0) > 0 ? (
                     element.lineDirection === "vertical" ? (
-                        <Rect x={width / 2 - Math.max(2, strokeWidthPx) / 2} width={Math.max(2, strokeWidthPx)} height={height} fill={element.stroke} />
+                        <Rect x={width / 2 - Math.max(2, strokeWidthPx) / 2} width={Math.max(2, strokeWidthPx)} height={height} fill={element.stroke} listening={false} />
                     ) : (
-                        <Rect y={height / 2 - Math.max(2, strokeWidthPx) / 2} width={width} height={Math.max(2, strokeWidthPx)} fill={element.stroke} />
+                        <Rect y={height / 2 - Math.max(2, strokeWidthPx) / 2} width={width} height={Math.max(2, strokeWidthPx)} fill={element.stroke} listening={false} />
                     )
                 ) : (
-                    <Rect width={width} height={height} fill="#00000000" strokeEnabled={false} />
+                    <Rect width={width} height={height} fill="transparent" strokeEnabled={false} listening={false} />
                 )
             ) : null}
 
             {(element.type === "barcode" || element.type === "qr") ? (
-                image ? <KonvaImage image={image} width={width} height={height} /> : <Rect width={width} height={height} fill="#f8fafc" stroke="#94a3b8" dash={[4, 4]} />
+                image ? (
+                    <KonvaImage image={image} width={width} height={height} listening={false} />
+                ) : (
+                    <Rect width={width} height={height} fill="#f8fafc" stroke="#94a3b8" dash={[4, 4]} listening={false} />
+                )
             ) : null}
 
             {element.type === "image" ? (
@@ -344,16 +364,54 @@ function ElementNode({
                             stroke={element.frameStroke ?? undefined}
                             strokeWidth={frameStrokeWidthPx}
                             cornerRadius={cornerRadiusPx}
+                            listening={false}
                         />
                     ) : null}
                     {image ? (() => {
                         const placement = computeImagePlacement(element as ImageElement, width, height, image);
-                        return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} cornerRadius={cornerRadiusPx} />;
-                    })() : <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} cornerRadius={cornerRadiusPx} />}
+                        return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} cornerRadius={cornerRadiusPx} listening={false} />;
+                    })() : (
+                        <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} cornerRadius={cornerRadiusPx} listening={false} />
+                    )}
                 </>
             ) : null}
 
-            {selected ? <Rect width={width} height={height} stroke="#3b82f6" strokeWidth={1} dash={[6, 4]} listening={false} cornerRadius={element.type === "image" ? cornerRadiusPx : 0} /> : null}
+            {element.locked && (
+                <Group x={width - 12} y={-12} listening={false}>
+                    <Rect
+                        width={20}
+                        height={20}
+                        fill="#f1f5f9"
+                        stroke="#94a3b8"
+                        strokeWidth={1}
+                        cornerRadius={4}
+                        shadowBlur={1}
+                        shadowColor="rgba(0,0,0,0.1)"
+                    />
+                    <KonvaText
+                        text="🔒"
+                        fontSize={10}
+                        x={4}
+                        y={5}
+                        width={12}
+                        align="center"
+                    />
+                </Group>
+            )}
+
+
+
+            {selected ? (
+                <Rect 
+                    width={width} 
+                    height={height} 
+                    stroke="#3b82f6" 
+                    strokeWidth={1} 
+                    dash={[6, 4]} 
+                    listening={false} 
+                    cornerRadius={element.type === "image" ? cornerRadiusPx : (element.type === "rect" ? (cornerRadiusPx || 4) : 0)} 
+                />
+            ) : null}
         </Group>
     );
 }
@@ -373,13 +431,19 @@ export function EditorCanvasStage() {
     } | null>(null);
 
     const [guides, setGuides] = useState<GuideLine[]>([]);
+    const [measurements, setMeasurements] = useState<MeasurementLabel[]>([]);
     const [guideHint, setGuideHint] = useState<string | null>(null);
     const [marquee, setMarquee] = useState<{ x: number; y: number; width: number; height: number; additive: boolean } | null>(null);
+    const tooltipRef = useRef<Konva.Label | null>(null);
 
     const model = useEditorStore((state) => state.model);
     const selection = useEditorStore((state) => state.selection);
+    const customGuides = useEditorStore((state) => state.customGuides);
+    const ui = useEditorStore((state) => state.ui);
+    const previewMode = useEditorStore((state) => state.ui.previewMode);
     const activeTool = useEditorStore((state) => state.ui.activeTool);
     const isSpacePanning = useEditorStore((state) => state.ui.isSpacePanning);
+    const showGrid = useEditorStore((state) => state.ui.showGrid);
     const viewport = useEditorStore((state) => state.viewport);
     const setViewport = useEditorStore((state) => state.setViewport);
     const setCanvasSize = useEditorStore((state) => state.setCanvasSize);
@@ -390,7 +454,13 @@ export function EditorCanvasStage() {
     const captureHistory = useEditorStore((state) => state.captureHistory);
     const selectOnly = useEditorStore((state) => state.selectOnly);
     const toggleSelectedElement = useEditorStore((state) => state.toggleSelectedElement);
-    const clearSelection = useEditorStore((state) => state.clearSelection);
+    const storeClearSelection = useEditorStore((state) => state.clearSelection);
+    const clearSelection = useCallback(() => {
+        storeClearSelection();
+        setGuides([]);
+        setMeasurements([]);
+        setGuideHint(null);
+    }, [storeClearSelection]);
     const selectInBounds = useEditorStore((state) => state.selectInBounds);
     const setAlignmentReference = useEditorStore((state) => state.setAlignmentReference);
     const alignSelected = useEditorStore((state) => state.alignSelected);
@@ -402,6 +472,9 @@ export function EditorCanvasStage() {
     const removeSelected = useEditorStore((state) => state.removeSelected);
     const groupSelected = useEditorStore((state) => state.groupSelected);
     const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
+    
+    const editingTextElementId = useEditorStore((state) => state.ui.editingTextElementId);
+    const setEditingTextElementId = useEditorStore((state) => state.setEditingTextElementId);
 
     const labelWidthPx = UnitConverter.mmToProfile(model.dimensions.widthMm, ScreenPreviewProfile, 1);
     const labelHeightPx = UnitConverter.mmToProfile(model.dimensions.heightMm, ScreenPreviewProfile, 1);
@@ -434,21 +507,21 @@ export function EditorCanvasStage() {
     }, [selectedElements, selectedGroup]);
 
     const toolbarAnchor = useMemo(() => {
-        if (!selectionBounds) {
+        if (selection.selectedElementIds.length === 0) {
             return null;
         }
 
-        const left = labelX + UnitConverter.mmToProfile(selectionBounds.xMm + selectionBounds.widthMm / 2, ScreenPreviewProfile, viewport.zoom);
-        const topEdge = labelY + UnitConverter.mmToProfile(selectionBounds.yMm, ScreenPreviewProfile, viewport.zoom);
-        const bottomEdge = labelY + UnitConverter.mmToProfile(selectionBounds.yMm + selectionBounds.heightMm, ScreenPreviewProfile, viewport.zoom);
-        const placement = topEdge > 112 ? "top" : "bottom";
-
         return {
-            left,
-            top: placement === "top" ? topEdge : bottomEdge,
-            placement,
+            left: size.width / 2,
+            top: size.height - 32,
+            placement: "bottom",
         } as const;
-    }, [labelX, labelY, selectionBounds, viewport.zoom]);
+    }, [selection.selectedElementIds.length, size]);
+
+    const editingElement = useMemo(() => {
+        if (!editingTextElementId) return null;
+        return model.elements.find((e) => e.id === editingTextElementId) ?? null;
+    }, [model.elements, editingTextElementId]);
 
     const textStyleState = useMemo(() => {
         if (selectedElements.length === 0 || !selectedElements.every((element) => element.type === "text")) {
@@ -592,7 +665,7 @@ export function EditorCanvasStage() {
 
         const clickedStage = event.target === event.target.getStage();
         const clickedLabelSurface = event.target.hasName(LABEL_SURFACE_NAME);
-        if (!clickedStage && !clickedLabelSurface) {
+        if (activeTool === "select" && !clickedStage && !clickedLabelSurface) {
             return;
         }
 
@@ -661,6 +734,11 @@ export function EditorCanvasStage() {
     };
 
     const handleElementDoubleSelect = (element: LabelElement) => {
+        if (element.type === "text") {
+            setEditingTextElementId(element.id);
+            return;
+        }
+
         if (!element.groupId) {
             return;
         }
@@ -668,7 +746,43 @@ export function EditorCanvasStage() {
         selectOnly([element.id], { primaryId: element.id, activeEditingGroupId: element.groupId });
     };
 
-    const renderableElements = useMemo(() => model.elements.filter((element) => element.visible !== false), [model.elements]);
+    const handleContextMenu = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+        e.evt.preventDefault();
+        if (isSpacePanning || activeTool !== "select") return;
+
+        const clickedStage = e.target === e.target.getStage();
+        const clickedLabelSurface = e.target.hasName(LABEL_SURFACE_NAME);
+        
+        let targetId = null;
+        if (!clickedStage && !clickedLabelSurface) {
+            // Find the closest ancestor Group that has id
+            let current = e.target as Konva.Node | null;
+            while (current && current.getStage() !== current) {
+                if (current.id()) {
+                    targetId = current.id();
+                    break;
+                }
+                current = current.parent;
+            }
+        }
+
+        if (targetId && !selection.selectedElementIds.includes(targetId)) {
+            selectOnly([targetId], { primaryId: targetId });
+        } else if (clickedStage || clickedLabelSurface) {
+            clearSelection();
+        }
+
+        // Schedule context menu right after state propagates, or just pull from getter
+        setTimeout(() => {
+            useEditorStore.getState().setContextMenu({
+                x: e.evt.clientX,
+                y: e.evt.clientY,
+                elementIds: useEditorStore.getState().selection.selectedElementIds
+            });
+        }, 0);
+    }, [isSpacePanning, activeTool, selection.selectedElementIds, selectOnly, clearSelection]);
+
+    const renderableElements = useMemo(() => model.elements, [model.elements]);
 
     return (
         <div ref={ref} className="relative h-full w-full overflow-hidden bg-[#0b1220]">
@@ -677,6 +791,7 @@ export function EditorCanvasStage() {
                 ref={stageRef}
                 width={size.width}
                 height={size.height}
+                onContextMenu={handleContextMenu}
                 onMouseDown={handleStagePointerDown}
                 onMouseMove={handleStagePointerMove}
                 onMouseUp={handleStagePointerUp}
@@ -691,12 +806,64 @@ export function EditorCanvasStage() {
                         y={labelY}
                         width={scaledLabelWidth}
                         height={scaledLabelHeight}
-                        fill="#ffffff"
+                        fill={
+                            previewMode === "light" ? "#ffffff" : 
+                            previewMode === "dark" ? "#1e293b" : 
+                            "#ffffff"
+                        }
                         cornerRadius={6}
                         shadowBlur={24}
                         shadowColor="rgba(15, 23, 42, 0.35)"
                     />
-                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke="#cbd5e1" strokeWidth={1} listening={false} />
+                    {previewMode === "checkerboard" && (
+                        <Rect
+                            x={labelX}
+                            y={labelY}
+                            width={scaledLabelWidth}
+                            height={scaledLabelHeight}
+                            fillPriority="pattern"
+                            fillPatternImage={(() => {
+                                const canvas = document.createElement("canvas");
+                                canvas.width = 20;
+                                canvas.height = 20;
+                                const ctx = canvas.getContext("2d");
+                                if (ctx) {
+                                    ctx.fillStyle = "#eee";
+                                    ctx.fillRect(0, 0, 10, 10);
+                                    ctx.fillRect(10, 10, 10, 10);
+                                    ctx.fillStyle = "#fff";
+                                    ctx.fillRect(10, 0, 10, 10);
+                                    ctx.fillRect(0, 10, 10, 10);
+                                }
+                                const img = new window.Image();
+                                img.src = canvas.toDataURL();
+                                return img;
+                            })()}
+                            fillPatternRepeat="repeat"
+                            cornerRadius={6}
+                            listening={false}
+                        />
+                    )}
+                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke="#cbd5e1" strokeWidth={1} cornerRadius={6} listening={false} />
+                    
+                    {showGrid && (() => {
+                        const gridStep = 5; // 5mm step
+                        const lines = [];
+                        
+                        // Vertical lines
+                        for (let x = gridStep; x < model.dimensions.widthMm; x += gridStep) {
+                            const xPos = labelX + UnitConverter.mmToProfile(x, ScreenPreviewProfile, viewport.zoom);
+                            lines.push(<Rect key={`grid-v-${x}`} x={xPos} y={labelY} width={1} height={scaledLabelHeight} fill="#cbd5e1" opacity={0.3} listening={false} />);
+                        }
+                        
+                        // Horizontal lines
+                        for (let y = gridStep; y < model.dimensions.heightMm; y += gridStep) {
+                            const yPos = labelY + UnitConverter.mmToProfile(y, ScreenPreviewProfile, viewport.zoom);
+                            lines.push(<Rect key={`grid-h-${y}`} x={labelX} y={yPos} width={scaledLabelWidth} height={1} fill="#cbd5e1" opacity={0.3} listening={false} />);
+                        }
+                        
+                        return lines;
+                    })()}
 
                     {guides.map((guide, index) => (
                         guide.orientation === "vertical" ? (
@@ -705,6 +872,19 @@ export function EditorCanvasStage() {
                             <Rect key={`guide-h-${index}`} x={labelX} y={labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)} width={scaledLabelWidth} height={1} fill="#38bdf8" opacity={0.8} listening={false} />
                         )
                     ))}
+
+                    {measurements.map((m: MeasurementLabel, index: number) => {
+                        const px = labelX + UnitConverter.mmToProfile(m.xMm, ScreenPreviewProfile, viewport.zoom);
+                        const py = labelY + UnitConverter.mmToProfile(m.yMm, ScreenPreviewProfile, viewport.zoom);
+                        return (
+                            <Group key={`meas-${index}`} x={px} y={py} listening={false}>
+                                <Label>
+                                    <Tag fill="#f97316" cornerRadius={4} padding={4} pointerDirection="none" />
+                                    <KonvaText text={m.text} fill="#ffffff" padding={4} fontSize={10} fontFamily="Inter, sans-serif" fontStyle="bold" />
+                                </Label>
+                            </Group>
+                        );
+                    })}
 
                     {renderableElements.map((element) => {
                         const x = labelX + UnitConverter.mmToProfile(element.xMm, ScreenPreviewProfile, viewport.zoom);
@@ -723,6 +903,7 @@ export function EditorCanvasStage() {
                                 selected={selectedSet.has(element.id)}
                                 dimmed={Boolean(selection.activeEditingGroupId && element.groupId !== selection.activeEditingGroupId)}
                                 draggable={activeTool === "select" && !isSpacePanning && element.locked !== true && selectedSet.has(element.id)}
+                                activeTool={activeTool}
                                 viewport={viewport}
                                 registerRef={(node) => { elementRefs.current[element.id] = node; }}
                                 onSelect={(evt) => handleElementSelect(element, evt)}
@@ -764,21 +945,45 @@ export function EditorCanvasStage() {
                                             y: labelY + UnitConverter.mmToProfile(snapResult.yMm, ScreenPreviewProfile, viewport.zoom) + height / 2,
                                         });
                                         setGuides(snapResult.guides);
+                                        setMeasurements(snapResult.measurements || []);
                                         setGuideHint(snapResult.hint ?? null);
                                     } else {
                                         setGuides([]);
+                                        setMeasurements([]);
                                         setGuideHint(null);
                                     }
 
                                     let nextModel = cloneCanonicalModel(model);
+                                    let primaryElementActualX = 0;
+                                    let primaryElementActualY = 0;
+
                                     session.selectedIds.forEach((id) => {
                                         const origin = session.positions[id];
                                         if (!origin) return;
+                                        const newXMm = UnitConverter.toPersisted(origin.xMm + deltaX);
+                                        const newYMm = UnitConverter.toPersisted(origin.yMm + deltaY);
+                                        if (id === element.id) {
+                                            primaryElementActualX = newXMm;
+                                            primaryElementActualY = newYMm;
+                                        }
                                         nextModel = updateElementInModel(nextModel, id, {
-                                            xMm: UnitConverter.toPersisted(origin.xMm + deltaX),
-                                            yMm: UnitConverter.toPersisted(origin.yMm + deltaY),
+                                            xMm: newXMm,
+                                            yMm: newYMm,
                                         });
                                     });
+
+                                    if (tooltipRef.current) {
+                                        const tooltip = tooltipRef.current;
+                                        tooltip.position({
+                                            x: (evt.target.x() || 0),
+                                            y: (evt.target.y() || 0) - 30,
+                                        });
+                                        const textNode = tooltip.findOne("Text") as Konva.Text;
+                                        if (textNode) {
+                                            textNode.text(`X: ${primaryElementActualX.toFixed(1)} mm\nY: ${primaryElementActualY.toFixed(1)} mm`);
+                                        }
+                                        tooltip.visible(true);
+                                    }
 
                                     applyModel(nextModel, { recordHistory: false });
                                 }}
@@ -786,11 +991,32 @@ export function EditorCanvasStage() {
                                     dragSnapshotTakenRef.current = false;
                                     dragSessionRef.current = null;
                                     setGuides([]);
+                                    setMeasurements([]);
                                     setGuideHint(null);
+                                    if (tooltipRef.current) {
+                                        tooltipRef.current.visible(false);
+                                    }
                                 }}
                             />
                         );
                     })}
+
+                    {/* Custom Guides from Rulers - show during interaction */}
+                    {(guides.length > 0 || selection.selectedElementIds.length > 0) && customGuides.map((guide) => (
+                        <Line
+                            key={guide.id}
+                            points={
+                                guide.orientation === "horizontal"
+                                    ? [0, labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom), ui.canvasSize.width, labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)]
+                                    : [labelX + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom), 0, labelX + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom), ui.canvasSize.height]
+                            }
+                            stroke="#38bdf8"
+                            strokeWidth={1}
+                            dash={[4, 4]}
+                            opacity={0.5}
+                            listening={false}
+                        />
+                    ))}
 
                     {selectionBounds && selection.selectedElementIds.length > 1 ? (
                         <Rect
@@ -822,8 +1048,70 @@ export function EditorCanvasStage() {
                         ref={transformerRef}
                         rotateEnabled={false}
                         enabledAnchors={selection.selectedElementIds.length === 1 ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"] : []}
-                        boundBoxFunc={(oldBox, newBox) => ({ ...newBox, width: Math.max(8, newBox.width), height: Math.max(8, newBox.height) })}
+                        boundBoxFunc={(oldBox, newBox) => {
+                            if (!primarySelectedElement || selection.selectedElementIds.length !== 1) {
+                                return newBox;
+                            }
+
+                            // Determine which edge is moving based on box differences
+                            const edges: ("left" | "right" | "top" | "bottom")[] = [];
+                            if (Math.abs(newBox.x - oldBox.x) > 0.01) edges.push("left");
+                            if (Math.abs(newBox.y - oldBox.y) > 0.01) edges.push("top");
+                            if (Math.abs((newBox.x + newBox.width) - (oldBox.x + oldBox.width)) > 0.01) edges.push("right");
+                            if (Math.abs((newBox.y + newBox.height) - (oldBox.y + oldBox.height)) > 0.01) edges.push("bottom");
+
+                            if (edges.length === 0) return newBox;
+
+                            const proposedXmm = UnitConverter.profileToMm((newBox.x - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
+                            const proposedYmm = UnitConverter.profileToMm((newBox.y - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
+                            const proposedWidthMm = UnitConverter.profileToMm(newBox.width / viewport.zoom, ScreenPreviewProfile, 1);
+                            const proposedHeightMm = UnitConverter.profileToMm(newBox.height / viewport.zoom, ScreenPreviewProfile, 1);
+
+                            const snap = computeResizeSnap({
+                                model,
+                                element: primarySelectedElement,
+                                proposedXmm,
+                                proposedYmm,
+                                proposedWidthMm,
+                                proposedHeightMm,
+                                movingEdges: edges
+                            });
+
+                            setGuides(snap.guides);
+                            setMeasurements(snap.measurements || []);
+                            
+                            return {
+                                x: labelX + UnitConverter.mmToProfile(snap.xMm, ScreenPreviewProfile, viewport.zoom),
+                                y: labelY + UnitConverter.mmToProfile(snap.yMm, ScreenPreviewProfile, viewport.zoom),
+                                width: UnitConverter.mmToProfile(snap.widthMm, ScreenPreviewProfile, viewport.zoom),
+                                height: UnitConverter.mmToProfile(snap.heightMm, ScreenPreviewProfile, viewport.zoom),
+                                rotation: newBox.rotation
+                            };
+                        }}
                         onTransformStart={() => captureHistory()}
+                        onTransform={() => {
+                            if (!primarySelectedElement) return;
+                            const node = elementRefs.current[primarySelectedElement.id];
+                            if (!node) return;
+                            
+                            const scaleX = node.scaleX();
+                            const scaleY = node.scaleY();
+                            const widthMm = UnitConverter.profileToMm((node.width() * scaleX) / viewport.zoom, ScreenPreviewProfile, 1);
+                            const heightMm = UnitConverter.profileToMm((node.height() * scaleY) / viewport.zoom, ScreenPreviewProfile, 1);
+                            
+                            if (tooltipRef.current) {
+                                const tooltip = tooltipRef.current;
+                                tooltip.position({
+                                    x: node.x() + (node.width() * scaleX) / 2 + 10,
+                                    y: node.y() - (node.height() * scaleY) / 2 - 10,
+                                });
+                                const textNode = tooltip.findOne("Text") as Konva.Text;
+                                if (textNode) {
+                                    textNode.text(`W: ${widthMm.toFixed(1)} mm\nH: ${heightMm.toFixed(1)} mm`);
+                                }
+                                tooltip.visible(true);
+                            }
+                        }}
                         onTransformEnd={() => {
                             if (!primarySelectedElement) return;
                             const node = elementRefs.current[primarySelectedElement.id];
@@ -837,8 +1125,42 @@ export function EditorCanvasStage() {
                             node.scaleX(1);
                             node.scaleY(1);
                             updateElement(primarySelectedElement.id, { xMm: Math.max(0, xMm), yMm: Math.max(0, yMm), widthMm: Math.max(1, widthMm), heightMm: Math.max(1, heightMm) }, { recordHistory: false });
+                            
+                            setGuides([]);
+                            setMeasurements([]);
+                            if (tooltipRef.current) {
+                                tooltipRef.current.visible(false);
+                            }
                         }}
                     />
+
+                    {/* Performance Optimized Tooltip (Ref-based) */}
+                    <Label
+                        ref={tooltipRef}
+                        visible={false}
+                        listening={false}
+                        zIndex={1000}
+                    >
+                        <Tag 
+                            fill="#1e293b" 
+                            cornerRadius={4} 
+                            padding={6} 
+                            stroke="#475569" 
+                            strokeWidth={1} 
+                            shadowBlur={4} 
+                            shadowColor="black" 
+                            shadowOpacity={0.2} 
+                        />
+                        <KonvaText 
+                            text="" 
+                            fill="#f8fafc" 
+                            padding={6} 
+                            fontSize={11} 
+                            fontFamily="monospace" 
+                            lineHeight={1.4}
+                        />
+                    </Label>
+
                 </Layer>
             </Stage>
 
@@ -880,6 +1202,61 @@ export function EditorCanvasStage() {
                     {guideHint}
                 </div>
             ) : null}
+
+            {editingElement && editingElement.type === "text" ? (() => {
+                const x = labelX + UnitConverter.mmToProfile(editingElement.xMm, ScreenPreviewProfile, viewport.zoom);
+                const y = labelY + UnitConverter.mmToProfile(editingElement.yMm, ScreenPreviewProfile, viewport.zoom);
+                const width = UnitConverter.mmToProfile(editingElement.widthMm, ScreenPreviewProfile, viewport.zoom);
+                const height = UnitConverter.mmToProfile(editingElement.heightMm, ScreenPreviewProfile, viewport.zoom);
+                const fontSizePx = UnitConverter.mmToProfile((editingElement.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, viewport.zoom);
+                const rotation = editingElement.rotation || 0;
+
+                return (
+                    <textarea
+                        autoFocus
+                        defaultValue={editingElement.content || ""}
+                        style={{
+                            position: "absolute",
+                            left: `${x + width / 2}px`,
+                            top: `${y + height / 2}px`,
+                            width: `${width}px`,
+                            height: `${height}px`,
+                            transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                            fontSize: `${fontSizePx}px`,
+                            fontFamily: editingElement.font || "Arial",
+                            fontWeight: editingElement.fontWeight === "bold" ? "bold" : "normal",
+                            color: editingElement.fill || "#0f172a",
+                            textAlign: editingElement.textAlign as any || "left",
+                            lineHeight: editingElement.lineHeight || 1,
+                            letterSpacing: `${UnitConverter.mmToProfile((editingElement.letterSpacingPt || 0) * 0.352778, ScreenPreviewProfile, viewport.zoom)}px`,
+                            background: "transparent",
+                            outline: "none",
+                            padding: 0,
+                            margin: 0,
+                            resize: "none",
+                            overflow: "hidden",
+                            wordWrap: "break-word",
+                            border: "none",
+                            boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.4)",
+                            zIndex: 2000,
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                setEditingTextElementId(null);
+                            } else if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                updateElement(editingElement.id, { content: e.currentTarget.value });
+                                setEditingTextElementId(null);
+                            }
+                        }}
+                        onBlur={(e) => {
+                            updateElement(editingElement.id, { content: e.currentTarget.value });
+                            setEditingTextElementId(null);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                    />
+                );
+            })() : null}
         </div>
     );
 }

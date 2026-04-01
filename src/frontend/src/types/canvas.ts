@@ -9,6 +9,13 @@ export type LineDirection = "horizontal" | "vertical";
 export type DiscreteRotation = 0 | 90 | 180 | 270;
 export type AssetSource = "upload" | "phosphor";
 export type EditorAlignmentReference = "selection" | "canvas";
+export type EditorPreviewMode = "light" | "dark" | "checkerboard";
+
+export interface EditorGuide {
+    id: string;
+    orientation: "horizontal" | "vertical";
+    positionMm: number;
+}
 
 export interface BaseLabelElement {
     id: string;
