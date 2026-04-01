@@ -374,23 +374,12 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       <EditorTopBar
         name={model.name}
         dimensions={model.dimensions}
-        zoom={viewport.zoom}
         previewHref={previewHref}
         isDirty={isDirty || savePending}
         onSave={() => void handleSave()}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        onFit={fitCanvas}
-        onFitSelection={fitSelection}
-        onReset={resetViewport}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
-        onUndo={undo}
-        onRedo={redo}
+        onRenameTemplate={onRenameTemplate ? (name) => onRenameTemplate(name, model) : undefined}
         onResizeCanvas={handleResizeCanvas}
         onToggleHelp={() => setHelpOpen(!ui.isHelpOpen)}
-        previewMode={previewMode}
-        onSetPreviewMode={setPreviewMode}
       />
 
       <div className={layoutClassName}>
