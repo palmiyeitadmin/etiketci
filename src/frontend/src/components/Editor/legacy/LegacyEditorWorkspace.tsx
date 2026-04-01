@@ -125,6 +125,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         setSelection({ selectedElementIds: [element.id], primarySelectedElementId: element.id, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const deleteSelected = () => {
         if (!selection.primarySelectedElementId) return;
         const next = cloneModel(model);
@@ -133,6 +134,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         setSelection({ selectedElementIds: next.elements[0]?.id ? [next.elements[0].id] : [], primarySelectedElementId: next.elements[0]?.id ?? null, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const duplicateSelected = () => {
         if (!selectedElement) return;
         const duplicate = {
@@ -147,6 +149,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         setSelection({ selectedElementIds: [duplicate.id], primarySelectedElementId: duplicate.id, activeEditingGroupId: null, alignmentReference: "selection" });
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const undo = () => {
         setHistory((current) => {
             if (current.past.length === 0) return current;
@@ -160,6 +163,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({ initialModel, 
         });
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const redo = () => {
         setHistory((current) => {
             if (current.future.length === 0) return current;

@@ -84,6 +84,7 @@ export default function PrintIntentDetailPage() {
 
   useEffect(() => {
     loadIntent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const readiness = useMemo<ReadinessSnapshot | null>(() => {

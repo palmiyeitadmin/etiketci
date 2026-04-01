@@ -97,6 +97,7 @@ export function AssetLibraryDrawer({
   useEffect(() => {
     if (!open) return;
     void loadAssets("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const emptyText = useMemo(() => loading ? text.loading : text.empty, [loading, text.empty, text.loading]);
@@ -180,6 +181,7 @@ export function AssetLibraryDrawer({
                   {assets.map((asset) => (
                     <article key={asset.id} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
                       <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                       </div>
                       <div className="mt-3 truncate text-sm font-bold text-white">{asset.name}</div>

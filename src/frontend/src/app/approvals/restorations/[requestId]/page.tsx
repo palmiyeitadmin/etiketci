@@ -73,6 +73,7 @@ export default function RestorationApprovalDetailPage() {
 
     useEffect(() => {
         load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [requestId]);
 
     async function review(approve: boolean) {

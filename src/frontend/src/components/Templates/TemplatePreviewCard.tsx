@@ -65,7 +65,10 @@ export function TemplatePreviewCard({
             {element.type === "barcode" || element.type === "qr" ? <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">{element.type}</div> : null}
             {element.type === "image" ? (
                 element.assetId ? (
-                    <img src={`/api/assets/${element.assetId}/content`} alt="Asset" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
+                    <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/api/assets/${element.assetId}/content`} alt="Asset" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
+                    </>
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">asset</div>
                 )

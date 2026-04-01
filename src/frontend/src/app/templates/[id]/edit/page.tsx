@@ -105,6 +105,7 @@ export default function TemplateEditorPage() {
         return () => {
             cancelled = true;
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, requestedVersionId, router]);
 
     const handleSave = async (model: CanonicalLabelModel): Promise<EditorSaveResult> => {

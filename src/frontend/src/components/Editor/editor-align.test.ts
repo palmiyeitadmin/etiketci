@@ -57,7 +57,7 @@ describe("editor grouping helpers", () => {
     expect(grouped.groupId).toBeTruthy();
     expect(groupedIds).toEqual(["a", "b"]);
 
-    const ungrouped = ungroupGroupInModel(grouped.model, grouped.groupId);
+    const ungrouped = ungroupGroupInModel(grouped.model, grouped.groupId!);
     expect(ungrouped.elements.map((element) => element.id)).toEqual(["a", "b", "c"]);
     expect(ungrouped.elements.every((element) => !element.groupId)).toBe(true);
   });

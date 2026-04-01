@@ -92,6 +92,7 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
         return () => {
             active = false;
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     useEffect(() => {

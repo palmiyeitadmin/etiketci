@@ -145,6 +145,7 @@ export default function NewTemplatePage() {
         }
 
         void loadCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -165,6 +166,7 @@ export default function NewTemplatePage() {
         }
 
         void loadCodePreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.templateCategoryId]);
 
     const handleChange = (field: keyof TemplateFormState, value: string) => {

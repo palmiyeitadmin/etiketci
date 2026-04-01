@@ -294,6 +294,7 @@ export default function TemplatePreviewPage() {
         };
 
         load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, versionId, selectedProductId]);
 
     useEffect(() => {
@@ -345,6 +346,7 @@ export default function TemplatePreviewPage() {
                 URL.revokeObjectURL(nextObjectUrl);
             }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [previewFileUrl, pdfReloadKey]);
 
     const handleCreateIntent = async () => {

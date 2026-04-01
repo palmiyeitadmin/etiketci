@@ -146,8 +146,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     const isAuthRoute = pathname.startsWith("/auth/");
     const isEditorRoute = /^\/templates\/[^/]+\/edit$/.test(pathname);
-    const userRoles = ((session?.user as any)?.roles || []) as string[];
-    const userPermissions = ((session?.user as any)?.permissions || []) as string[];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const userRoles = useMemo(() => (((session?.user as any)?.roles || []) as string[]), [session?.user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const userPermissions = useMemo(() => (((session?.user as any)?.permissions || []) as string[]), [session?.user]);
     const mustChangePassword = Boolean((session?.user as any)?.mustChangePassword);
 
     const visibleGroups = useMemo(

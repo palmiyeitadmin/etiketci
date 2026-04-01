@@ -83,6 +83,7 @@ export default function NewProductPage() {
         }
 
         loadOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleChange = (field: keyof ProductFormState, value: string | boolean) => {

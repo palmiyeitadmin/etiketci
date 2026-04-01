@@ -341,6 +341,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearSelection, duplicateSelected, groupSelected, handleSave, nudgeSelected, redo, removeSelected, reorderSelected, rotateSelected, selection.activeEditingGroupId, setActiveEditingGroup, setSpacePanning, setTool, undo, ungroupSelectedGroup, copySelected, pasteClipboard, setHelpOpen, ui.contextMenu, ui.isHelpOpen]);
 
   const insertImageFromLibrary = useCallback((payload: { name: string; content: string; assetId?: string; assetSource?: "upload" | "phosphor"; assetKey?: string }) => {
