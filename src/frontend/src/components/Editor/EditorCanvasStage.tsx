@@ -503,16 +503,32 @@ export function EditorCanvasStage() {
     }, [selectedElements, selectedGroup]);
 
     const toolbarAnchor = useMemo(() => {
-        if (selection.selectedElementIds.length === 0) {
+        if (selection.selectedElementIds.length === 0 || !selectionBounds) {
             return null;
         }
 
+        const toolbarHalfWidth = 192;
+        const horizontalPadding = 16;
+        const selectionLeft = labelX + UnitConverter.mmToProfile(selectionBounds.xMm, ScreenPreviewProfile, viewport.zoom);
+        const selectionTop = labelY + UnitConverter.mmToProfile(selectionBounds.yMm, ScreenPreviewProfile, viewport.zoom);
+        const selectionWidth = UnitConverter.mmToProfile(selectionBounds.widthMm, ScreenPreviewProfile, viewport.zoom);
+        const selectionHeight = UnitConverter.mmToProfile(selectionBounds.heightMm, ScreenPreviewProfile, viewport.zoom);
+        const preferredLeft = selectionLeft + selectionWidth / 2;
+        const clampedLeft = Math.min(
+            Math.max(preferredLeft, horizontalPadding + toolbarHalfWidth),
+            Math.max(horizontalPadding + toolbarHalfWidth, size.width - horizontalPadding - toolbarHalfWidth),
+        );
+
+        const anchorBottom = selectionTop + selectionHeight;
+        const belowSpace = size.height - anchorBottom;
+        const placement = belowSpace >= 140 ? "bottom" : "top";
+
         return {
-            left: size.width / 2,
-            top: size.height - 32,
-            placement: "bottom",
+            left: clampedLeft,
+            top: placement === "bottom" ? anchorBottom : selectionTop,
+            placement,
         } as const;
-    }, [selection.selectedElementIds.length, size]);
+    }, [labelX, labelY, selection.selectedElementIds.length, selectionBounds, size.height, size.width, viewport.zoom]);
 
     const editingElement = useMemo(() => {
         if (!editingTextElementId) return null;

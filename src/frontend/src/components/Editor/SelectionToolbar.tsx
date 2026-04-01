@@ -201,12 +201,14 @@ export function SelectionToolbar({
         textAlignRight: "Right",
       }, [locale]);
 
-  const placementClass = anchor.placement === "top" ? "bottom-full mb-3" : "top-full mt-3";
+  const toolbarTransform = anchor.placement === "top"
+    ? "translate(-50%, calc(-100% - 12px))"
+    : "translate(-50%, 12px)";
 
   return (
     <div
-      className={`absolute z-30 -translate-x-1/2 ${placementClass}`}
-      style={{ left: anchor.left, top: anchor.top }}
+      className="absolute z-30"
+      style={{ left: anchor.left, top: anchor.top, transform: toolbarTransform }}
     >
       <div className="min-w-[23rem] max-w-[34rem] rounded-2xl border border-white/12 bg-[#0f1b2f]/96 px-3 py-3 shadow-[0_26px_80px_rgba(2,6,23,0.62)] ring-1 ring-white/6 backdrop-blur-xl">
         <div className="flex items-center gap-2">
