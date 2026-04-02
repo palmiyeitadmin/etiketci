@@ -2,6 +2,14 @@ import { computeBoundsForElements, getGroupMemberIds, selectionMatchesGroup } fr
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { useShallow } from "zustand/shallow";
 
+// Optimized selectors that prevent unnecessary re-renders
+
+// Model selectors
+export const useEditorModel = () => useEditorStore((state) => state.model, useShallow);
+
+// Selection selectors
+export const useEditorSelection = () => useEditorStore((state) => state.selection, useShallow);
+
 export const useSelectedElements = () => useEditorStore(useShallow((state) => {
   const selected = new Set(state.selection.selectedElementIds);
   return state.model.elements.filter((element) => selected.has(element.id));
@@ -34,10 +42,6 @@ export const useSelectionBounds = () => useEditorStore(useShallow((state) =>
   )
 ));
 
-export const useOrderedLayers = () => useEditorStore(useShallow((state) => [...state.model.elements].reverse()));
-
-export const useVisibleElementCount = () => useEditorStore(useShallow((state) => state.model.elements.filter((element) => element.visible !== false).length));
-
 export const useSelectionSummary = () => useEditorStore(useShallow((state) => {
   const selected = state.model.elements.filter((element) => state.selection.selectedElementIds.includes(element.id));
   const selectedGroup = selectionMatchesGroup(state.model, state.selection.selectedElementIds);
@@ -50,7 +54,36 @@ export const useSelectionSummary = () => useEditorStore(useShallow((state) => {
   };
 }));
 
+// Viewport selectors
+export const useEditorViewport = () => useEditorStore((state) => state.viewport, useShallow);
+
+// UI selectors
+export const useEditorUI = () => useEditorStore((state) => state.ui, useShallow);
+
+// History selectors
+export const useEditorHistory = () => useEditorStore((state) => state.history, useShallow);
+
+// Element selectors
+export const useEditorElements = () => useEditorStore((state) => state.model.elements, useShallow);
+
+// Utility selectors
+export const useOrderedLayers = () => useEditorStore(useShallow((state) => [...state.model.elements].reverse()));
+
+export const useVisibleElementCount = () => useEditorStore(useShallow((state) => state.model.elements.filter((element) => element.visible !== false).length));
+
 export const useGroupMembers = (groupId: string | null | undefined) => useEditorStore(useShallow((state) => {
   const ids = getGroupMemberIds(state.model, groupId);
   return state.model.elements.filter((element) => ids.includes(element.id));
 }));
+
+export const useEditorSelectedIds = () => useEditorStore((state) => state.selection.selectedElementIds, useShallow);
+
+export const useEditorPrimarySelectedId = () => useEditorStore((state) => state.selection.primarySelectedElementId, useShallow);
+
+export const useEditorIsDirty = () => useEditorStore((state) => state.isDirty);
+
+export const useEditorActiveTool = () => useEditorStore((state) => state.ui.activeTool);
+
+export const useEditorClipboard = () => useEditorStore((state) => state.clipboard, useShallow);
+
+export const useEditorRecentColors = () => useEditorStore((state) => state.recentColors, useShallow);
