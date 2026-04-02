@@ -8,6 +8,8 @@ import { EditorRulers } from "@/components/Editor/EditorRulers";
 import { computeSelectionBounds, getGroupMemberIds, selectionMatchesGroup, updateElementInModel } from "@/components/Editor/editor-actions";
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
 import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides";
+import { computeEnhancedSnap, computeRotationSnap } from "@/components/Editor/editor-advanced-guides";
+import { createSpatialIndex } from "@/components/Editor/editor-spatial-index";
 import { SelectionToolbar } from "@/components/Editor/SelectionToolbar";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { cloneCanonicalModel } from "@/lib/editor-canonical";
@@ -1054,13 +1056,21 @@ export function EditorCanvasStage() {
     }, [isSpacePanning, activeTool, selection.selectedElementIds, selectOnly, clearSelection]);
 
     const renderableElements = useMemo(() => model.elements, [model.elements]);
-
     const containerElements = useMemo(() => model.elements.filter(el => el.type === "container") as ContainerElement[], [model.elements]);
     const nonContainerElements = useMemo(() => model.elements.filter(el => el.type !== "container"), [model.elements]);
 
     const getContainerChildren = useCallback((containerId: string) => {
         return nonContainerElements.filter(el => el.groupId === containerId);
     }, [nonContainerElements]);
+
+    const spatialIndex = useMemo(() => {
+        return createSpatialIndex(
+            model.elements.filter(el => el.visible !== false),
+            model.dimensions.widthMm,
+            model.dimensions.heightMm,
+            20 // 20mm cell size
+        );
+    }, [model.elements, model.dimensions.widthMm, model.dimensions.heightMm]);
 
     return (
         <div ref={ref} className="relative h-full w-full overflow-hidden bg-[#0b1220]">
