@@ -412,6 +412,112 @@ function ElementNode({
     );
 }
 
+function GhostNode({
+    element,
+    x,
+    y,
+    width,
+    height,
+    viewport,
+}: {
+    element: LabelElement;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    viewport: EditorViewport;
+}) {
+    const image = useElementImage(element);
+    const rotation = element.rotation ?? 0;
+    const strokeWidthPx = element.stroke && (element.strokeWidthMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(element.strokeWidthMm || 0.4, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+    const frameStrokeWidthPx = element.type === "image" && (element.frameStrokeWidthMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(element.frameStrokeWidthMm || 0, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+    const cornerRadiusPx = element.type === "image" && (element.cornerRadiusMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(element.cornerRadiusMm || 0, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+
+    return (
+        <Group
+            x={x + width / 2}
+            y={y + height / 2}
+            width={width}
+            height={height}
+            offsetX={width / 2}
+            offsetY={height / 2}
+            opacity={0.4}
+            listening={false}
+            rotation={rotation}
+        >
+            {element.type === "text" ? (
+                <KonvaText
+                    width={width}
+                    height={height}
+                    text={applyTextTransform(element.content || "", element.textTransform)}
+                    fontFamily={element.font || "Arial"}
+                    fontSize={UnitConverter.mmToProfile((element.fontSizePt || 12) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
+                    fontStyle={element.fontWeight === "bold" ? "bold" : "normal"}
+                    fill={element.fill || "#0f172a"}
+                    align={element.textAlign || "left"}
+                    verticalAlign={element.verticalAlign || "middle"}
+                    lineHeight={element.lineHeight || 1}
+                    letterSpacing={UnitConverter.mmToProfile((element.letterSpacingPt || 0) * 0.352778, ScreenPreviewProfile, viewport.zoom)}
+                />
+            ) : null}
+
+            {element.type === "rect" ? (
+                <Rect
+                    width={width}
+                    height={height}
+                    fill={element.fill ?? undefined}
+                    stroke={element.stroke ?? undefined}
+                    strokeWidth={strokeWidthPx}
+                    cornerRadius={cornerRadiusPx || 4}
+                />
+            ) : null}
+
+            {element.type === "ellipse" ? (
+                <KonvaEllipse
+                    x={width / 2}
+                    y={height / 2}
+                    radiusX={width / 2}
+                    radiusY={height / 2}
+                    fill={element.fill ?? undefined}
+                    stroke={element.stroke ?? undefined}
+                    strokeWidth={strokeWidthPx}
+                />
+            ) : null}
+
+            {element.type === "line" ? (
+                <Line
+                    points={[0, 0, width, 0]}
+                    stroke={element.stroke ?? "#0f172a"}
+                    strokeWidth={strokeWidthPx || 1}
+                    lineCap="round"
+                />
+            ) : null}
+
+            {element.type === "image" && image ? (
+                <KonvaImage
+                    image={image}
+                    x={frameStrokeWidthPx / 2}
+                    y={frameStrokeWidthPx / 2}
+                    {...computeImagePlacement(element, width - frameStrokeWidthPx, height - frameStrokeWidthPx, image)}
+                />
+            ) : null}
+
+            {element.type === "barcode" ? (
+                <KonvaImage
+                    image={image}
+                    listening={false}
+                />
+            ) : null}
+        </Group>
+    );
+}
+
 export function EditorCanvasStage() {
     const { ref, size } = useContainerSize<HTMLDivElement>();
     const stageRef = useRef<Konva.Stage | null>(null);
@@ -431,6 +537,13 @@ export function EditorCanvasStage() {
     const [guideHint, setGuideHint] = useState<string | null>(null);
     const [marquee, setMarquee] = useState<{ x: number; y: number; width: number; height: number; additive: boolean } | null>(null);
     const tooltipRef = useRef<Konva.Label | null>(null);
+    const [ghostElement, setGhostElement] = useState<{
+        element: LabelElement;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } | null>(null);
 
     const model = useEditorStore((state) => state.model);
     const selection = useEditorStore((state) => state.selection);
@@ -934,6 +1047,14 @@ export function EditorCanvasStage() {
                                         captureHistory();
                                         dragSnapshotTakenRef.current = true;
                                     }
+
+                                    setGhostElement({
+                                        element: element,
+                                        x: x,
+                                        y: y,
+                                        width: width,
+                                        height: height,
+                                    });
                                 }}
                                 onDragMove={(evt) => {
                                     const session = dragSessionRef.current;
@@ -1000,6 +1121,16 @@ export function EditorCanvasStage() {
                                     }
 
                                     applyModel(nextModel, { recordHistory: false });
+
+                                    if (session.selectedIds.length === 1 && ghostElement) {
+                                        const currentX = evt.target.x() - width / 2;
+                                        const currentY = evt.target.y() - height / 2;
+                                        setGhostElement(prev => prev ? {
+                                            ...prev,
+                                            x: currentX,
+                                            y: currentY,
+                                        } : null);
+                                    }
                                 }}
                                 onDragEnd={() => {
                                     dragSnapshotTakenRef.current = false;
@@ -1010,6 +1141,7 @@ export function EditorCanvasStage() {
                                     if (tooltipRef.current) {
                                         tooltipRef.current.visible(false);
                                     }
+                                    setGhostElement(null);
                                 }}
                             />
                         );
@@ -1175,6 +1307,19 @@ export function EditorCanvasStage() {
                         />
                     </Label>
 
+                </Layer>
+
+                <Layer>
+                    {ghostElement && (
+                        <GhostNode
+                            element={ghostElement.element}
+                            x={ghostElement.x}
+                            y={ghostElement.y}
+                            width={ghostElement.width}
+                            height={ghostElement.height}
+                            viewport={viewport}
+                        />
+                    )}
                 </Layer>
             </Stage>
 

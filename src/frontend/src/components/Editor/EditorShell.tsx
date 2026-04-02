@@ -4,13 +4,14 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssetLibraryDrawer } from "@/components/Editor/AssetLibraryDrawer";
 import { EditorInspector } from "@/components/Editor/EditorInspector";
-import { EditorLayersPanel } from "@/components/EditorLayersPanel";
+import { EditorLayersPanel } from "@/components/Editor/EditorLayersPanel";
 import { EditorToolRail } from "@/components/Editor/EditorToolRail";
 import { EditorTopBar } from "@/components/Editor/EditorTopBar";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { computeSelectionBounds, fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
-import { EditorContextMenu } from "@/components/Editor/Editor/EditorContextMenu";
+import { useEditorModel, useEditorSelection, useEditorViewport, useEditorUI, useEditorIsDirty } from "./editor-selectors";
+import { EditorContextMenu } from "@/components/Editor/EditorContextMenu";
 import { ShortcutsHelpModal } from "@/components/Editor/ShortcutsHelpModal";
 import { TemplatesLibraryDrawer } from "@/components/Editor/TemplatesLibraryDrawer";
 import { EditorHistoryPanel } from "@/components/Editor/EditorHistoryPanel";
@@ -19,7 +20,7 @@ import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
-import { useEditorModel, useEditorSelection, useEditorViewport, useEditorUI } from "./editor-selectors";
+import { useToast } from "@/hooks/useToast";
 
 const CanvasStage = dynamic(
   () => import("@/components/Editor/EditorCanvasStage").then((module) => module.EditorCanvasStage),
@@ -42,40 +43,44 @@ function isInteractiveTarget(target: EventTarget | null) {
 }
 
 export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplate }: EditorShellProps) {
-  const { locale } = useI18n();
-  const initialize = useEditorStore((state) => state.initialize);
+    const { locale } = useI18n();
+    const initialize = useEditorStore((state) => state.initialize);
 
-  // Use optimized selectors to prevent unnecessary re-renders
-  const model = useEditorModel();
-  const selection = useEditorSelection();
-  const viewport = useEditorViewport();
-  const ui = useEditorUI();
-  const isDirty = useEditorStore((state) => state.isDirty);
-  
-  // Only subscribe to specific methods we need
-  const setTool = useEditorStore((state) => state.setTool);
-  const setViewport = useEditorStore((state) => state.setViewport);
-  const clearSelection = useEditorStore((state) => state.clearSelection);
-  const setActiveEditingGroup = useEditorStore((state) => state.setActiveEditingGroup);
-  const setSpacePanning = useEditorStore((state) => state.setSpacePanning);
-  const duplicateSelected = useEditorStore((state) => state.duplicateSelected);
-  const removeSelected = useEditorStore((state) => state.removeSelected);
-  const reorderSelected = useEditorStore((state) => state.reorderSelected);
-  const nudgeSelected = useEditorStore((state) => state.nudgeSelected);
-  const undo = useEditorStore((state) => state.undo);
-  const redo = useEditorStore((state) => state.redo);
-  const copySelected = useEditorStore((state) => state.copySelected);
-  const pasteClipboard = useEditorStore((state) => state.pasteClipboard);
-  const setHelpOpen = useEditorStore((state) => state.setHelpOpen);
-  const markSaved = useEditorStore((state) => state.markSaved);
-  const applyModel = useEditorStore((state) => state.applyModel);
-  const setShowGrid = useEditorStore((state) => state.setShowGrid);
-  const insertElement = useEditorStore((state) => state.insertElement);
-  const rotateSelected = useEditorStore((state) => state.rotateSelected);
-  const groupSelected = useEditorStore((state) => state.groupSelected);
-  const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
-  const previewMode = useEditorStore((state) => state.ui.previewMode);
-  const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
+    // Use optimized selectors to prevent unnecessary re-renders
+    const model = useEditorModel();
+    const selection = useEditorSelection();
+    const viewport = useEditorViewport();
+    const ui = useEditorUI();
+    const isDirty = useEditorStore((state) => state.isDirty);
+    
+    // Only subscribe to specific methods we need
+    const setTool = useEditorStore((state) => state.setTool);
+    const setViewport = useEditorStore((state) => state.setViewport);
+    const clearSelection = useEditorStore((state) => state.clearSelection);
+    const setActiveEditingGroup = useEditorStore((state) => state.setActiveEditingGroup);
+    const setSpacePanning = useEditorStore((state) => state.setSpacePanning);
+    const duplicateSelected = useEditorStore((state) => state.duplicateSelected);
+    const removeSelected = useEditorStore((state) => state.removeSelected);
+    const reorderSelected = useEditorStore((state) => state.reorderSelected);
+    const nudgeSelected = useEditorStore((state) => state.nudgeSelected);
+    const undo = useEditorStore((state) => state.undo);
+    const redo = useEditorStore((state) => state.redo);
+    const copySelected = useEditorStore((state) => state.copySelected);
+    const pasteClipboard = useEditorStore((state) => state.pasteClipboard);
+    const setHelpOpen = useEditorStore((state) => state.setHelpOpen);
+    const markSaved = useEditorStore((state) => state.markSaved);
+    const applyModel = useEditorStore((state) => state.applyModel);
+    const setShowGrid = useEditorStore((state) => state.setShowGrid);
+    const insertElement = useEditorStore((state) => state.insertElement);
+    const rotateSelected = useEditorStore((state) => state.rotateSelected);
+    const groupSelected = useEditorStore((state) => state.groupSelected);
+    const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
+    const previewMode = useEditorStore((state) => state.ui.previewMode);
+    const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
+
+    // Toast notifications
+    const addToast = useEditorStore((state) => state.addToast);
+    const { result } = renderHook(() => useToast());
 
   const [savePending, setSavePending] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("layers");
@@ -137,20 +142,43 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   const zoomIn = useCallback(() => setViewport({ zoom: Math.min(4, viewport.zoom + 0.1) }), [setViewport, viewport.zoom]);
   const zoomOut = useCallback(() => setViewport({ zoom: Math.max(0.2, viewport.zoom - 0.1) }), [setViewport, viewport.zoom]);
 
-  const handleSave = useCallback(async () => {
-    // Prevent overlapping saves
-    if (savePending) return;
-    
-    setSavePending(true);
-    try {
-      const result = await onSave(model);
-      if (result.ok) {
-        markSaved();
-      }
-    } finally {
-      setSavePending(false);
-    }
-  }, [markSaved, model, onSave, savePending]);
+    const handleSave = useCallback(async () => {
+        // Prevent overlapping saves
+        if (savePending) return;
+        
+        setSavePending(true);
+        try {
+            const result = await onSave(model);
+            if (result.ok) {
+                markSaved();
+                addToast({
+                    type: 'success',
+                    message: locale === "tr" ? 'Sablon kaydedildi' : 'Template saved successfully',
+                    duration: 3000,
+                });
+            } else {
+                addToast({
+                    type: 'error',
+                    message: result.message || (locale === "tr" ? 'Kaydet hatası' : 'Failed to save template'),
+                    duration: 5000,
+                    action: {
+                        label: locale === "tr" ? 'Tekrar deneyin' : 'Try again',
+                        onClick: () => {
+                            // Re-try with toast notification
+                        },
+                    },
+                });
+            }
+        } catch (error) {
+            addToast({
+                type: 'error',
+                message: locale === "tr" ? 'Kaydet sırasında hata oluştu' : 'An unexpected error occurred while saving',
+                duration: 5000,
+            });
+        } finally {
+            setSavePending(false);
+        }
+    }, [model, isDirty, markSaved, model, onSave, savePending, addToast]);
 
   // Debounced auto-save (5 seconds)
   useEffect(() => {
