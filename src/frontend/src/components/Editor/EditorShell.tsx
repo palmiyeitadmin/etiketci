@@ -403,8 +403,8 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
   }, [insertElement, model.dimensions.heightMm, model.dimensions.widthMm, model.elements]);
 
   const layoutClassName = panelsCollapsed
-    ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)]"
-    : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem]";
+    ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] md:grid-cols-[4rem_minmax(0,1fr)_20rem] lg:grid-cols-[4rem_minmax(0,1fr)_22rem] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem]"
+    : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)_22rem] md:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem] lg:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem_1fr] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem_1fr]";
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-[#08111f] text-white">
