@@ -1,6 +1,6 @@
 "use client";
 
-import { Barcode, Circle, CursorClick, FolderOpen, HandPalm, ImageSquare, Minus, QrCode, Square, TextT, SquaresFour } from "@phosphor-icons/react";
+import { Barcode, Circle, CursorClick, FolderOpen, HandPalm, ImageSquare, Minus, QrCode, Square, TextT, SquaresFour, GridFour } from "@phosphor-icons/react";
 import { EditorToolButton } from "@/components/Editor/EditorIconButton";
 import { EditorTool } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
@@ -17,6 +17,7 @@ const TOOL_DEFS: ToolDef[] = [
     { tool: "barcode", labelTr: "Barkod", labelEn: "Barcode", icon: Barcode, shortcut: "B" },
     { tool: "qr", labelTr: "QR Kod", labelEn: "QR Code", icon: QrCode, shortcut: "Q" },
     { tool: "image", labelTr: "Gorsel", labelEn: "Image", icon: ImageSquare, shortcut: "I" },
+    { tool: "container", labelTr: "Kapsayici", labelEn: "Container", icon: SquaresFour, shortcut: "C" },
 ];
 
 export function EditorToolRail({

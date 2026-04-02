@@ -12,7 +12,8 @@ import { SelectionToolbar } from "@/components/Editor/SelectionToolbar";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { cloneCanonicalModel } from "@/lib/editor-canonical";
 import { EDITOR_SNAP_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
-import { EditorViewport, ImageElement, LabelElement, EditorTool } from "@/types/canvas";
+import { EditorViewport, ImageElement, LabelElement, EditorTool, ContainerElement } from "@/types/canvas";
+import { computeLayout } from "@/components/Editor/editor-layout";
 import { MeasurementLabel, computeResizeSnap } from "@/components/Editor/editor-guides";
 
 const FIT_PADDING = 48;
@@ -412,6 +413,126 @@ function ElementNode({
     );
 }
 
+function ContainerNode({
+    container,
+    x,
+    y,
+    width,
+    height,
+    selected,
+    dimmed,
+    draggable,
+    onSelect,
+    onDoubleSelect,
+    registerRef,
+    viewport,
+    children,
+}: {
+    container: ContainerElement;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    selected: boolean;
+    dimmed: boolean;
+    draggable: boolean;
+    onSelect: (event: Konva.KonvaEventObject<MouseEvent>) => void;
+    onDoubleSelect: () => void;
+    registerRef: (node: Konva.Group | null) => void;
+    viewport: EditorViewport;
+    children: LabelElement[];
+}) {
+    const rotation = container.rotation ?? 0;
+    const strokeWidthPx = container.stroke && (container.strokeWidthMm ?? 0) > 0
+        ? UnitConverter.mmToProfile(container.strokeWidthMm || 0.4, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+    const cornerRadiusPx = container.cornerRadiusMm ?? 0
+        ? UnitConverter.mmToProfile(container.cornerRadiusMm || 0, ScreenPreviewProfile, viewport.zoom)
+        : 0;
+
+    // Compute layout for children
+    const { children: positionedChildren } = computeLayout(
+        container,
+        children,
+        container.widthMm,
+        container.heightMm,
+    );
+
+    return (
+        <Group
+            id={container.id}
+            name="element-node"
+            ref={registerRef}
+            x={x + width / 2}
+            y={y + height / 2}
+            width={width}
+            height={height}
+            offsetX={width / 2}
+            offsetY={height / 2}
+            opacity={container.visible === false ? 0 : (dimmed ? 0.3 : 1)}
+            rotation={rotation}
+            draggable={draggable}
+            onClick={(event) => { event.cancelBubble = true; onSelect(event); }}
+            onTap={(event) => { event.cancelBubble = true; onSelect(event as unknown as Konva.KonvaEventObject<MouseEvent>); }}
+            onDblClick={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
+            onDblTap={(event) => { event.cancelBubble = true; onDoubleSelect(); }}
+            listening={(!container.locked || selected) && container.visible !== false}
+        >
+            <Rect
+                width={width}
+                height={height}
+                fill={container.fill ?? "transparent"}
+                stroke={container.stroke ?? "#94a3b8"}
+                strokeWidth={strokeWidthPx || 1}
+                dash={[4, 4]}
+                cornerRadius={cornerRadiusPx || 4}
+                listening={false}
+            />
+
+            {positionedChildren.map((pos) => {
+                const childX = UnitConverter.mmToProfile(pos.xMm, ScreenPreviewProfile, viewport.zoom);
+                const childY = UnitConverter.mmToProfile(pos.yMm, ScreenPreviewProfile, viewport.zoom);
+                const childWidth = UnitConverter.mmToProfile(pos.element.widthMm, ScreenPreviewProfile, viewport.zoom);
+                const childHeight = UnitConverter.mmToProfile(pos.element.heightMm, ScreenPreviewProfile, viewport.zoom);
+
+                return (
+                    <ElementNode
+                        key={pos.element.id}
+                        element={pos.element}
+                        x={childX}
+                        y={childY}
+                        width={childWidth}
+                        height={childHeight}
+                        selected={false}
+                        dimmed={dimmed}
+                        draggable={false}
+                        onSelect={() => {}}
+                        onDoubleSelect={() => {}}
+                        onDragStart={() => {}}
+                        onDragMove={() => {}}
+                        onDragEnd={() => {}}
+                        registerRef={() => {}}
+                        viewport={viewport}
+                        activeTool="select"
+                    />
+                );
+            })}
+
+            {selected ? (
+                <Rect
+                    width={width}
+                    height={height}
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dash={[6, 4]}
+                    listening={false}
+                    cornerRadius={cornerRadiusPx || 4}
+                />
+            ) : null}
+        </Group>
+    );
+}
+
 function GhostNode({
     element,
     x,
@@ -804,10 +925,37 @@ export function EditorCanvasStage() {
         if (activeTool !== "select") {
             const xMm = UnitConverter.profileToMm((pointer.x - labelX) / viewport.zoom, ScreenPreviewProfile, 1);
             const yMm = UnitConverter.profileToMm((pointer.y - labelY) / viewport.zoom, ScreenPreviewProfile, 1);
-            addElement(activeTool, {
-                xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
-                yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
-            });
+
+            if (activeTool === "container") {
+                const containerId = `container-${Date.now()}`;
+                const newContainer: ContainerElement = {
+                    id: containerId,
+                    type: "container",
+                    xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
+                    yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
+                    widthMm: 50,
+                    heightMm: 50,
+                    content: "",
+                    direction: "row",
+                    justifyContent: "flex-start",
+                    alignItems: "flex-start",
+                    gap: 2,
+                    wrap: "nowrap",
+                    fill: "transparent",
+                    stroke: "#94a3b8",
+                    strokeWidthMm: 0.5,
+                    cornerRadiusMm: 4,
+                };
+
+                const nextModel = cloneCanonicalModel(model);
+                nextModel.elements.push(newContainer);
+                applyModel(nextModel, { recordHistory: true });
+            } else {
+                addElement(activeTool, {
+                    xMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(xMm, EDITOR_SNAP_MM)),
+                    yMm: UnitConverter.toPersisted(UnitConverter.snapToGrid(yMm, EDITOR_SNAP_MM)),
+                });
+            }
             return;
         }
 
@@ -906,6 +1054,13 @@ export function EditorCanvasStage() {
     }, [isSpacePanning, activeTool, selection.selectedElementIds, selectOnly, clearSelection]);
 
     const renderableElements = useMemo(() => model.elements, [model.elements]);
+
+    const containerElements = useMemo(() => model.elements.filter(el => el.type === "container") as ContainerElement[], [model.elements]);
+    const nonContainerElements = useMemo(() => model.elements.filter(el => el.type !== "container"), [model.elements]);
+
+    const getContainerChildren = useCallback((containerId: string) => {
+        return nonContainerElements.filter(el => el.groupId === containerId);
+    }, [nonContainerElements]);
 
     return (
         <div ref={ref} className="relative h-full w-full overflow-hidden bg-[#0b1220]">
@@ -1011,7 +1166,34 @@ export function EditorCanvasStage() {
                         );
                     })}
 
-                    {renderableElements.map((element) => {
+                    {containerElements.map((container) => {
+                        const x = labelX + UnitConverter.mmToProfile(container.xMm, ScreenPreviewProfile, viewport.zoom);
+                        const y = labelY + UnitConverter.mmToProfile(container.yMm, ScreenPreviewProfile, viewport.zoom);
+                        const width = Math.max(4, UnitConverter.mmToProfile(container.widthMm, ScreenPreviewProfile, viewport.zoom));
+                        const height = Math.max(4, UnitConverter.mmToProfile(container.heightMm, ScreenPreviewProfile, viewport.zoom));
+                        const children = getContainerChildren(container.id);
+
+                        return (
+                            <ContainerNode
+                                key={container.id}
+                                container={container}
+                                x={x}
+                                y={y}
+                                width={width}
+                                height={height}
+                                selected={selectedSet.has(container.id)}
+                                dimmed={Boolean(selection.activeEditingGroupId && container.groupId !== selection.activeEditingGroupId)}
+                                draggable={activeTool === "select" && !isSpacePanning && container.locked !== true && selectedSet.has(container.id)}
+                                onSelect={(evt) => handleElementSelect(container, evt)}
+                                onDoubleSelect={() => handleElementDoubleSelect(container)}
+                                registerRef={(node) => { elementRefs.current[container.id] = node; }}
+                                viewport={viewport}
+                                children={children}
+                            />
+                        );
+                    })}
+
+                    {nonContainerElements.map((element) => {
                         const x = labelX + UnitConverter.mmToProfile(element.xMm, ScreenPreviewProfile, viewport.zoom);
                         const y = labelY + UnitConverter.mmToProfile(element.yMm, ScreenPreviewProfile, viewport.zoom);
                         const width = Math.max(4, UnitConverter.mmToProfile(element.widthMm, ScreenPreviewProfile, viewport.zoom));
