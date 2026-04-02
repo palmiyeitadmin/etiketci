@@ -5,18 +5,18 @@ import { EditorToolButton } from "@/components/Editor/EditorIconButton";
 import { EditorTool } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 
-type ToolDef = { tool: EditorTool; labelTr: string; labelEn: string; icon: any };
+type ToolDef = { tool: EditorTool; labelTr: string; labelEn: string; icon: any; shortcut?: string };
 
 const TOOL_DEFS: ToolDef[] = [
-    { tool: "select", labelTr: "Sec", labelEn: "Select", icon: CursorClick },
-    { tool: "pan", labelTr: "Kaydir", labelEn: "Pan", icon: HandPalm },
-    { tool: "text", labelTr: "Metin", labelEn: "Text", icon: TextT },
-    { tool: "rect", labelTr: "Dikdortgen", labelEn: "Rectangle", icon: Square },
-    { tool: "ellipse", labelTr: "Oval", labelEn: "Oval", icon: Circle },
-    { tool: "line", labelTr: "Cizgi", labelEn: "Line", icon: Minus },
-    { tool: "barcode", labelTr: "Barkod", labelEn: "Barcode", icon: Barcode },
-    { tool: "qr", labelTr: "QR Kod", labelEn: "QR Code", icon: QrCode },
-    { tool: "image", labelTr: "Gorsel", labelEn: "Image", icon: ImageSquare },
+    { tool: "select", labelTr: "Sec", labelEn: "Select", icon: CursorClick, shortcut: "V" },
+    { tool: "pan", labelTr: "Kaydir", labelEn: "Pan", icon: HandPalm, shortcut: "H" },
+    { tool: "text", labelTr: "Metin", labelEn: "Text", icon: TextT, shortcut: "T" },
+    { tool: "rect", labelTr: "Dikdortgen", labelEn: "Rectangle", icon: Square, shortcut: "R" },
+    { tool: "ellipse", labelTr: "Oval", labelEn: "Oval", icon: Circle, shortcut: "O" },
+    { tool: "line", labelTr: "Cizgi", labelEn: "Line", icon: Minus, shortcut: "L" },
+    { tool: "barcode", labelTr: "Barkod", labelEn: "Barcode", icon: Barcode, shortcut: "B" },
+    { tool: "qr", labelTr: "QR Kod", labelEn: "QR Code", icon: QrCode, shortcut: "Q" },
+    { tool: "image", labelTr: "Gorsel", labelEn: "Image", icon: ImageSquare, shortcut: "I" },
 ];
 
 export function EditorToolRail({

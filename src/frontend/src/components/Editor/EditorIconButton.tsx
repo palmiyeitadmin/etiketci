@@ -41,27 +41,31 @@ export function EditorCommandButton({
 }
 
 export function EditorToolButton({
-  icon: IconComponent,
-  label,
-  active = false,
-  onClick,
+   icon: IconComponent,
+   label,
+   active = false,
+   onClick,
 }: {
   icon: Icon;
   label: string;
   active?: boolean;
   onClick: () => void;
 }) {
+  const finalAriaLabel = label;
+
   return (
     <div className="group relative flex w-full justify-center">
       <button
         type="button"
         onClick={onClick}
         className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border transition-colors ${active ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
-        aria-label={label}
+        aria-label={finalAriaLabel}
+        aria-pressed={active}
+        title={label}
       >
-        <IconComponent size={18} weight={active ? "fill" : "bold"} />
+        <IconComponent size={18} weight={active ? "fill" : "bold"} aria-hidden="true" />
       </button>
-      <div className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-[#13233b] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white opacity-0 shadow-[0_12px_32px_rgba(2,6,23,0.35)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+      <div className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-[#13233b] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white opacity-0 shadow-[0_12px_32px_rgba(2,6,23,0.35)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" aria-hidden="true">
         {label}
       </div>
     </div>
