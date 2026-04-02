@@ -12,6 +12,7 @@ import {
   LineDirection,
   RectElement,
   TextElement,
+  ContainerElement,
 } from "@/types/canvas";
 
 const DEFAULT_DIMENSIONS = { widthMm: 100, heightMm: 150 };
@@ -26,6 +27,7 @@ const elementLabels: Record<ElementType, string> = {
   barcode: "Barcode",
   qr: "QR",
   image: "Image",
+  container: "Container",
 };
 
 function clampNumber(value: unknown, fallback: number): number {

@@ -15,10 +15,11 @@ import { EditorContextMenu } from "@/components/Editor/EditorContextMenu";
 import { ShortcutsHelpModal } from "@/components/Editor/ShortcutsHelpModal";
 import { TemplatesLibraryDrawer } from "@/components/Editor/TemplatesLibraryDrawer";
 import { EditorHistoryPanel } from "@/components/Editor/EditorHistoryPanel";
+import { EditorLayoutPanel } from "@/components/Editor/EditorLayoutPanel";
 import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
-import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
+import { CanonicalLabelModel, ImageElement, ContainerElement, LabelElement } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/useToast";
 
@@ -34,7 +35,7 @@ interface EditorShellProps {
   onRenameTemplate?: (name: string, model: CanonicalLabelModel) => Promise<void>;
 }
 
-type RightPanelTab = "layers" | "properties" | "history";
+type RightPanelTab = "layers" | "properties" | "history" | "layout";
 
 function isInteractiveTarget(target: EventTarget | null) {
   const element = target as HTMLElement | null;
@@ -75,11 +76,20 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     const rotateSelected = useEditorStore((state) => state.rotateSelected);
     const groupSelected = useEditorStore((state) => state.groupSelected);
     const ungroupSelectedGroup = useEditorStore((state) => state.ungroupSelectedGroup);
+    const updateElement = useEditorStore((state) => state.updateElement);
     const previewMode = useEditorStore((state) => state.ui.previewMode);
     const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
 
     // Toast notifications
     const { addToast } = useToast();
+
+    // Layout container detection
+    const selectedContainer = useMemo(() => {
+        if (selection.selectedElementIds.length !== 1) return null;
+        const element = model.elements.find(el => el.id === selection.selectedElementIds[0]);
+        if (!element) return null;
+        return element.type === "container" ? element as ContainerElement : null;
+    }, [selection.selectedElementIds, model.elements]);
 
   const [savePending, setSavePending] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("layers");
@@ -473,6 +483,16 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
               </button>
               <button
                 type="button"
+                className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${!panelsCollapsed && rightPanelTab === "layout" ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                onClick={() => {
+                  setPanelsCollapsed(false);
+                  setRightPanelTab("layout");
+                }}
+              >
+                {locale === "tr" ? "Yerlesim" : "Layout"}
+              </button>
+              <button
+                type="button"
                 className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)] transition-colors hover:bg-white/5 hover:text-white"
                 onClick={() => setPanelsCollapsed((current) => !current)}
               >
@@ -492,18 +512,85 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
               {rightPanelTab === "layers" && <EditorLayersPanel className="h-full w-[22rem]" />}
               {rightPanelTab === "properties" && <EditorInspector className="h-full w-[22rem]" />}
               {rightPanelTab === "history" && <EditorHistoryPanel />}
+              {rightPanelTab === "layout" && selectedContainer && (
+                <div className="h-full w-[22rem] overflow-y-auto p-4">
+                  <EditorLayoutPanel
+                    direction={selectedContainer.direction ?? "row"}
+                    justifyContent={selectedContainer.justifyContent ?? "flex-start"}
+                    alignItems={selectedContainer.alignItems ?? "flex-start"}
+                    gap={selectedContainer.gap ?? 2}
+                    wrap={selectedContainer.wrap ?? "nowrap"}
+                    onDirectionChange={(value) => updateElement(selectedContainer.id, { direction: value })}
+                    onJustifyContentChange={(value) => updateElement(selectedContainer.id, { justifyContent: value })}
+                    onAlignItemsChange={(value) => updateElement(selectedContainer.id, { alignItems: value })}
+                    onGapChange={(value) => updateElement(selectedContainer.id, { gap: value })}
+                    onWrapChange={(value) => updateElement(selectedContainer.id, { wrap: value })}
+                  />
+                </div>
+              )}
+              {rightPanelTab === "layout" && !selectedContainer && (
+                <div className="flex h-full w-[22rem] flex-col items-center justify-center p-4 text-center text-white/50">
+                  <p className="text-sm">
+                    {locale === "tr" ? "Yerleşim ayarlarını düzenlemek için bir kapsayıcı seçin" : "Select a container to edit layout settings"}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* 2XL Breakpoint: Dual panels visible */}
             <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
               {rightPanelTab === "history" ? (
                 <EditorHistoryPanel />
+              ) : rightPanelTab === "layout" && selectedContainer ? (
+                <div className="h-full w-[20rem] overflow-y-auto p-4">
+                  <EditorLayoutPanel
+                    direction={selectedContainer.direction ?? "row"}
+                    justifyContent={selectedContainer.justifyContent ?? "flex-start"}
+                    alignItems={selectedContainer.alignItems ?? "flex-start"}
+                    gap={selectedContainer.gap ?? 2}
+                    wrap={selectedContainer.wrap ?? "nowrap"}
+                    onDirectionChange={(value) => updateElement(selectedContainer.id, { direction: value })}
+                    onJustifyContentChange={(value) => updateElement(selectedContainer.id, { justifyContent: value })}
+                    onAlignItemsChange={(value) => updateElement(selectedContainer.id, { alignItems: value })}
+                    onGapChange={(value) => updateElement(selectedContainer.id, { gap: value })}
+                    onWrapChange={(value) => updateElement(selectedContainer.id, { wrap: value })}
+                  />
+                </div>
+              ) : rightPanelTab === "layout" && !selectedContainer ? (
+                <div className="flex h-full w-[20rem] flex-col items-center justify-center p-4 text-center text-white/50">
+                  <p className="text-sm">
+                    {locale === "tr" ? "Yerleşim ayarlarını düzenlemek için bir kapsayıcı seçin" : "Select a container to edit layout settings"}
+                  </p>
+                </div>
               ) : (
                 <EditorLayersPanel className="h-full w-[20rem]" />
               )}
             </div>
             <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
-              <EditorInspector className="h-full w-[22rem]" />
+              {rightPanelTab === "layout" && selectedContainer ? (
+                <div className="h-full w-[22rem] overflow-y-auto p-4">
+                  <EditorLayoutPanel
+                    direction={selectedContainer.direction ?? "row"}
+                    justifyContent={selectedContainer.justifyContent ?? "flex-start"}
+                    alignItems={selectedContainer.alignItems ?? "flex-start"}
+                    gap={selectedContainer.gap ?? 2}
+                    wrap={selectedContainer.wrap ?? "nowrap"}
+                    onDirectionChange={(value) => updateElement(selectedContainer.id, { direction: value })}
+                    onJustifyContentChange={(value) => updateElement(selectedContainer.id, { justifyContent: value })}
+                    onAlignItemsChange={(value) => updateElement(selectedContainer.id, { alignItems: value })}
+                    onGapChange={(value) => updateElement(selectedContainer.id, { gap: value })}
+                    onWrapChange={(value) => updateElement(selectedContainer.id, { wrap: value })}
+                  />
+                </div>
+              ) : rightPanelTab === "layout" && !selectedContainer ? (
+                <div className="flex h-full w-[22rem] flex-col items-center justify-center p-4 text-center text-white/50">
+                  <p className="text-sm">
+                    {locale === "tr" ? "Yerleşim ayarlarını düzenlemek için bir kapsayıcı seçin" : "Select a container to edit layout settings"}
+                  </p>
+                </div>
+              ) : (
+                <EditorInspector className="h-full w-[22rem]" />
+              )}
             </div>
           </>
         ) : null}

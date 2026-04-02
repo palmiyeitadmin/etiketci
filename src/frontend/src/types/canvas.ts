@@ -1,4 +1,4 @@
-export type ElementType = "text" | "barcode" | "qr" | "image" | "rect" | "ellipse" | "line";
+export type ElementType = "text" | "barcode" | "qr" | "image" | "rect" | "ellipse" | "line" | "container";
 export type TextAlign = "left" | "center" | "right";
 export type VerticalAlign = "top" | "middle" | "bottom";
 export type FontWeight = "normal" | "bold";
@@ -10,6 +10,13 @@ export type DiscreteRotation = 0 | 90 | 180 | 270;
 export type AssetSource = "upload" | "phosphor";
 export type EditorAlignmentReference = "selection" | "canvas";
 export type EditorPreviewMode = "light" | "dark" | "checkerboard";
+
+// Auto Layout / Flexbox Types
+export type LayoutDirection = "row" | "column";
+export type LayoutJustifyContent = "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly";
+export type LayoutAlignItems = "flex-start" | "flex-end" | "center" | "stretch";
+export type LayoutGap = number; // gap in mm
+export type LayoutWrap = "nowrap" | "wrap";
 
 export interface EditorGuide {
     id: string;
@@ -110,7 +117,20 @@ export interface LineElement extends BaseLabelElement {
     lineDirection?: LineDirection;
 }
 
-export type LabelElement = TextElement | BarcodeElement | QrElement | ImageElement | RectElement | EllipseElement | LineElement;
+export interface ContainerElement extends BaseLabelElement {
+    type: "container";
+    direction?: LayoutDirection;
+    justifyContent?: LayoutJustifyContent;
+    alignItems?: LayoutAlignItems;
+    gap?: LayoutGap;
+    wrap?: LayoutWrap;
+    fill?: string | null;
+    stroke?: string | null;
+    strokeWidthMm?: number;
+    cornerRadiusMm?: number;
+}
+
+export type LabelElement = TextElement | BarcodeElement | QrElement | ImageElement | RectElement | EllipseElement | LineElement | ContainerElement;
 
 export interface LabelDimensions {
     widthMm: number;
@@ -142,7 +162,7 @@ export interface EditorHistoryState {
     future: CanonicalLabelModel[];
 }
 
-export type EditorTool = "select" | "pan" | "text" | "rect" | "ellipse" | "line" | "barcode" | "qr" | "image";
+export type EditorTool = "select" | "pan" | "text" | "rect" | "ellipse" | "line" | "barcode" | "qr" | "image" | "container";
 
 export interface EditorViewport {
     zoom: number;
