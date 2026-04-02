@@ -51,10 +51,10 @@ export function Toast({ toast, onDismiss }: { toast: Toast; onDismiss: (id: stri
         >
             <Icon size={20} weight="bold" className="flex-shrink-0" aria-hidden="true" />
             <p className="flex-1 text-sm font-medium">{toast.message}</p>
-            {toast.action && (
+            {toast.action ? (
                 <button
                     onClick={() => {
-                        toast.action.onClick();
+                        toast.action!.onClick();
                         onDismiss(toast.id);
                     }}
                     className="flex-shrink-0 rounded-lg bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-colors"
@@ -62,7 +62,7 @@ export function Toast({ toast, onDismiss }: { toast: Toast; onDismiss: (id: stri
                 >
                     {toast.action.label}
                 </button>
-            )}
+            ) : null}
             <button
                 onClick={() => onDismiss(toast.id)}
                 className="flex-shrink-0 rounded-lg p-1 hover:bg-white/10 transition-colors"

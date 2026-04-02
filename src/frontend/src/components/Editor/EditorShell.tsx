@@ -79,8 +79,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
 
     // Toast notifications
-    const addToast = useEditorStore((state) => state.addToast);
-    const { result } = renderHook(() => useToast());
+    const { addToast } = useToast();
 
   const [savePending, setSavePending] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>("layers");

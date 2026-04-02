@@ -13,12 +13,12 @@ export function EditorHelpModal() {
 
     const modalRef = useFocusTrap(isHelpOpen, {
         onDeactivate: () => setHelpOpen(false),
-    });
+    }) as React.RefObject<HTMLDivElement>;
 
     useEffect(() => {
         if (isHelpOpen) {
             document.body.style.overflow = 'hidden';
-        modalRef.current?.focus();
+            modalRef.current?.focus();
         }
         return () => {
             document.body.style.overflow = '';
@@ -124,8 +124,7 @@ export function EditorHelpModal() {
                                 </tbody>
                             </table>
                         </div>
-                    ))}
-                </div>
+                     ))}
                 </div>
             </div>
         </div>

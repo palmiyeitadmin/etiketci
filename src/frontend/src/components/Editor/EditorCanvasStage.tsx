@@ -502,13 +502,11 @@ function GhostNode({
             {element.type === "image" && image ? (
                 <KonvaImage
                     image={image}
-                    x={frameStrokeWidthPx / 2}
-                    y={frameStrokeWidthPx / 2}
                     {...computeImagePlacement(element, width - frameStrokeWidthPx, height - frameStrokeWidthPx, image)}
                 />
             ) : null}
 
-            {element.type === "barcode" ? (
+            {element.type === "barcode" && image ? (
                 <KonvaImage
                     image={image}
                     listening={false}
