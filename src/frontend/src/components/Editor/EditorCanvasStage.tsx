@@ -856,26 +856,28 @@ export function EditorCanvasStage() {
                             listening={false}
                         />
                     )}
-                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke="#cbd5e1" strokeWidth={1} cornerRadius={6} listening={false} />
-                    
-                    {showGrid && (() => {
-                        const gridStep = 5; // 5mm step
-                        const lines = [];
-                        
-                        // Vertical lines
-                        for (let x = gridStep; x < model.dimensions.widthMm; x += gridStep) {
-                            const xPos = labelX + UnitConverter.mmToProfile(x, ScreenPreviewProfile, viewport.zoom);
-                            lines.push(<Rect key={`grid-v-${x}`} x={xPos} y={labelY} width={1} height={scaledLabelHeight} fill="#cbd5e1" opacity={0.3} listening={false} />);
-                        }
-                        
-                        // Horizontal lines
-                        for (let y = gridStep; y < model.dimensions.heightMm; y += gridStep) {
-                            const yPos = labelY + UnitConverter.mmToProfile(y, ScreenPreviewProfile, viewport.zoom);
-                            lines.push(<Rect key={`grid-h-${y}`} x={labelX} y={yPos} width={scaledLabelWidth} height={1} fill="#cbd5e1" opacity={0.3} listening={false} />);
-                        }
-                        
-                        return lines;
-                    })()}
+                     <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke="#cbd5e1" strokeWidth={1} cornerRadius={6} listening={false} />
+                     
+                     {useMemo(() => {
+                         if (!showGrid) return null;
+                         
+                         const gridStep = 5; // 5mm step
+                         const lines: JSX.Element[] = [];
+                         
+                         // Vertical lines
+                         for (let x = gridStep; x < model.dimensions.widthMm; x += gridStep) {
+                             const xPos = labelX + UnitConverter.mmToProfile(x, ScreenPreviewProfile, viewport.zoom);
+                             lines.push(<Rect key={`grid-v-${x}`} x={xPos} y={labelY} width={1} height={scaledLabelHeight} fill="#cbd5e1" opacity={0.3} listening={false} />);
+                         }
+                         
+                         // Horizontal lines
+                         for (let y = gridStep; y < model.dimensions.heightMm; y += gridStep) {
+                             const yPos = labelY + UnitConverter.mmToProfile(y, ScreenPreviewProfile, viewport.zoom);
+                             lines.push(<Rect key={`grid-h-${y}`} x={labelX} y={yPos} width={scaledLabelWidth} height={1} fill="#cbd5e1" opacity={0.3} listening={false} />);
+                         }
+                         
+                         return lines;
+                     }, [showGrid, model.dimensions, viewport.zoom, labelX, labelY, scaledLabelWidth, scaledLabelHeight])}
 
                     {guides.map((guide, index) => (
                         guide.orientation === "vertical" ? (

@@ -4,13 +4,13 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssetLibraryDrawer } from "@/components/Editor/AssetLibraryDrawer";
 import { EditorInspector } from "@/components/Editor/EditorInspector";
-import { EditorLayersPanel } from "@/components/Editor/EditorLayersPanel";
+import { EditorLayersPanel } from "@/components/EditorLayersPanel";
 import { EditorToolRail } from "@/components/Editor/EditorToolRail";
 import { EditorTopBar } from "@/components/Editor/EditorTopBar";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { computeSelectionBounds, fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
-import { EditorContextMenu } from "@/components/Editor/EditorContextMenu";
+import { EditorContextMenu } from "@/components/Editor/Editor/EditorContextMenu";
 import { ShortcutsHelpModal } from "@/components/Editor/ShortcutsHelpModal";
 import { TemplatesLibraryDrawer } from "@/components/Editor/TemplatesLibraryDrawer";
 import { EditorHistoryPanel } from "@/components/Editor/EditorHistoryPanel";
@@ -19,6 +19,7 @@ import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
+import { useEditorModel, useEditorSelection, useEditorViewport, useEditorUI } from "./editor-selectors";
 
 const CanvasStage = dynamic(
   () => import("@/components/Editor/EditorCanvasStage").then((module) => module.EditorCanvasStage),
@@ -43,12 +44,15 @@ function isInteractiveTarget(target: EventTarget | null) {
 export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplate }: EditorShellProps) {
   const { locale } = useI18n();
   const initialize = useEditorStore((state) => state.initialize);
-  const model = useEditorStore((state) => state.model);
-  const selection = useEditorStore((state) => state.selection);
-  const history = useEditorStore((state) => state.history);
-  const viewport = useEditorStore((state) => state.viewport);
-  const ui = useEditorStore((state) => state.ui);
+
+  // Use optimized selectors to prevent unnecessary re-renders
+  const model = useEditorModel();
+  const selection = useEditorSelection();
+  const viewport = useEditorViewport();
+  const ui = useEditorUI();
   const isDirty = useEditorStore((state) => state.isDirty);
+  
+  // Only subscribe to specific methods we need
   const setTool = useEditorStore((state) => state.setTool);
   const setViewport = useEditorStore((state) => state.setViewport);
   const clearSelection = useEditorStore((state) => state.clearSelection);

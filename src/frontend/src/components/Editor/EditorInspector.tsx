@@ -7,6 +7,7 @@ import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { buildAssetContentUrl, uploadAsset } from "@/lib/assets";
 import { ElementType, ImageFit, LabelElement, TextTransform, VerticalAlign } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const FONT_OPTIONS = [
     // Sans-Serif (Modern & Clean)
@@ -204,6 +205,11 @@ export function EditorInspector({ className = "" }: { className?: string }) {
     const setInspectorMessage = useEditorStore((state) => state.setInspectorMessage);
     const recentColors = useEditorStore((state) => state.recentColors);
 
+    // Debounced content update to prevent excessive re-renders during typing
+    const handleContentChange = useDebounce((id: string, content: string) => {
+        updateElement(id, { content });
+    }, 300);
+
     const commonType = useMemo(() => selectedElements.length > 0 && selectedElements.every((element) => element.type === selectedElements[0].type) ? selectedElements[0].type : null, [selectedElements]);
     const supportsVariables = useMemo(() => selectedElement ? [selectedElement.type].filter((type) => type === "text" || type === "barcode" || type === "qr") as ElementType[] : [], [selectedElement]);
 
@@ -333,7 +339,11 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
                         {(selectedElement.type === "text" || selectedElement.type === "barcode" || selectedElement.type === "qr") ? (
                             <PropertySection label={text.content}>
-                                <textarea className="plms-input min-h-28" value={selectedElement.content} onChange={(event) => updateElement(selectedElement.id, { content: event.target.value })} />
+                                <textarea 
+                                    className="plms-input min-h-28" 
+                                    defaultValue={selectedElement.content} 
+                                    onChange={(event) => handleContentChange(selectedElement.id, event.target.value)}
+                                />
                                 <EditorVariablePicker supportedTypes={supportsVariables} onInsert={(placeholder) => updateElement(selectedElement.id, { content: `${selectedElement.content}${selectedElement.content ? " " : ""}${placeholder}` })} />
                             </PropertySection>
                         ) : null}
