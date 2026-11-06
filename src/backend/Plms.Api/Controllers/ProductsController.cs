@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.ProductsView)]
         public async Task<IActionResult> GetProducts()
         {
             var items = await _context.Products
@@ -50,7 +51,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.ProductsView)]
         public async Task<IActionResult> GetProduct(Guid id)
         {
             var p = await _context.Products
@@ -84,7 +85,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsCreate)]
         public async Task<IActionResult> CreateProduct(CreateProductDto dto)
         {
             if (await _context.Products.AnyAsync(p => p.Sku == dto.Sku))
@@ -128,7 +129,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsEdit)]
         public async Task<IActionResult> UpdateProduct(Guid id, UpdateProductDto dto)
         {
             var p = await _context.Products.FindAsync(id);
@@ -162,7 +163,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("import/dry-run")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsImport)]
         public async Task<IActionResult> ImportDryRun(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -182,7 +183,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("import/sessions")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsImport)]
         public async Task<IActionResult> GetImportSessions()
         {
             var sessions = await _importService.GetImportSessionsAsync();
@@ -190,7 +191,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("import/sessions/{sessionId}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsImport)]
         public async Task<IActionResult> GetImportSession(Guid sessionId)
         {
             var session = await _importService.GetImportSessionAsync(sessionId);
@@ -203,7 +204,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("import/sessions/{sessionId}/overwrite")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsImport)]
         public async Task<IActionResult> EnableOverwrite(Guid sessionId)
         {
             var session = await _importService.EnableOverwriteAsync(sessionId);
@@ -216,7 +217,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("import/sessions/{sessionId}/commit")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsImport)]
         public async Task<IActionResult> CommitImportSession(Guid sessionId)
         {
             try
@@ -236,35 +237,48 @@ namespace Plms.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsDelete)]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var p = await _context.Products.FindAsync(id);
             if (p == null) return NotFound(new { success = false, error = "Product not found." });
 
             // Safety Guard: Check for non-cancelled print intents
-            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && PrintIntentStatuses.IsOpen(pi.Status));
+            var openStatuses = PrintIntentStatuses.OpenStatuses;
+            var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && openStatuses.Contains(pi.Status));
             if (hasActiveIntents)
             {
                 return BadRequest(new { success = false, error = "Product cannot be deleted because it is referenced by active Print Intents." });
             }
 
-            _context.Products.Remove(p);
+            // A product with print history is deactivated instead of deleted, so the history stays intact.
+            var hasPrintHistory = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id);
+            if (hasPrintHistory)
+            {
+                p.IsActive = false;
+                p.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.Products.Remove(p);
+            }
 
             _context.AuditLogs.Add(new AuditLog
             {
                 Id = Guid.NewGuid(),
                 Timestamp = DateTime.UtcNow,
-                Action = "ProductDeleted",
+                Action = hasPrintHistory ? "ProductDeactivated" : "ProductDeleted",
                 EntityId = id.ToString(),
                 EntityType = "Product",
                 UserId = User.Identity?.Name ?? "System",
-                Details = $"Product {p.Sku} deleted.",
+                Details = hasPrintHistory
+                    ? $"Product {p.Sku} has print history, so it was deactivated instead of deleted."
+                    : $"Product {p.Sku} deleted.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
 
             await _context.SaveChangesAsync();
-            return Ok(new { success = true });
+            return Ok(new { success = true, data = new { deactivated = hasPrintHistory } });
         }
     }
 }

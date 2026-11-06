@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetTemplateCategories()
         {
             var items = await _context.TemplateCategories
@@ -38,7 +39,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetTemplateCategory(Guid id)
         {
             var category = await _context.TemplateCategories.FindAsync(id);
@@ -62,7 +63,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}/next-code")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetNextTemplateCode(Guid id)
         {
             var category = await _context.TemplateCategories.FindAsync(id);
@@ -85,7 +86,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.CategoriesManage)]
         public async Task<IActionResult> CreateTemplateCategory(CreateTemplateCategoryDto dto)
         {
             var normalizedCode = dto.Code.Trim().ToUpperInvariant();
@@ -134,7 +135,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.CategoriesManage)]
         public async Task<IActionResult> UpdateTemplateCategory(Guid id, UpdateTemplateCategoryDto dto)
         {
             var category = await _context.TemplateCategories.FindAsync(id);

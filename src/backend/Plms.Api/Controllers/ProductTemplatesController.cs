@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.ProductsView)]
         public async Task<IActionResult> GetProductTemplates(Guid productId)
         {
             var items = await _context.ProductTemplates
@@ -44,7 +45,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsEdit)]
         public async Task<IActionResult> LinkTemplate(Guid productId, LinkTemplateDto dto)
         {
             var product = await _context.Products.FindAsync(productId);
@@ -95,7 +96,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/set-default")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.ProductsEdit)]
         public async Task<IActionResult> SetDefault(Guid productId, Guid id)
         {
             var pt = await _context.ProductTemplates.FindAsync(id);

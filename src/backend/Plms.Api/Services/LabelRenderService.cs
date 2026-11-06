@@ -15,6 +15,9 @@ namespace Plms.Api.Services
     public interface ILabelRenderService
     {
         byte[] GeneratePdf(CanonicalLabelModel model);
+
+        /// <summary>Renders the label with a proof watermark (for versions that are not approved for production).</summary>
+        byte[] GeneratePdf(CanonicalLabelModel model, string? proofWatermark);
     }
 
     public class LabelRenderService : ILabelRenderService
@@ -27,7 +30,9 @@ namespace Plms.Api.Services
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
-        public byte[] GeneratePdf(CanonicalLabelModel model)
+        public byte[] GeneratePdf(CanonicalLabelModel model) => GeneratePdf(model, null);
+
+        public byte[] GeneratePdf(CanonicalLabelModel model, string? proofWatermark)
         {
             var pageWidthMm = model.Dimensions.WidthMm;
             var pageHeightMm = model.Dimensions.HeightMm;
@@ -57,6 +62,19 @@ namespace Plms.Api.Services
                                 .Element(container => RenderRotatedElement(container, element));
                         }
                     });
+
+                    if (!string.IsNullOrWhiteSpace(proofWatermark))
+                    {
+                        var fontSize = Math.Clamp(Math.Min(pageWidthMm, pageHeightMm) * 0.9f, 6f, 28f);
+                        page.Foreground()
+                            .AlignCenter()
+                            .AlignMiddle()
+                            .Rotate(-20)
+                            .Text(proofWatermark)
+                            .FontSize(fontSize)
+                            .FontColor("#80DC2626")
+                            .SemiBold();
+                    }
                 });
             });
 
@@ -248,7 +266,8 @@ namespace Plms.Api.Services
 
             var asset = _dbContext.ContentAssets
                 .AsNoTracking()
-                .FirstOrDefault(item => item.Id == assetId && item.IsActive);
+                // Soft-deleted assets stay renderable: published labels that reference them must not change.
+                .FirstOrDefault(item => item.Id == assetId);
 
             if (asset == null || asset.StorageData.Length == 0)
             {
@@ -373,7 +392,8 @@ namespace Plms.Api.Services
                 {
                     "CODE_128" => BarcodeFormat.CODE_128,
                     "EAN_13" => BarcodeFormat.EAN_13,
-                    _ => BarcodeFormat.CODE_128
+                    "CODE_39" => BarcodeFormat.CODE_39,
+                    _ => throw new NotSupportedException($"Barcode type '{type}' is not supported.")
                 };
 
                 var writer = new BarcodeWriter

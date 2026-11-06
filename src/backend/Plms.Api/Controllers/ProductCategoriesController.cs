@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.CategoriesView)]
         public async Task<IActionResult> GetCategories()
         {
             var items = await _context.ProductCategories
@@ -36,7 +37,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.CategoriesView)]
         public async Task<IActionResult> GetCategory(Guid id)
         {
             var cat = await _context.ProductCategories.FindAsync(id);
@@ -60,7 +61,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.CategoriesManage)]
         public async Task<IActionResult> CreateCategory(CreateProductCategoryDto dto)
         {
             if (await _context.ProductCategories.AnyAsync(c => c.Code == dto.Code))
@@ -103,7 +104,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.CategoriesManage)]
         public async Task<IActionResult> UpdateCategory(Guid id, UpdateProductCategoryDto dto)
         {
             var cat = await _context.ProductCategories.FindAsync(id);

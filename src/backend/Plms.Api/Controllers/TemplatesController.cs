@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetTemplates()
         {
             var currentUserId = GetCurrentUserId();
@@ -135,7 +136,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetTemplate(Guid id)
         {
             var t = await _context.Templates
@@ -203,7 +204,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("variables/catalog")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public IActionResult GetVariableCatalog()
         {
             var catalog = _variableService.GetVariableCatalog();
@@ -211,7 +212,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("archived")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> GetArchivedTemplates()
         {
             var currentUserId = GetCurrentUserId();
@@ -265,7 +266,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/versions/{versionId}/restore-request")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.TemplatesEdit)]
         public async Task<IActionResult> CreateRestoreRequest(Guid id, Guid versionId, CreateTemplateRestorationRequestDto dto)
         {
             var version = await _context.TemplateVersions
@@ -323,7 +324,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.TemplatesCreate)]
         public async Task<IActionResult> CreateTemplate(CreateTemplateDto dto)
         {
             var category = await _context.TemplateCategories.FirstOrDefaultAsync(c => c.Id == dto.TemplateCategoryId);
@@ -528,7 +529,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/favorite")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> AddFavorite(Guid id)
         {
             var currentUserId = GetCurrentUserId();
@@ -573,7 +574,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpDelete("{id}/favorite")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesView)]
         public async Task<IActionResult> RemoveFavorite(Guid id)
         {
             var currentUserId = GetCurrentUserId();
@@ -751,7 +752,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/versions/{versionId}/request-approval")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.TemplatesSubmitReview)]
         public async Task<IActionResult> RequestApproval(Guid id, Guid versionId)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
@@ -788,7 +789,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/versions/{versionId}/review")]
-        [Authorize(Policy = "RequireReviewer")]
+        [HasPermission(Permissions.TemplatesReview)]
         public async Task<IActionResult> ReviewVersion(Guid id, Guid versionId, ReviewTemplateVersionDto dto)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
@@ -802,6 +803,16 @@ namespace Plms.Api.Controllers
             if (string.IsNullOrWhiteSpace(dto.Comments))
             {
                 return BadRequest(new { success = false, error = "Reviewer comments are required." });
+            }
+
+            // Four-eyes rule: the author or submitter cannot approve their own version.
+            // Administrators may, so single-admin installations keep working; the audit entry marks it.
+            var reviewer = User.Identity?.Name ?? "System";
+            var isOwnWork = IsSameUser(version.CreatedBy, reviewer) || IsSameUser(version.SubmittedForReviewBy, reviewer);
+            var isAdmin = User.IsInRole(ApplicationRoles.Admin);
+            if (dto.Approve && isOwnWork && !isAdmin)
+            {
+                return BadRequest(new { success = false, error = "You cannot approve a version you created or submitted. Ask another reviewer." });
             }
 
             var oldStatus = version.Status;
@@ -822,7 +833,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
-                Details = $"Status changed from {oldStatus} to {version.Status}. Comments: {dto.Comments}",
+                Details = $"Status changed from {oldStatus} to {version.Status}. Comments: {dto.Comments}" + (dto.Approve && isOwnWork ? " [Self-approval by administrator]" : string.Empty),
                 CorrelationId = HttpContext.TraceIdentifier
             });
 
@@ -831,7 +842,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/versions/{versionId}/publish")]
-        [Authorize(Policy = "RequireReviewer")]
+        [HasPermission(Permissions.TemplatesPublish)]
         public async Task<IActionResult> PublishTemplate(Guid id, Guid versionId)
         {
             var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
@@ -879,7 +890,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}/versions/{versionId}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.TemplatesEdit)]
         public async Task<IActionResult> UpdateVersion(Guid id, Guid versionId, UpdateTemplateVersionDto dto)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
@@ -916,7 +927,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/revisions")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.TemplatesEdit)]
         public async Task<IActionResult> CreateRevision(Guid id, [FromQuery] Guid fromVersionId)
         {
             var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
@@ -924,6 +935,17 @@ namespace Plms.Api.Controllers
 
             var sourceVersion = template.Versions.FirstOrDefault(v => v.Id == fromVersionId);
             if (sourceVersion == null) return NotFound(new { success = false, error = "Source version not found." });
+
+            // One open draft per template: return the existing draft instead of creating a second one.
+            // This makes the endpoint safe to call twice (double clicks, retried requests, React effects).
+            var openDraft = template.Versions
+                .Where(v => v.Status == TemplateStatus.Draft)
+                .OrderByDescending(v => v.VersionNumber)
+                .FirstOrDefault();
+            if (openDraft != null)
+            {
+                return Ok(new { success = true, data = new { id = openDraft.Id, versionNumber = openDraft.VersionNumber, existing = true } });
+            }
 
             var newVersionNumber = template.Versions.Max(v => v.VersionNumber) + 1;
 
@@ -940,13 +962,24 @@ namespace Plms.Api.Controllers
             };
 
             _context.TemplateVersions.Add(newVersion);
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Id = Guid.NewGuid(),
+                Timestamp = DateTime.UtcNow,
+                Action = "TemplateRevisionCreated",
+                EntityId = newVersion.Id.ToString(),
+                EntityType = "LabelTemplateVersion",
+                UserId = User.Identity?.Name ?? "System",
+                Details = $"Draft V{newVersion.VersionNumber} created from V{sourceVersion.VersionNumber}.",
+                CorrelationId = HttpContext.TraceIdentifier
+            });
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, data = new { id = newVersion.Id, versionNumber = newVersion.VersionNumber } });
+            return Ok(new { success = true, data = new { id = newVersion.Id, versionNumber = newVersion.VersionNumber, existing = false } });
         }
 
         [HttpGet("{id}/versions/{versionId}/preview-metadata")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesPreview)]
         public async Task<IActionResult> GetPreviewMetadata(Guid id, Guid versionId, [FromQuery] Guid? productId)
         {
             var template = await _context.Templates
@@ -1035,7 +1068,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}/versions/{versionId}/preview")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesPreview)]
         public async Task<IActionResult> GetPreview(Guid id, Guid versionId, [FromQuery] Guid? productId)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
@@ -1060,7 +1093,9 @@ namespace Plms.Api.Controllers
                 var model = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (model == null) return BadRequest(new { success = false, error = "Invalid layout JSON." });
 
-                var pdf = _renderService.GeneratePdf(model);
+                // Versions that are not approved for production are marked so a proof can never pass as a real label.
+                var isProductionVersion = version.Status is TemplateStatus.Approved or TemplateStatus.Published or TemplateStatus.Deprecated;
+                var pdf = _renderService.GeneratePdf(model, isProductionVersion ? null : "PROVA");
                 Response.Headers.ContentDisposition = "inline";
                 return File(pdf, "application/pdf");
             }
@@ -1071,7 +1106,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}/versions/{versionId}/compare")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.TemplatesCompare)]
         public async Task<IActionResult> CompareVersions(Guid id, Guid versionId, [FromQuery] Guid againstVersionId)
         {
             var versions = await _context.TemplateVersions
@@ -1249,7 +1284,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("approvals")]
-        [Authorize(Policy = "RequireReviewer")]
+        [HasPermission(Permissions.TemplatesReview)]
         public async Task<IActionResult> GetInReviewVersions()
         {
             var items = await _context.TemplateVersions
@@ -1535,6 +1570,12 @@ namespace Plms.Api.Controllers
                 ReviewedAt = request.ReviewedAt,
                 RestoredVersionId = request.RestoredVersionId
             };
+        }
+
+        private static bool IsSameUser(string? a, string? b)
+        {
+            return !string.IsNullOrWhiteSpace(a) && !string.IsNullOrWhiteSpace(b)
+                && string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

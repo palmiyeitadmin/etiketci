@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.PrintIntentsView)]
         public async Task<IActionResult> GetPrintIntents()
         {
             var items = await _context.PrintIntents
@@ -64,10 +65,14 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsCreate)]
         public async Task<IActionResult> CreatePrintIntent(CreatePrintIntentDto dto)
         {
-            var product = await _context.Products.FindAsync(dto.ProductId);
+            // Category and Vendor feed the {{product.category}} / {{product.vendor}} variables.
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Vendor)
+                .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
             if (product == null) return NotFound(new { success = false, error = "Product not found." });
 
             var template = await _context.Templates.FindAsync(dto.TemplateId);
@@ -122,7 +127,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.PrintIntentsView)]
         public async Task<IActionResult> GetPrintIntent(Guid id)
         {
             var pi = await _context.PrintIntents
@@ -141,7 +146,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/handoff")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsHandoff)]
         public async Task<IActionResult> ConfirmHandoff(Guid id)
         {
             var pi = await _context.PrintIntents
@@ -196,7 +201,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/dispatch-pdf")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsDispatch)]
         public async Task<IActionResult> DispatchPdf(Guid id)
         {
             var pi = await _context.PrintIntents
@@ -234,7 +239,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/confirm-print")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsConfirm)]
         public async Task<IActionResult> ConfirmPrint(Guid id)
         {
             var pi = await _context.PrintIntents
@@ -273,7 +278,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/mark-failed")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsFail)]
         public async Task<IActionResult> MarkFailed(Guid id, MarkPrintIntentFailedDto dto)
         {
             var pi = await _context.PrintIntents
@@ -312,7 +317,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost("{id}/cancel")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.PrintIntentsCancel)]
         public async Task<IActionResult> CancelIntent(Guid id)
         {
             var pi = await _context.PrintIntents.FindAsync(id);
@@ -341,7 +346,7 @@ namespace Plms.Api.Controllers
             return Ok(new { success = true });
         }
         [HttpGet("{id}/audit")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.PrintIntentsView)]
         public async Task<IActionResult> GetIntentAudit(Guid id)
         {
             var piExists = await _context.PrintIntents.AnyAsync(p => p.Id == id);

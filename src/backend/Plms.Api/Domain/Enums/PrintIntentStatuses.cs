@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Plms.Api.Domain.Enums
 {
     public static class PrintIntentStatuses
@@ -9,9 +11,12 @@ namespace Plms.Api.Domain.Enums
         public const string Failed = "Failed";
         public const string Cancelled = "Cancelled";
 
+        /// <summary>Statuses that still need an operator action. Use this array inside EF queries; IsOpen cannot be translated to SQL.</summary>
+        public static readonly string[] OpenStatuses = { Pending, ReadyForPrint, SentToClient };
+
         public static bool IsOpen(string? status)
         {
-            return status == Pending || status == ReadyForPrint || status == SentToClient;
+            return status != null && OpenStatuses.Contains(status);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ namespace Plms.Api.Controllers
 {
     [ApiController]
     [Route("api/audit-logs")]
-    [Authorize(Policy = "RequireViewer")]
+    [HasPermission(Permissions.AuditView)]
     public class AuditLogsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

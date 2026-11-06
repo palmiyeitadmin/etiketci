@@ -179,6 +179,7 @@ namespace Plms.Api.Security
         public static IReadOnlyCollection<string> ApprovalReviewerPermissions { get; } = new[]
         {
             Permissions.DashboardView,
+            Permissions.ProductsView, // Reviewers preview labels with real product data.
             Permissions.TemplatesView,
             Permissions.TemplatesPreview,
             Permissions.TemplatesCompare,

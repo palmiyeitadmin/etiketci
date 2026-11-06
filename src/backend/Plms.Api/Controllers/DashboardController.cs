@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,7 @@ namespace Plms.Api.Controllers
 {
     [ApiController]
     [Route("api/dashboard")]
-    [Authorize(Policy = "RequireViewer")]
+    [HasPermission(Permissions.DashboardView)]
     public class DashboardController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

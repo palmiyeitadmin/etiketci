@@ -1,3 +1,4 @@
+using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.VendorsView)]
         public async Task<IActionResult> GetVendors()
         {
             var vendors = await _context.Vendors
@@ -36,7 +37,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "RequireViewer")]
+        [HasPermission(Permissions.VendorsView)]
         public async Task<IActionResult> GetVendor(Guid id)
         {
             var vendor = await _context.Vendors.FindAsync(id);
@@ -60,7 +61,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.VendorsManage)]
         public async Task<IActionResult> CreateVendor(CreateVendorDto dto)
         {
             if (await _context.Vendors.AnyAsync(v => v.Code == dto.Code))
@@ -103,7 +104,7 @@ namespace Plms.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "RequireOperator")]
+        [HasPermission(Permissions.VendorsManage)]
         public async Task<IActionResult> UpdateVendor(Guid id, UpdateVendorDto dto)
         {
             var vendor = await _context.Vendors.FindAsync(id);

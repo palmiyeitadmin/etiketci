@@ -200,9 +200,10 @@ namespace Plms.Api.Data
             modelBuilder.Entity<PrintIntent>(entity =>
             {
                 entity.HasKey(pi => pi.Id);
-                entity.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId);
-                entity.HasOne(pi => pi.Template).WithMany().HasForeignKey(pi => pi.TemplateId);
-                entity.HasOne(pi => pi.Version).WithMany().HasForeignKey(pi => pi.VersionId);
+                // Print history is audit evidence: deleting a product, template or version must never remove it.
+                entity.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(pi => pi.Template).WithMany().HasForeignKey(pi => pi.TemplateId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(pi => pi.Version).WithMany().HasForeignKey(pi => pi.VersionId).OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
