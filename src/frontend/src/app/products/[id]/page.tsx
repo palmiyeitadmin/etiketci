@@ -205,7 +205,7 @@ export default function ProductDetailPage() {
   return (
     <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
       <div className="space-y-6">
-        <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+        <nav className="-mb-3 flex items-center gap-1.5 text-sm text-ink-3">
           <Link href="/products" className="transition-colors hover:text-ink">{text.parent}</Link>
           <CaretRight size={12} aria-hidden />
           <span className="whitespace-nowrap font-mono text-ink-2">{product.sku}</span>
@@ -261,7 +261,7 @@ export default function ProductDetailPage() {
                         <Link href={`/templates/${link.templateId}`} className="text-ink transition-colors hover:text-accent">{link.templateName}</Link>
                       </td>
                       <td className="px-4 py-2.5">{link.isDefault ? <StatusBadge label={text.default} tone="success" /> : <StatusBadge label={text.secondary} tone="neutral" />}</td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-1.5">
                         <div className="flex items-center justify-end gap-1">
                           {versionId ? <Link href={`/templates/${link.templateId}/preview?versionId=${versionId}&productId=${id}`} className="plms-button-compact">{text.preview}</Link> : null}
                           <RowMenu label={text.more}>

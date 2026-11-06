@@ -121,7 +121,7 @@ export default function ProductsPage() {
                                 <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">
                                     {formatDate(product.createdAt)}
                                 </td>
-                                <td className="px-4 py-2.5 text-right">
+                                <td className="px-4 py-1.5 text-right">
                                     <Link href={`/products/${product.id}`} className="plms-button-compact">
                                         {t("common.open")}
                                     </Link>

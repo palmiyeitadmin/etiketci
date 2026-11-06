@@ -159,7 +159,7 @@ export default function AdminUserDetailPage() {
   return (
     <PermissionGuard permissions={[permissions.usersView]}>
       <div className="space-y-6">
-        <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+        <nav className="-mb-3 flex items-center gap-1.5 text-sm text-ink-3">
           <Link href="/admin/users" className="transition-colors hover:text-ink">{text.parent}</Link>
           <CaretRight size={12} aria-hidden />
           <span className="text-ink-2">{user?.fullName || text.user}</span>

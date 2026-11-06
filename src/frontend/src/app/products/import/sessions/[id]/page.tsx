@@ -125,7 +125,7 @@ export default function ImportSessionDetailPage() {
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
             <div className="space-y-6">
-                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                <nav className="-mb-3 flex items-center gap-1.5 text-sm text-ink-3">
                     <Link href="/products/import" className="transition-colors hover:text-ink">{text.parent}</Link>
                     <CaretRight size={12} aria-hidden />
                     <span className="text-ink-2">{text.title}</span>

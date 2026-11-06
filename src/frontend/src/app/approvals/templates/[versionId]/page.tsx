@@ -72,7 +72,7 @@ export default function ApprovalReviewDetailPage() {
     return (
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
             <div className="space-y-6">
-                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                <nav className="-mb-3 flex items-center gap-1.5 text-sm text-ink-3">
                     <Link href="/approvals" className="transition-colors hover:text-ink">{text.parent}</Link>
                     <CaretRight size={12} aria-hidden />
                     <span className="whitespace-nowrap font-mono text-ink-2">{item ? `${item.templateCode} v${item.versionNumber}` : text.title}</span>

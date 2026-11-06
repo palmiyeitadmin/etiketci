@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
                     {user.mustChangePassword ? <span className="whitespace-nowrap text-sm text-warn">{text.mustChangePasswordBadge}</span> : null}
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-right">
+                <td className="px-4 py-1.5 text-right">
                   <Link href={`/admin/users/${user.id}`} className="plms-button-compact">{text.open}</Link>
                 </td>
               </tr>

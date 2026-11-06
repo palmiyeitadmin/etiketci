@@ -163,7 +163,7 @@ export default function AuditLogsPage() {
                                             <span className="text-ink-3">–</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-2.5 text-right">
+                                    <td className="px-4 py-1.5 text-right">
                                         <button className="plms-button-compact" onClick={() => setSelected(log)}>
                                             {text.open}
                                         </button>

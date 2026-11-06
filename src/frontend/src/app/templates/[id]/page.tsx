@@ -560,7 +560,6 @@ export default function TemplateDetailPage() {
                   <h2 className="text-md font-medium text-ink">{text.activeVersion}</h2>
                   <p className="text-sm text-ink-3">{activeVersion ? text.productionDescription : text.noPublished}</p>
                 </div>
-                {activeVersion ? <span className="tabular font-mono text-sm text-ink-2">v{activeVersion.versionNumber}</span> : null}
               </div>
               {snapshotVersion ? <TemplatePreviewCard template={template} version={activeVersion || snapshotVersion} /> : null}
               {activeVersion ? (
@@ -594,7 +593,7 @@ export default function TemplateDetailPage() {
                       <button className="plms-button-secondary" onClick={() => handleEdit(editableDraft)} disabled={locked}>{text.openDraft}</button>
                     </RoleGuard>
                     <Link href={`/templates/${template.id}/preview?versionId=${editableDraft.id}`} className="plms-button-ghost">{text.preview}</Link>
-                    {activeVersion ? <Link href={`/templates/${template.id}/compare?leftVersionId=${editableDraft.id}&rightVersionId=${activeVersion.id}`} className="plms-button-ghost">{text.compareToPublished}</Link> : null}
+                    {activeVersion ? <Link href={`/templates/${template.id}/compare?leftVersionId=${editableDraft.id}&rightVersionId=${activeVersion.id}`} className="plms-button-ghost" title={text.compareToPublished}>{text.compare}</Link> : null}
                   </div>
                 </>
               ) : (

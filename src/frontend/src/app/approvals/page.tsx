@@ -129,7 +129,7 @@ export default function ApprovalQueuePage() {
                                                 <td className={`${cell} whitespace-nowrap text-ink-2`}>{item.requestedBy}</td>
                                                 <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(item.requestedAt)}</td>
                                                 <td className={`${cell} max-w-xs truncate text-ink-3`} title={note || undefined}>{note || "–"}</td>
-                                                <td className="px-4 py-2.5 text-right">
+                                                <td className="px-4 py-1.5 text-right">
                                                     <Link href={`/approvals/templates/${item.versionId}`} className="plms-button-compact">{text.openReview}</Link>
                                                 </td>
                                             </tr>
@@ -159,7 +159,7 @@ export default function ApprovalQueuePage() {
                                             <td className={`${cell} whitespace-nowrap text-ink-2`}>{item.requestedBy}</td>
                                             <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(item.requestedAt)}</td>
                                             <td className={`${cell} max-w-xs truncate text-ink-3`} title={item.businessJustification}>{item.businessJustification || "–"}</td>
-                                            <td className="px-4 py-2.5 text-right">
+                                            <td className="px-4 py-1.5 text-right">
                                                 <Link href={`/approvals/restorations/${item.id}`} className="plms-button-compact">{text.openRequest}</Link>
                                             </td>
                                         </tr>

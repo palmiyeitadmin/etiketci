@@ -111,7 +111,7 @@ export default function ProductImportPage() {
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
             <div className="space-y-6">
-                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                <nav className="-mb-3 flex items-center gap-1.5 text-sm text-ink-3">
                     <Link href="/products" className="transition-colors hover:text-ink">{text.parent}</Link>
                     <CaretRight size={12} aria-hidden />
                     <span className="text-ink-2">{text.title}</span>
@@ -156,7 +156,7 @@ export default function ProductImportPage() {
                                         </td>
                                         <td className="px-4 py-2.5 text-base text-ink-2">{session.createdBy}</td>
                                         <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(session.createdAt)}</td>
-                                        <td className="px-4 py-2.5 text-right"><Link href={`/products/import/sessions/${session.id}`} className="plms-button-compact">{text.open}</Link></td>
+                                        <td className="px-4 py-1.5 text-right"><Link href={`/products/import/sessions/${session.id}`} className="plms-button-compact">{text.open}</Link></td>
                                     </tr>
                                 ))}
                             </DataTable>

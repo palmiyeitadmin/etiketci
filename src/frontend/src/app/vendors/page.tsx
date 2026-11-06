@@ -182,7 +182,7 @@ export default function VendorsPage() {
                                 <td className="w-40 whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{item.code}</td>
                                 <td className="px-4 py-2.5 text-base text-ink">{item.name}</td>
                                 <td className="px-4 py-2.5"><StatusBadge label={item.isActive ? "Active" : "Inactive"} tone={item.isActive ? "success" : "neutral"} /></td>
-                                <td className="px-4 py-2.5">
+                                <td className="px-4 py-1.5">
                                     <div className="flex justify-end gap-1">
                                         {canEdit ? <button className="plms-button-compact" onClick={() => openEdit(item)}>{text.edit}</button> : null}
                                         {canDelete ? <button className="plms-button-compact hover:bg-bad-soft hover:text-bad" onClick={() => setDeleteTarget(item)}>{text.delete}</button> : null}

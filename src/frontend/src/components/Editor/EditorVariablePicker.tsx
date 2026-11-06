@@ -6,6 +6,14 @@ import { ElementType, VariableCatalogItem } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
 
+/** The backend catalog is in English; Turkish names for the known variables. */
+const TURKISH_VARIABLES: Record<string, { label: string; description: string }> = {
+    "product.sku": { label: "Ürün kodu (SKU)", description: "Ürünün stok kodu" },
+    "product.name": { label: "Ürün adı", description: "Ürün kaydındaki ad" },
+    "product.category": { label: "Ürün kategorisi", description: "Ürünün bağlı olduğu kategori" },
+    "product.vendor": { label: "Tedarikçi", description: "Ürünün tedarikçisi" },
+};
+
 export function EditorVariablePicker({
     supportedTypes,
     onInsert,
@@ -40,13 +48,15 @@ export function EditorVariablePicker({
         async function load() {
             const response = await apiFetch<{ items: VariableCatalogItem[] }>("/api/Templates/variables/catalog");
             if (response.success) {
-                setItems(response.data.items);
+                setItems(locale === "tr"
+                    ? response.data.items.map((item) => ({ ...item, ...(TURKISH_VARIABLES[item.key] ?? {}) }))
+                    : response.data.items);
             }
             setLoading(false);
         }
 
         load();
-    }, []);
+    }, [locale]);
 
     const filtered = items.filter((item) =>
         item.supportedElementTypes.some((type) => supportedTypes.includes(type)) &&
