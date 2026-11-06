@@ -21,44 +21,44 @@ export default function ProductDetailPage() {
   const id = String(params.id);
   const text = locale === "tr"
     ? {
-      eyebrow: "Urun baglami",
-      description: "Urun ana verisi ve bagli etiket sablonlari.",
-      back: "Urunlere Don",
-      linkTemplate: "Sablon Bagla",
-      notFound: "Urun bulunamadi",
-      notFoundDescription: "Istenen urun kaydi yuklenemedi.",
+      eyebrow: "Ürün bağlamı",
+      description: "Ürün ana verisi ve bağlı etiket şablonları.",
+      back: "Ürünlere Dön",
+      linkTemplate: "Şablon Bağla",
+      notFound: "Ürün bulunamadı",
+      notFoundDescription: "İstenen ürün kaydı yüklenemedi.",
       status: "Durum",
       category: "Kategori",
-      vendor: "Tedarikci",
+      vendor: "Tedarikçi",
       uncategorized: "Kategorisiz",
-      direct: "Dogrudan",
-      linkedTemplates: "Bagli Sablonlar",
-      linkedDescription: "Bu urunden prova ve baski niyeti olusturmak icin kullanilabilecek sablonlar.",
-      noLinked: "Bagli sablon yok",
-      noLinkedDescription: "Urun baglamli onizleme veya baski niyeti icin en az bir sablon baglayin.",
+      direct: "Doğrudan",
+      linkedTemplates: "Bağlı Şablonlar",
+      linkedDescription: "Bu üründen prova ve baskı talebi oluşturmak için kullanılabilecek şablonlar.",
+      noLinked: "Bağlı şablon yok",
+      noLinkedDescription: "Ürün bağlamlı önizleme veya baskı talebi için en az bir şablon bağlayın.",
       code: "Kod",
-      template: "Sablon",
-      priority: "Oncelik",
-      actions: "Islemler",
-      default: "Varsayilan",
-      secondary: "Ikincil",
-      preview: "Onizleme",
-      setDefault: "Varsayilan Yap",
-      openTemplate: "Sablonu Ac",
-      unlink: "Baglantiyi Kaldir",
-      recordTimeline: "Kayit Zaman Cizelgesi",
-      created: "Olusturuldu",
-      updated: "Guncellendi",
-      linkedCount: "Bagli Sablonlar",
+      template: "Şablon",
+      priority: "Öncelik",
+      actions: "İşlemler",
+      default: "Varsayılan",
+      secondary: "İkincil",
+      preview: "Önizleme",
+      setDefault: "Varsayılan Yap",
+      openTemplate: "Şablonu Aç",
+      unlink: "Bağlantıyı Kaldır",
+      recordTimeline: "Kayıt Zaman Çizelgesi",
+      created: "Oluşturuldu",
+      updated: "Güncellendi",
+      linkedCount: "Bağlı Şablonlar",
       guidance: "Operasyon Rehberi",
-      guidance1: "Yalnizca bagli sablonlar urun baglamli onizleme ve baski niyeti olusturmada kullanilabilir.",
-      guidance2: "Varsayilan sablon operatorler icin onerilen giris noktasi olur.",
-      guidance3: "Yayindaki sablon surumleri degistirilemez; duzenleme yeni bir taslak revizyon olusturur.",
-      modalTitle: "Sablon Bagla",
-      modalLabel: "Sablon",
-      selectTemplate: "Sablon secin",
-      markDefault: "Bu urun icin varsayilan sablon olarak isaretle",
-      linking: "Baglaniyor...",
+      guidance1: "Yalnızca bağlı şablonlar ürün bağlamlı önizleme ve baskı talebi oluşturmada kullanılabilir.",
+      guidance2: "Varsayılan şablon operatörler için önerilen giriş noktası olur.",
+      guidance3: "Yayındaki şablon sürümleri değiştirilemez; düzenleme yeni bir taslak revizyon oluşturur.",
+      modalTitle: "Şablon Bağla",
+      modalLabel: "Şablon",
+      selectTemplate: "Şablon seçin",
+      markDefault: "Bu ürün için varsayılan şablon olarak işaretle",
+      linking: "Bağlanıyor...",
     }
     : {
       eyebrow: "Product context",
@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>;
+    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>;
   }
 
   if (!product) {
@@ -213,34 +213,34 @@ export default function ProductDetailPage() {
         />
 
         {message ? (
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">{message}</div>
+          <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
         ) : null}
 
         <div className="grid gap-5 md:grid-cols-4">
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">SKU</div>
-            <div className="mt-3 font-mono text-2xl font-black tracking-[-0.05em] text-white">{product.sku}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">SKU</div>
+            <div className="mt-3 font-mono text-2xl font-medium text-ink">{product.sku}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.status}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.status}</div>
             <div className="mt-3"><StatusBadge label={product.isActive ? "Active" : "Inactive"} tone={product.isActive ? "success" : "danger"} /></div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.category}</div>
-            <div className="mt-3 text-lg font-black tracking-[-0.04em] text-white">{product.categoryName || text.uncategorized}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.category}</div>
+            <div className="mt-3 text-lg font-medium text-ink">{product.categoryName || text.uncategorized}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.vendor}</div>
-            <div className="mt-3 text-lg font-black tracking-[-0.04em] text-white">{product.vendorName || text.direct}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.vendor}</div>
+            <div className="mt-3 text-lg font-medium text-ink">{product.vendorName || text.direct}</div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+          <div className="rounded-xl border border-line bg-surface p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.linkedTemplates}</div>
-                <div className="mt-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{text.linkedDescription}</div>
+                <div className="text-xs font-medium text-ink-3">{text.linkedTemplates}</div>
+                <div className="mt-1 text-sm font-medium text-ink-2">{text.linkedDescription}</div>
               </div>
             </div>
 
@@ -254,8 +254,8 @@ export default function ProductDetailPage() {
                     const versionId = template?.currentActiveVersionId;
                     return (
                       <tr key={link.id} className="transition-colors hover:bg-white/5">
-                        <td className="px-6 py-4"><span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{link.templateCode}</span></td>
-                        <td className="px-6 py-4 text-sm font-bold text-white">{link.templateName}</td>
+                        <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{link.templateCode}</span></td>
+                        <td className="px-6 py-4 text-sm font-medium text-ink">{link.templateName}</td>
                         <td className="px-6 py-4">{link.isDefault ? <StatusBadge label={text.default} tone="success" /> : <StatusBadge label={text.secondary} tone="neutral" />}</td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
@@ -267,7 +267,7 @@ export default function ProductDetailPage() {
                             ) : null}
                             <Link href={`/templates/${link.templateId}`} className="plms-button-secondary">{text.openTemplate}</Link>
                             <RoleGuard allowedRoles={["Admin"]}>
-                              <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={() => handleUnlink(link.id)}>{text.unlink}</button>
+                              <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => handleUnlink(link.id)}>{text.unlink}</button>
                             </RoleGuard>
                           </div>
                         </td>
@@ -280,17 +280,17 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.recordTimeline}</div>
-              <div className="mt-4 space-y-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
-                <div className="flex items-center justify-between"><span>{text.created}</span><span className="text-white">{formatDateTime(product.createdAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{text.updated}</span><span className="text-white">{formatDateTime(product.updatedAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{text.linkedCount}</span><span className="text-white">{links.length}</span></div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.recordTimeline}</div>
+              <div className="mt-4 space-y-3 text-sm font-medium text-ink-2">
+                <div className="flex items-center justify-between"><span>{text.created}</span><span className="text-ink">{formatDateTime(product.createdAt)}</span></div>
+                <div className="flex items-center justify-between"><span>{text.updated}</span><span className="text-ink">{formatDateTime(product.updatedAt)}</span></div>
+                <div className="flex items-center justify-between"><span>{text.linkedCount}</span><span className="text-ink">{links.length}</span></div>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.guidance}</div>
-              <ul className="mt-4 space-y-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.guidance}</div>
+              <ul className="mt-4 space-y-3 text-sm font-medium text-ink-2">
                 <li>{text.guidance1}</li>
                 <li>{text.guidance2}</li>
                 <li>{text.guidance3}</li>
@@ -302,7 +302,7 @@ export default function ProductDetailPage() {
         <SlideOver open={showLinkModal} title={text.modalTitle} subtitle={`${product.sku} · ${product.name}`} onClose={() => setShowLinkModal(false)}>
           <div className="space-y-5">
             <div>
-              <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.modalLabel}</label>
+              <label className="mb-2 block text-xs font-medium text-ink-3">{text.modalLabel}</label>
               <select className="plms-input" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
                 <option value="">{text.selectTemplate}</option>
                 {availableTemplates.map((template) => (
@@ -310,7 +310,7 @@ export default function ProductDetailPage() {
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
+            <label className="flex items-center gap-3 rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-2">
               <input type="checkbox" checked={isDefault} onChange={(event) => setIsDefault(event.target.checked)} />
               {text.markDefault}
             </label>

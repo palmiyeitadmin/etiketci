@@ -28,17 +28,17 @@ type VersionActionTarget = { template: LabelTemplate; version: TemplateVersion }
 function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
     switch (tone) {
         case "info":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-blue-400/25 bg-blue-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-blue-100 transition-colors hover:bg-blue-500/20";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20";
         case "warning":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-amber-400/25 bg-amber-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-amber-100 transition-colors hover:bg-amber-500/20";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-warn/25 bg-warn/10 px-2.5 text-xs font-medium text-warn transition-colors hover:bg-warn/20";
         case "danger":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-red-400/20 bg-red-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-red-200 transition-colors hover:bg-red-500/20";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-bad/20 bg-bad/10 px-2.5 text-xs font-medium text-bad transition-colors hover:bg-bad/20";
         case "primary":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-blue-500/30 bg-blue-600 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-blue-500";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-accent/30 bg-accent px-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover";
         case "success":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-100 transition-colors hover:bg-emerald-500/20";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-good/25 bg-good/10 px-2.5 text-xs font-medium text-good transition-colors hover:bg-good/20";
         default:
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] px-2.5 text-[9px] font-black uppercase tracking-[0.14em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
+            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-line bg-raised px-2.5 text-xs font-medium text-ink-2 transition-colors hover:bg-raised";
     }
 }
 
@@ -65,25 +65,25 @@ export default function TemplatesPage() {
         ? {
             category: "Kategori",
             actions: "Aksiyonlar",
-            manageCategories: "Sablon Kategorileri",
-            open: "Ac",
-            preview: "Onizle",
-            print: "Yazdir",
+            manageCategories: "Şablon Kategorileri",
+            open: "Aç",
+            preview: "Önizle",
+            print: "Yazdır",
             clone: "Klonla",
-            archive: "Arsivle",
+            archive: "Arşivle",
             delete: "Sil",
-            activeVersionRequired: "Aktif surum gerekli",
-            archiveTitle: "Sablonu arsivle",
-            archiveDescription: (name: string) => `${name} ana listeden cikacak, gecmis surumleri korunacak ve arsiv ekranindan geri alinabilecek.`,
-            archiveConfirm: "Sablonu Arsivle",
-            deleteTitle: "Sablonu sil",
-            deleteDescription: (name: string) => `${name} kalici olarak silinecek. Bu islem yalnizca guvenli taslak kayitlarinda desteklenir.`,
-            deleteConfirm: "Kalici Olarak Sil",
+            activeVersionRequired: "Aktif sürüm gerekli",
+            archiveTitle: "Şablonu arşivle",
+            archiveDescription: (name: string) => `${name} ana listeden çıkacak, geçmiş sürümleri korunacak ve arşiv ekranından geri alınabilecek.`,
+            archiveConfirm: "Şablonu Arşivle",
+            deleteTitle: "Şablonu sil",
+            deleteDescription: (name: string) => `${name} kalıcı olarak silinecek. Bu işlem yalnızca güvenli taslak kayıtlarında desteklenir.`,
+            deleteConfirm: "Kalıcı Olarak Sil",
             uncategorized: "Kategori yok",
-            ownership: "Yonetim",
-            activeLifecycle: "Surum / Yasam",
-            createdBy: "Olusturan",
-            lastEditedBy: "Son Duzenleyen",
+            ownership: "Yönetim",
+            activeLifecycle: "Sürüm / Yaşam",
+            createdBy: "Oluşturan",
+            lastEditedBy: "Son Düzenleyen",
             version: "Versiyon",
             status: "Durum",
             date: "Tarih",
@@ -91,19 +91,19 @@ export default function TemplatesPage() {
             filtersFavorites: "Favoriler",
             filtersMine: "Benimkiler",
             filtersReset: "Temizle",
-            allStatuses: "Tum durumlar",
-            allCategories: "Tum kategoriler",
+            allStatuses: "Tüm durumlar",
+            allCategories: "Tüm kategoriler",
             favorite: "Favoriye ekle",
-            unfavorite: "Favoriden cikar",
-            favoriteAdded: "Sablon favorilere eklendi.",
-            favoriteRemoved: "Sablon favorilerden cikarildi.",
+            unfavorite: "Favoriden çıkar",
+            favoriteAdded: "Şablon favorilere eklendi.",
+            favoriteRemoved: "Şablon favorilerden çıkarıldı.",
             draftOnly: "Sadece taslak",
-            versionArchiveTitle: "Surumu arsivle",
-            versionArchiveDescription: (name: string, version: number) => `${name} icindeki v${version} surumu arsivlenecek ve normal liste akisindan cikacak.`,
-            versionArchiveConfirm: "Surumu Arsivle",
-            versionDeleteTitle: "Surumu sil",
-            versionDeleteDescription: (name: string, version: number) => `${name} icindeki v${version} taslagi kalici olarak silinecek.`,
-            versionDeleteConfirm: "Surumu Sil",
+            versionArchiveTitle: "Sürümü arşivle",
+            versionArchiveDescription: (name: string, version: number) => `${name} içindeki v${version} sürümü arşivlenecek ve normal liste akışından çıkacak.`,
+            versionArchiveConfirm: "Sürümü Arşivle",
+            versionDeleteTitle: "Sürümü sil",
+            versionDeleteDescription: (name: string, version: number) => `${name} içindeki v${version} taslağı kalıcı olarak silinecek.`,
+            versionDeleteConfirm: "Sürümü Sil",
         }
         : {
             category: "Category",
@@ -168,7 +168,7 @@ export default function TemplatesPage() {
     const [mineOnly, setMineOnly] = useState(false);
 
     const filterChipClass =
-        "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-2xl border px-3 text-[10px] font-black uppercase tracking-[0.18em] transition-colors";
+        "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-xs font-medium transition-colors";
 
     async function load() {
         setLoading(true);
@@ -415,7 +415,7 @@ export default function TemplatesPage() {
                 />
 
                 {message ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
+                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
                         {message}
                     </div>
                 ) : null}
@@ -448,14 +448,14 @@ export default function TemplatesPage() {
                             </select>
                             <button
                                 type="button"
-                                className={`${filterChipClass} ${favoritesOnly ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : "border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)]"}`}
+                                className={`${filterChipClass} ${favoritesOnly ? "border-warn/40 bg-warn/15 text-warn" : "border-line bg-raised text-ink-2"}`}
                                 onClick={() => setFavoritesOnly((current) => !current)}
                             >
                                 {text.filtersFavorites}
                             </button>
                             <button
                                 type="button"
-                                className={`${filterChipClass} ${mineOnly ? "border-blue-400/40 bg-blue-500/15 text-white" : "border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)]"}`}
+                                className={`${filterChipClass} ${mineOnly ? "border-accent/40 bg-accent/15 text-ink" : "border-line bg-raised text-ink-2"}`}
                                 onClick={() => setMineOnly((current) => !current)}
                             >
                                 {text.filtersMine}
@@ -469,7 +469,7 @@ export default function TemplatesPage() {
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
                     </div>
                 ) : filteredTemplates.length === 0 ? (
                     <EmptyState
@@ -493,27 +493,27 @@ export default function TemplatesPage() {
                                 <React.Fragment key={template.id}>
                                 <tr className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
                                     <td className="pl-6 pr-2 py-4 w-10 text-center" onClick={(e) => { e.stopPropagation(); setExpandedRowId(isExpanded ? null : template.id); }}>
-                                        <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 transition-colors text-slate-400">
+                                        <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full bg-raised hover:bg-raised transition-colors text-ink-2">
                                             {isExpanded ? <CaretDown weight="bold" /> : <CaretRight weight="bold" />}
                                         </button>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
+                                        <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">
                                             {template.code}
                                         </span>
-                                        <div className="mt-2 text-sm font-bold text-white">{template.templateCategoryCode || "-"}</div>
-                                            <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                        <div className="mt-2 text-sm font-medium text-ink">{template.templateCategoryCode || "-"}</div>
+                                            <div className="mt-1 text-xs text-ink-3">
                                             {template.templateCategoryName || text.uncategorized}
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 min-w-[240px] xl:min-w-[280px]">
-                                        <div className="text-sm font-bold text-white">{template.name}</div>
-                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                        <div className="text-sm font-medium text-ink">{template.name}</div>
+                                        <div className="mt-1 text-xs text-ink-3">
                                             {template.description || t("templates.detail.noDescription")}
                                         </div>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">
+                                        <div className="text-sm font-medium text-ink-2">
                                             {template.currentActiveVersion
                                                 ? `v${template.currentActiveVersion.versionNumber}`
                                                 : template.latestVersion
@@ -536,18 +536,18 @@ export default function TemplatesPage() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 min-w-[170px]">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                                        <div className="text-xs font-medium text-ink-3">
                                             {text.createdBy}
                                         </div>
-                                        <div className="mt-1 text-sm font-medium text-white">{template.createdBy || "-"}</div>
-                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                        <div className="mt-1 text-sm font-medium text-ink">{template.createdBy || "-"}</div>
+                                        <div className="mt-1 text-xs text-ink-3">
                                             {formatDate(template.createdAt)}
                                         </div>
-                                        <div className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                                        <div className="mt-3 text-xs font-medium text-ink-3">
                                             {text.lastEditedBy}
                                         </div>
-                                        <div className="mt-1 text-sm font-medium text-white">{template.lastUpdatedBy || "-"}</div>
-                                        <div className="mt-1 text-xs text-[color:var(--plms-text-subtle)]">
+                                        <div className="mt-1 text-sm font-medium text-ink">{template.lastUpdatedBy || "-"}</div>
+                                        <div className="mt-1 text-xs text-ink-3">
                                             {formatDate(template.updatedAt)}
                                         </div>
                                     </td>
@@ -555,7 +555,7 @@ export default function TemplatesPage() {
                                         <div className="flex items-center gap-1.5 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
                                             <button
                                                 type="button"
-                                                className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                                                className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
                                                 onClick={() => void handleToggleFavorite(template)}
                                                 title={template.isFavorite ? text.unfavorite : text.favorite}
                                                 aria-label={template.isFavorite ? text.unfavorite : text.favorite}
@@ -603,10 +603,10 @@ export default function TemplatesPage() {
                                 </tr>
                                 {isExpanded && template.versions && template.versions.length > 0 && (
                                     <tr>
-                                        <td colSpan={6} className="bg-black/20 p-4 border-b border-[color:var(--plms-border)] pt-2 pb-6">
-                                            <div className="rounded-xl border border-[color:var(--plms-border)] overflow-hidden bg-[color:var(--plms-panel-2)] ml-[3.25rem]">
-                                                <table className="w-full text-left text-sm text-[color:var(--plms-text-subtle)]">
-                                                    <thead className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] border-b border-[color:var(--plms-border)]">
+                                        <td colSpan={6} className="bg-black/20 p-4 border-b border-line pt-2 pb-6">
+                                            <div className="rounded-xl border border-line overflow-hidden bg-raised ml-[3.25rem]">
+                                                <table className="w-full text-left text-sm text-ink-3">
+                                                    <thead className="bg-raised text-xs font-medium border-b border-line">
                                                         <tr>
                                                             <th className="px-5 py-3">{text.version}</th>
                                                             <th className="px-5 py-3">{text.status}</th>
@@ -619,11 +619,11 @@ export default function TemplatesPage() {
                                                     <tbody className="divide-y divide-[color:var(--plms-border)]">
                                                         {[...template.versions].sort((a,b) => b.versionNumber - a.versionNumber).map(v => (
                                                             <tr key={v.id} className="hover:bg-white/5 transition-colors">
-                                                                <td className="px-5 py-3 font-bold text-white">v{v.versionNumber}</td>
+                                                                <td className="px-5 py-3 font-medium text-ink">v{v.versionNumber}</td>
                                                                 <td className="px-5 py-3">
                                                                     <StatusBadge label={v.status} tone={v.status === "Published" ? "success" : v.status === "InReview" ? "info" : "warning"} />
                                                                 </td>
-                                                                <td className="px-5 py-3 font-medium text-slate-300">{v.createdBy || "-"}</td>
+                                                                <td className="px-5 py-3 font-medium text-ink-2">{v.createdBy || "-"}</td>
                                                                 <td className="px-5 py-3">{formatDate(v.createdAt)}</td>
                                                                 <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
                                                                 <td className="px-5 py-3">
@@ -641,7 +641,7 @@ export default function TemplatesPage() {
                                                                         ) : null}
                                                                         <button
                                                                             type="button"
-                                                                            className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                                                                            className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
                                                                             onClick={() => void handleToggleFavorite(template)}
                                                                             title={template.isFavorite ? text.unfavorite : text.favorite}
                                                                             aria-label={template.isFavorite ? text.unfavorite : text.favorite}
@@ -703,17 +703,17 @@ export default function TemplatesPage() {
                             <DetailMetric label={t("templates.detail.inReview")} value={String(selectedTemplate.inReviewCount ?? 0)} />
                         </section>
 
-                        <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.lifecycleSnapshot")}</div>
+                        <section className="rounded-xl border border-line bg-raised p-5">
+                            <div className="text-xs font-medium text-ink-3">{t("templates.detail.lifecycleSnapshot")}</div>
                             <div className="mt-4 flex flex-wrap gap-2">
                                 <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "InReview" : "DraftOnly"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
                                 {selectedTemplate.latestVersion ? <StatusBadge label={`Latest ${selectedTemplate.latestVersion.status}`} tone="neutral" /> : null}
                             </div>
-                            <div className="mt-4 text-sm text-[color:var(--plms-text-subtle)]">{selectedTemplate.description || t("templates.detail.noLifecycleDescription")}</div>
+                            <div className="mt-4 text-sm text-ink-3">{selectedTemplate.description || t("templates.detail.noLifecycleDescription")}</div>
                         </section>
 
-                        <section className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detail.quickActions")}</div>
+                        <section className="rounded-xl border border-line bg-raised p-5">
+                            <div className="text-xs font-medium text-ink-3">{t("templates.detail.quickActions")}</div>
                             <div className="mt-4 grid gap-2 sm:grid-cols-3">
                                 <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">{t("templates.detail.openDetail")}</Link>
                                 {canEdit ? (
@@ -783,9 +783,9 @@ export default function TemplatesPage() {
 
 function DetailMetric({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{label}</div>
-            <div className="mt-2 text-xl font-black tracking-[-0.04em] text-white">{value}</div>
+        <div className="rounded-lg border border-line bg-raised p-4">
+            <div className="text-xs font-medium text-ink-3">{label}</div>
+            <div className="mt-2 text-xl font-medium text-ink">{value}</div>
         </div>
     );
 }

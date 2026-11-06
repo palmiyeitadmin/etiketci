@@ -70,6 +70,34 @@ namespace Plms.Api.Controllers
             }
 
             summary.WeeklyActivity = chartData;
+
+            // Print operations for the last 14 days, by completion day.
+            var printWindowStart = today.AddDays(-13);
+            var finished = await _context.PrintIntents
+                .Where(pi => pi.CompletedAt != null && pi.CompletedAt >= printWindowStart
+                    && (pi.Status == PrintIntentStatuses.UserPrinted || pi.Status == PrintIntentStatuses.Failed))
+                .Select(pi => new { pi.Status, pi.Quantity, CompletedAt = pi.CompletedAt!.Value })
+                .ToListAsync();
+
+            for (var i = 0; i < 14; i++)
+            {
+                var day = printWindowStart.AddDays(i);
+                var ofDay = finished.Where(item => item.CompletedAt.Date == day).ToList();
+                summary.DailyPrints.Add(new DailyPrintItemDto
+                {
+                    Date = day.ToString("yyyy-MM-dd"),
+                    Labels = ofDay.Where(item => item.Status == PrintIntentStatuses.UserPrinted).Sum(item => item.Quantity),
+                    Jobs = ofDay.Count(item => item.Status == PrintIntentStatuses.UserPrinted),
+                    Failed = ofDay.Count(item => item.Status == PrintIntentStatuses.Failed),
+                });
+            }
+
+            summary.LabelsPrintedToday = summary.DailyPrints[^1].Labels;
+            summary.LabelsPrintedYesterday = summary.DailyPrints[^2].Labels;
+            summary.FailedPrintsToday = summary.DailyPrints[^1].Failed;
+            summary.AwaitingOutcome = await _context.PrintIntents.CountAsync(pi => pi.Status == PrintIntentStatuses.SentToClient);
+            summary.PendingPrintIntents = await _context.PrintIntents.CountAsync(pi => pi.Status == PrintIntentStatuses.Pending || pi.Status == PrintIntentStatuses.ReadyForPrint);
+
             return Ok(new { success = true, data = summary });
         }
 

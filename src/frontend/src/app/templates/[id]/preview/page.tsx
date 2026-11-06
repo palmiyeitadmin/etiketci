@@ -66,78 +66,78 @@ export default function TemplatePreviewPage() {
 
     const text = locale === "tr"
         ? {
-            metadataLoadError: "Onizleme metadata bilgisi yuklenemedi.",
-            loadPreviewFailed: "Onizleme metadata bilgisi yuklenemedi.",
-            pdfRenderError: "PDF onizlemesi olusturulamadi.",
-            selectProduct: "Print intent olusturmak icin bir urun secin.",
-            statusNotAllowed: "Yalnizca onayli veya yayindaki sablon surumleri baski talebi icin kullanilabilir.",
-            readinessBlocked: "Baski talebi olusturmadan once hazirlik engellerini giderin.",
-            quantityInvalid: "Miktar sifirdan buyuk olmalidir.",
-            createIntentFailed: "Baski talebi olusturulamadi: {message}",
-            createIntentError: "Baski talebi olusturulurken hata olustu.",
-            allowPopups: "PDF sekmesini acmak icin popup izni verin.",
-            print: "Yazdir",
-            loadingEngine: "PDF Motoru Hazirlaniyor",
-            metadataContextLoss: "Metadata baglami kayboldu.",
-            version: "Surum",
-            productionBlocked: "Uretim Engelli",
-            readyWithWarnings: "Uyarilar Var",
-            readinessPass: "Uretime Hazir",
-            downloadPdf: "PDF Indir",
-            creatingIntent: "Baski Talebi Olusturuluyor...",
-            createPrintIntent: "Baski Talebi Olustur",
-            masterDiagnostic: "Ana Teshis",
-            critical: "KRITIK",
-            caution: "DIKKAT",
-            verified: "DOGRULANDI",
-            visualArtifacts: "Gorsel artifaktlar veya kritik olmayan eksik veriler tespit edildi.",
-            layoutPass: "Layout motoru uretim degiskenleri icin %100 cozumleme raporluyor.",
-            operationalContext: "Operasyonel Baglam",
-            selectProductContext: "Urun baglami secin",
+            metadataLoadError: "Önizleme metadata bilgisi yüklenemedi.",
+            loadPreviewFailed: "Önizleme metadata bilgisi yüklenemedi.",
+            pdfRenderError: "PDF önizlemesi oluşturulamadı.",
+            selectProduct: "Baskı talebi oluşturmak için bir ürün seçin.",
+            statusNotAllowed: "Yalnızca onaylı veya yayındaki şablon sürümleri baskı talebi için kullanılabilir.",
+            readinessBlocked: "Baskı talebi oluşturmadan önce hazırlık engellerini giderin.",
+            quantityInvalid: "Miktar sıfırdan büyük olmalıdır.",
+            createIntentFailed: "Baskı talebi oluşturulamadı: {message}",
+            createIntentError: "Baskı talebi oluşturulurken hata oluştu.",
+            allowPopups: "PDF sekmesini açmak için popup izni verin.",
+            print: "Yazdır",
+            loadingEngine: "PDF Motoru Hazırlanıyor",
+            metadataContextLoss: "Şablon bilgileri yüklenemedi.",
+            version: "Sürüm",
+            productionBlocked: "Üretim Engelli",
+            readyWithWarnings: "Uyarılar Var",
+            readinessPass: "Üretime Hazır",
+            downloadPdf: "PDF İndir",
+            creatingIntent: "Baskı Talebi Oluşturuluyor...",
+            createPrintIntent: "Baskı Talebi Oluştur",
+            masterDiagnostic: "Hazırlık kontrolü",
+            critical: "KRİTİK",
+            caution: "DİKKAT",
+            verified: "DOĞRULANDI",
+            visualArtifacts: "Görsel artifaktlar veya kritik olmayan eksik veriler tespit edildi.",
+            layoutPass: "Tüm değişkenler ürün verisiyle dolduruldu.",
+            operationalContext: "Operasyonel Bağlam",
+            selectProductContext: "Ürün bağlamı seçin",
             quantity: "Miktar",
-            productContextActive: "Urun baglami aktif. Onizleme ve baski talebi secilen urunu kullanacak.",
-            selectProductToValidate: "Hazirlik durumunu dogrulamak ve baski talebi acmak icin bir urun secin.",
-            previewAllowed: "Surum durumu {status}. Onizlemeye izin verilir, ancak baski talebi icin onayli veya yayindaki surum gerekir.",
-            targetProduct: "Hedef Urun",
-            noProductContext: "Aktif urun baglami yok",
-            placeholdersRemain: "Degiskenler placeholder durumunda kalacak.",
-            variableResolution: "Degisken Cozumleme",
-            variablesFound: "{count} degisken",
-            noVariables: "DEGISKEN YOK",
-            staticLayout: "Statik yerlesim - Tanimli degisken yok.",
-            resolved: "Cozuldu",
+            productContextActive: "Ürün bağlamı aktif. Önizleme ve baskı talebi seçilen ürünü kullanacak.",
+            selectProductToValidate: "Hazırlık durumunu doğrulamak ve baskı talebi açmak için bir ürün seçin.",
+            previewAllowed: "Sürüm durumu {status}. Önizlemeye izin verilir, ancak baskı talebi için onaylı veya yayındaki sürüm gerekir.",
+            targetProduct: "Hedef Ürün",
+            noProductContext: "Aktif ürün bağlamı yok",
+            placeholdersRemain: "Değişkenler placeholder durumunda kalacak.",
+            variableResolution: "Değişken Çözümleme",
+            variablesFound: "{count} değişken",
+            noVariables: "DEĞİŞKEN YOK",
+            staticLayout: "Statik yerleşim - Tanımlı değişken yok.",
+            resolved: "Çözüldü",
             missing: "Eksik",
             unsupported: "Desteklenmiyor",
-            governanceSnapshot: "Yonetişim Ozeti",
+            governanceSnapshot: "Yonetişim Özeti",
             status: "Durum",
-            actor: "Kaydi Olusturan",
-            timestamp: "Kayit Zamani",
-            draftOwner: "Taslagi olusturan",
-            submittedBy: "Incelemeye gonderen",
-            reviewedBy: "Inceleyen",
-            publishedBy: "Yayina alan",
-            loadingPdfPreview: "PDF onizlemesi yukleniyor",
-            previewFailure: "Onizleme hatasi",
-            pdfCouldNotRender: "PDF onizlemesi olusturulamadi.",
+            actor: "Kaydı Oluşturan",
+            timestamp: "Kayıt Zamanı",
+            draftOwner: "Taslağı oluşturan",
+            submittedBy: "İncelemeye gönderen",
+            reviewedBy: "İnceleyen",
+            publishedBy: "Yayına alan",
+            loadingPdfPreview: "PDF önizlemesi yükleniyor",
+            previewFailure: "Önizleme hatası",
+            pdfCouldNotRender: "PDF önizlemesi oluşturulamadı.",
             retry: "Tekrar Dene",
-            unusablePdf: "Onizleme servisi kullanilabilir bir PDF donmedi.",
-            productionPdfStream: "Uretim PDF Akisi",
-            awaitingPdf: "PDF akis yaniti bekleniyor...",
-            printSetup: "Yazdirma Kurulumu",
+            unusablePdf: "Önizleme servisi kullanılabilir bir PDF dönmedi.",
+            productionPdfStream: "Üretim PDF Akışı",
+            awaitingPdf: "PDF akış yanıtı bekleniyor...",
+            printSetup: "Yazdırma Kurulumu",
             stockSize: "Etiket Boyutu",
-            orientation: "Yon",
+            orientation: "Yön",
             landscape: "Yatay",
             portrait: "Dikey",
-            printGuideTitle: "Yazdirma Notlari",
-            printGuideScale: "Yazdirirken olcek 100% / Gercek boyut olmali.",
-            printGuidePaper: "Kagit boyutu sablon boyutuyla ayni olmali.",
-            printGuideViewer: "Yazdirma dogrudan PDF sekmesinden yapilir; iframe wrapper kullanilmaz.",
-            missingProductContext: "Urun baglami eksik. Baski talebi icin belirli bir urun secilmesi gerekir.",
-            versionStateBlocked: "Surum durumu {status}. Baski talebi icin yalnizca onayli veya yayindaki surumler kullanilabilir.",
+            printGuideTitle: "Yazdırma Notları",
+            printGuideScale: "Yazdırırken ölçek 100% / Gerçek boyut olmalı.",
+            printGuidePaper: "Kağıt boyutu şablon boyutuyla aynı olmalı.",
+            printGuideViewer: "Yazdırma doğrudan PDF sekmesinden yapılır; iframe wrapper kullanılmaz.",
+            missingProductContext: "Ürün bağlamı eksik. Baskı talebi için belirli bir ürün seçilmesi gerekir.",
+            versionStateBlocked: "Sürüm durumu {status}. Baskı talebi için yalnızca onaylı veya yayındaki sürümler kullanılabilir.",
             missingVariable: "Gerekli veri eksik: {name}",
-            unsupportedVariable: "Desteklenmeyen degisken yer tutucusu: {name}",
-            unlinkedProduct: "Secilen urun katalogda bu sablona acikca bagli degil.",
-            barcodeWarning: "{name} barkod tipi PDF cikisinda tam desteklenmeyebilir.",
+            unsupportedVariable: "Desteklenmeyen değişken yer tutucusu: {name}",
+            unlinkedProduct: "Seçilen ürün katalogda bu şablona açıkça bağlı değil.",
+            barcodeWarning: "{name} barkod tipi PDF çıkışında tam desteklenmeyebilir.",
         }
         : {
             metadataLoadError: "Preview metadata could not be loaded.",
@@ -411,15 +411,15 @@ export default function TemplatePreviewPage() {
     }
 
     if (loading) return (
-        <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
+        <div className="h-screen flex items-center justify-center bg-surface text-ink">
             <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mb-4"></div>
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">{text.loadingEngine}</div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-good/30 mb-4"></div>
+                <div className="text-xs font-medium text-good">{text.loadingEngine}</div>
             </div>
         </div>
     );
 
-    if (!metadata) return <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest">{text.metadataContextLoss}</div>;
+    if (!metadata) return <div className="p-8 text-center text-ink-3 font-medium">{text.metadataContextLoss}</div>;
 
     const isBlocked = metadata.readinessStatus === 2;
     const hasWarnings = metadata.readinessStatus === 1 || metadata.warnings.length > 0;
@@ -463,58 +463,58 @@ export default function TemplatePreviewPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="h-screen flex flex-col bg-slate-100 overflow-hidden">
+            <div className="h-screen flex flex-col bg-raised overflow-hidden">
                 {/* Enterprise Header */}
-                <div className="bg-slate-900 text-white border-b border-white/5 px-8 h-20 flex justify-between items-center shrink-0 shadow-2xl z-10">
+                <div className="bg-surface text-ink border-b border-line px-8 h-20 flex justify-between items-center shrink-0 shadow-pop z-10">
                     <div className="flex items-center space-x-6">
                         <button
                             onClick={() => router.back()}
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all group"
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-raised hover:bg-raised transition-colors group"
                         >
-                            <span className="text-white/50 group-hover:text-white transition-colors">←</span>
+                            <span className="text-ink-2 group-hover:text-ink transition-colors">←</span>
                         </button>
-                        <div className="border-l border-white/10 pl-6">
-                            <h1 className="text-xl font-black uppercase tracking-tighter leading-none">{metadata.templateName}</h1>
+                        <div className="border-l border-line pl-6">
+                            <h1 className="text-xl font-medium leading-none">{metadata.templateName}</h1>
                             <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-widest">{metadata.templateCode}</span>
-                                <span className="text-white/20 text-[10px]">|</span>
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{text.version} {metadata.versionNumber}</span>
+                                <span className="text-xs font-mono text-good font-medium">{metadata.templateCode}</span>
+                                <span className="text-ink-2 text-xs">|</span>
+                                <span className="text-xs font-medium text-ink-2">{text.version} {metadata.versionNumber}</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] flex items-center space-x-2 ${
-                            isBlocked ? "bg-red-500/20 text-red-400 border border-red-500/30" :
-                            hasWarnings ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
-                            "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-medium flex items-center space-x-2 ${
+                            isBlocked ? "bg-bad/20 text-bad border border-bad/30" :
+                            hasWarnings ? "bg-warn/20 text-warn border border-warn/30" :
+                            "bg-good/20 text-good border border-good/30"
                         }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isBlocked ? "bg-red-500" : hasWarnings ? "bg-amber-500" : "bg-emerald-500"}`}></span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isBlocked ? "bg-bad" : hasWarnings ? "bg-warn" : "bg-good"}`}></span>
                             <span>{isBlocked ? text.productionBlocked : hasWarnings ? text.readyWithWarnings : text.readinessPass}</span>
                         </div>
 
-                        <div className="h-8 w-px bg-white/10 mx-2"></div>
+                        <div className="h-8 w-px bg-raised mx-2"></div>
 
                         <button
                             onClick={handlePrintPdf}
                             disabled={pdfStatus !== "ready"}
-                            className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10"
+                            className="bg-raised text-ink-2 px-4 py-2.5 rounded font-medium text-xs hover:bg-raised hover:text-ink transition-colors border border-line"
                         >
                             {text.print}
                         </button>
                         <button
                             onClick={handleDownloadPdf}
                             disabled={!downloadPdfUrl}
-                            className="bg-white/5 text-white/70 px-4 py-2.5 rounded font-black text-[11px] uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="bg-raised text-ink-2 px-4 py-2.5 rounded font-medium text-xs hover:bg-raised hover:text-ink transition-colors border border-line disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {text.downloadPdf}
                         </button>
                         <button
                             onClick={handleCreateIntent}
                             disabled={!canCreateIntent || creatingIntent}
-                            className={`px-6 py-2.5 rounded font-black text-[11px] uppercase tracking-widest transition-all shadow-lg ${
+                            className={`px-6 py-2.5 rounded font-medium text-xs transition-colors shadow-pop ${
                                 !canCreateIntent || creatingIntent
-                                ? "bg-slate-700 text-slate-500 cursor-not-allowed border border-white/5" 
-                                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/40"
+                                ? "bg-raised text-ink-3 cursor-not-allowed border border-line" 
+                                : "bg-good text-white hover:bg-good"
                             }`}
                         >
                             {creatingIntent ? text.creatingIntent : text.createPrintIntent}
@@ -524,20 +524,20 @@ export default function TemplatePreviewPage() {
 
                 <div className="flex-1 flex overflow-hidden">
                     {/* Industrial Sidebar */}
-                    <div className="w-[400px] bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar shadow-inner select-none flex flex-col">
+                    <div className="w-[400px] bg-white border-r border-line overflow-y-auto custom-scrollbar select-none flex flex-col">
                         
                         {/* Status Guard Section */}
                         <div className={`p-8 border-b-2 flex flex-col space-y-4 ${
-                            isBlocked ? "bg-red-50/50 border-red-100" :
-                            hasWarnings ? "bg-amber-50/50 border-amber-100" :
-                            "bg-emerald-50/50 border-emerald-100"
+                            isBlocked ? "bg-bad/50 border-bad/30" :
+                            hasWarnings ? "bg-warn/50 border-warn/30" :
+                            "bg-good/50 border-good/30"
                         }`}>
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{text.masterDiagnostic}</h3>
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${
-                                    isBlocked ? "text-red-700 border-red-200 bg-red-100" :
-                                    hasWarnings ? "text-amber-700 border-amber-200 bg-amber-100" :
-                                    "text-emerald-700 border-emerald-200 bg-emerald-100"
+                                <h3 className="text-xs font-medium text-ink-2">{text.masterDiagnostic}</h3>
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded border ${
+                                    isBlocked ? "text-bad border-bad/30 bg-bad-soft" :
+                                    hasWarnings ? "text-warn border-warn/30 bg-warn-soft" :
+                                    "text-good border-good/30 bg-good-soft"
                                 }`}>
                                     {isBlocked ? text.critical : hasWarnings ? text.caution : text.verified}
                                 </span>
@@ -545,26 +545,26 @@ export default function TemplatePreviewPage() {
 
                             <div className="space-y-3">
                                 {isBlocked && localizedErrors.map((err, i) => (
-                                    <div key={i} className="flex space-x-3 items-start p-3 bg-red-100/50 rounded-lg border border-red-100">
-                                        <span className="text-red-600 text-xs">✕</span>
-                                        <p className="text-[11px] font-bold text-red-900 leading-tight">{err}</p>
+                                    <div key={i} className="flex space-x-3 items-start p-3 bg-bad/50 rounded-lg border border-bad/30">
+                                        <span className="text-bad text-xs">✕</span>
+                                        <p className="text-xs font-medium text-bad leading-tight">{err}</p>
                                     </div>
                                 ))}
                                 {!isBlocked && hasWarnings && (
                                     localizedWarnings.length > 0 ? localizedWarnings.map((warning, i) => (
-                                        <div key={i} className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
-                                            <span className="text-amber-600 text-xs">!</span>
-                                            <p className="text-[11px] font-bold text-amber-900 leading-tight">{warning}</p>
+                                        <div key={i} className="flex space-x-3 items-start p-3 bg-warn/50 rounded-lg border border-warn/30">
+                                            <span className="text-warn text-xs">!</span>
+                                            <p className="text-xs font-medium text-warn leading-tight">{warning}</p>
                                         </div>
                                     )) : (
-                                        <div className="flex space-x-3 items-start p-3 bg-amber-100/50 rounded-lg border border-amber-100">
-                                            <span className="text-amber-600 text-xs">!</span>
-                                            <p className="text-[11px] font-bold text-amber-900 leading-tight">{text.visualArtifacts}</p>
+                                        <div className="flex space-x-3 items-start p-3 bg-warn/50 rounded-lg border border-warn/30">
+                                            <span className="text-warn text-xs">!</span>
+                                            <p className="text-xs font-medium text-warn leading-tight">{text.visualArtifacts}</p>
                                         </div>
                                     )
                                 )}
                                 {!isBlocked && !hasWarnings && (
-                                    <p className="text-[11px] font-medium text-emerald-800 italic">{text.layoutPass}</p>
+                                    <p className="text-xs font-medium text-good">{text.layoutPass}</p>
                                 )}
                             </div>
                         </div>
@@ -574,13 +574,13 @@ export default function TemplatePreviewPage() {
                             
                             {/* Product Context */}
                             <section>
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
+                                <h4 className="text-xs font-medium text-ink-2 mb-4 flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-accent mr-2"></span>
                                     {text.operationalContext}
                                 </h4>
                                 <div className="space-y-3">
                                     <select
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none"
+                                        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-medium text-ink outline-none"
                                         value={selectedProductId}
                                         onChange={(event) => {
                                             setSelectedProductId(event.target.value);
@@ -595,7 +595,7 @@ export default function TemplatePreviewPage() {
                                         ))}
                                     </select>
                                     <input
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none"
+                                        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-medium text-ink outline-none"
                                         type="number"
                                         min={1}
                                         value={quantity}
@@ -605,7 +605,7 @@ export default function TemplatePreviewPage() {
                                         }}
                                         placeholder={text.quantity}
                                     />
-                            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[11px] font-medium text-slate-500">
+                            <div className="rounded-lg border border-line bg-white px-4 py-3 text-xs font-medium text-ink-3">
                                         {(metadata.status === "Published" || metadata.status === "Approved")
                                             ? selectedProductId
                                                 ? text.productContextActive
@@ -613,51 +613,51 @@ export default function TemplatePreviewPage() {
                                             : text.previewAllowed.replace("{status}", localizedStatus)}
                                       </div>
                                     {actionMessage ? (
-                                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[11px] font-bold text-amber-900">
+                                        <div className="rounded-lg border border-warn/30 bg-warn-soft px-4 py-3 text-xs font-medium text-warn">
                                             {actionMessage}
                                         </div>
                                     ) : null}
                                 </div>
                                 <div className="mt-4">
                                 {metadata.hasProductContext ? (
-                                    <div className="bg-slate-900 rounded-xl p-5 shadow-lg relative overflow-hidden group">
-                                        <div className="absolute right-[-10px] top-[-10px] font-black text-4xl text-white/5 italic select-none">DATA</div>
-                                        <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{text.targetProduct}</div>
-                                        <div className="text-lg font-black text-white uppercase tracking-tighter leading-tight">{metadata.productName}</div>
+                                    <div className="bg-surface rounded-xl p-5 shadow-pop relative overflow-hidden group">
+                                        <div className="absolute right-[-10px] top-[-10px] font-medium text-4xl text-ink-2 select-none">DATA</div>
+                                        <div className="text-xs font-medium text-accent mb-1">{text.targetProduct}</div>
+                                        <div className="text-lg font-medium text-ink leading-tight">{metadata.productName}</div>
                                         <div className="mt-2 flex items-center space-x-2">
-                                            <span className="text-[10px] font-mono text-white/40 tracking-widest">SKU_REF:</span>
-                                            <span className="text-[10px] font-mono text-emerald-400 font-bold">{metadata.productSku}</span>
+                                            <span className="text-xs font-mono text-ink-2">SKU_REF:</span>
+                                            <span className="text-xs font-mono text-good font-medium">{metadata.productSku}</span>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-5 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-center">
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{text.noProductContext}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">{text.placeholdersRemain}</p>
+                                    <div className="p-5 border-2 border-dashed border-line rounded-xl bg-raised text-center">
+                                        <p className="text-xs font-medium text-ink-2">{text.noProductContext}</p>
+                                        <p className="text-xs text-ink-2 mt-1">{text.placeholdersRemain}</p>
                                     </div>
                                 )}
                                 </div>
                             </section>
 
                             <section>
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2"></span>
+                                <h4 className="text-xs font-medium text-ink-2 mb-4 flex items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-line mr-2"></span>
                                     {text.printSetup}
                                 </h4>
                                 <div className="space-y-3">
-                                    <div className="rounded-xl border border-slate-200 bg-white p-4">
-                                        <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-500">
+                                    <div className="rounded-xl border border-line bg-white p-4">
+                                        <div className="flex items-center justify-between text-xs font-medium text-ink-3">
                                             <span>{text.stockSize}</span>
-                                            <span className="font-mono text-slate-900">
+                                            <span className="font-mono text-ink">
                                                 {metadata.pageWidthMm} x {metadata.pageHeightMm} mm
                                             </span>
                                         </div>
-                                        <div className="mt-3 flex items-center justify-between text-[10px] font-bold uppercase text-slate-500">
+                                        <div className="mt-3 flex items-center justify-between text-xs font-medium text-ink-3">
                                             <span>{text.orientation}</span>
-                                            <span className="font-black text-slate-900">{localizedOrientation}</span>
+                                            <span className="font-medium text-ink">{localizedOrientation}</span>
                                         </div>
                                     </div>
-                                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-[11px] font-medium text-blue-900">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-blue-700">{text.printGuideTitle}</div>
+                                    <div className="rounded-xl border border-accent/30 bg-accent-soft p-4 text-xs font-medium text-accent">
+                                        <div className="text-xs font-medium text-accent">{text.printGuideTitle}</div>
                                         <ul className="mt-3 space-y-2 list-disc pl-4">
                                             <li>{text.printGuideScale}</li>
                                             <li>{text.printGuidePaper}</li>
@@ -670,11 +670,11 @@ export default function TemplatePreviewPage() {
                             {/* Variable Resolution */}
                             <section>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
+                                    <h4 className="text-xs font-medium text-ink-2 flex items-center">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-good mr-2"></span>
                                         {text.variableResolution}
                                     </h4>
-                                    <span className="text-[9px] font-black text-slate-300">
+                                    <span className="text-xs font-medium text-ink-2">
                                         {metadata.variableDetails.length > 0
                                             ? text.variablesFound.replace("{count}", String(metadata.variableDetails.length))
                                             : text.noVariables}
@@ -682,28 +682,28 @@ export default function TemplatePreviewPage() {
                                 </div>
                                 <div className="space-y-3">
                                     {metadata.variableDetails.length === 0 ? (
-                                        <div className="text-[11px] text-slate-400 italic font-medium p-4 bg-slate-50 rounded-lg">{text.staticLayout}</div>
+                                        <div className="text-xs text-ink-2 font-medium p-4 bg-raised rounded-lg">{text.staticLayout}</div>
                                     ) : (
                                         metadata.variableDetails.map(varDetail => (
-                                            <div key={varDetail.name} className={`p-3 rounded-lg border transition-all ${
-                                                varDetail.status === 0 ? "bg-white border-slate-200 hover:border-emerald-200" :
-                                                "bg-red-50 border-red-100"
+                                            <div key={varDetail.name} className={`p-3 rounded-lg border transition-colors ${
+                                                varDetail.status === 0 ? "bg-white border-line hover:border-good/30" :
+                                                "bg-bad-soft border-bad/30"
                                             }`}>
                                                 <div className="flex items-start justify-between mb-1.5">
-                                                    <span className="font-mono text-[10px] font-black text-slate-900">{"{{"}{varDetail.name}{"}}"}</span>
-                                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border uppercase ${
-                                                        varDetail.status === 0 ? "text-emerald-700 border-emerald-100 bg-emerald-50" :
-                                                        "text-red-700 border-red-100 bg-red-100"
+                                                    <span className="font-mono text-xs font-medium text-ink">{"{{"}{varDetail.name}{"}}"}</span>
+                                                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${
+                                                        varDetail.status === 0 ? "text-good border-good/30 bg-good-soft" :
+                                                        "text-bad border-bad/30 bg-bad-soft"
                                                     }`}>
                                                         {varDetail.status === 0 ? text.resolved : varDetail.status === 2 ? text.unsupported : text.missing}
                                                     </span>
                                                 </div>
                                                 {varDetail.status === 0 ? (
-                                                    <div className="text-[10px] font-bold text-slate-500 bg-slate-50 p-2 rounded truncate border border-slate-100">
+                                                    <div className="text-xs font-medium text-ink-3 bg-raised p-2 rounded truncate border border-line">
                                                         {varDetail.resolvedValue}
                                                     </div>
                                                 ) : (
-                                                    <div className="text-[9px] font-black text-red-600 uppercase tracking-widest italic decoration-red-300 decoration-wavy underline">
+                                                    <div className="text-xs font-medium text-bad decoration-red-300 decoration-wavy underline">
                                                         {varDetail.status === 2 ? text.unsupported : text.missing}
                                                     </div>
                                                 )}
@@ -714,24 +714,24 @@ export default function TemplatePreviewPage() {
                             </section>
 
                             {/* System Governance */}
-                            <section className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-4">{text.governanceSnapshot}</h4>
+                            <section className="bg-raised rounded-xl p-6 border border-line">
+                                <h4 className="text-xs font-medium text-ink-2 mb-4">{text.governanceSnapshot}</h4>
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase">{text.status}</span>
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
-                                            metadata.status === 'Published' || metadata.status === 'Approved' ? 'bg-emerald-900 text-white' : 'bg-slate-200 text-slate-600'
+                                        <span className="text-xs font-medium text-ink-3">{text.status}</span>
+                                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                                            metadata.status === 'Published' || metadata.status === 'Approved' ? 'bg-good text-white' : 'bg-line text-ink-3'
                                           }`}>
                                             {localizedStatus}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-slate-500 uppercase">{governanceSnapshot.actorLabel}</span>
-                                        <span className="font-black text-slate-900">{governanceSnapshot.actor}</span>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="font-medium text-ink-3">{governanceSnapshot.actorLabel}</span>
+                                        <span className="font-medium text-ink">{governanceSnapshot.actor}</span>
                                     </div>
-                                    <div className="flex justify-between items-center text-[10px]">
-                                        <span className="font-bold text-slate-500 uppercase">{text.timestamp}</span>
-                                        <span className="font-black text-slate-900">{formatDateTime(governanceSnapshot.timestamp)}</span>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="font-medium text-ink-3">{text.timestamp}</span>
+                                        <span className="font-medium text-ink">{formatDateTime(governanceSnapshot.timestamp)}</span>
                                     </div>
                                 </div>
                             </section>
@@ -739,21 +739,21 @@ export default function TemplatePreviewPage() {
                     </div>
 
                     {/* PDF Engine Canvas */}
-                    <div className="flex-1 bg-slate-200 relative overflow-hidden flex items-center justify-center p-12">
+                    <div className="flex-1 bg-line relative overflow-hidden flex items-center justify-center p-12">
                         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
 
                         {pdfStatus === "loading" ? (
-                            <div className="flex w-full max-w-5xl flex-col items-center justify-center rounded-sm border border-slate-300 bg-white/80 p-12 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)]">
-                                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-slate-700" />
-                                <div className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">{text.loadingPdfPreview}</div>
+                            <div className="flex w-full max-w-5xl flex-col items-center justify-center rounded-sm border border-line bg-raised p-12">
+                                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-line" />
+                                <div className="mt-6 text-xs font-medium text-ink-3">{text.loadingPdfPreview}</div>
                             </div>
                         ) : null}
 
                         {pdfStatus === "error" ? (
-                            <div className="w-full max-w-3xl rounded-[2rem] border border-red-200 bg-white p-10 text-center shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)]">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-500">{text.previewFailure}</div>
-                                <h3 className="mt-3 text-2xl font-black tracking-[-0.04em] text-slate-900">{text.pdfCouldNotRender}</h3>
-                                <p className="mt-3 text-sm font-medium text-slate-500">{pdfErrorMessage || text.unusablePdf}</p>
+                            <div className="w-full max-w-3xl rounded-xl border border-bad/30 bg-white p-10 text-center">
+                                <div className="text-xs font-medium text-bad">{text.previewFailure}</div>
+                                <h3 className="mt-3 text-2xl font-medium text-ink">{text.pdfCouldNotRender}</h3>
+                                <p className="mt-3 text-sm font-medium text-ink-3">{pdfErrorMessage || text.unusablePdf}</p>
                                 <div className="mt-6 flex items-center justify-center gap-3">
                                     <button className="plms-button-secondary" onClick={handleRetryPdf}>{text.retry}</button>
                                     <button className="plms-button-secondary" onClick={handleDownloadPdf} disabled={!downloadPdfUrl}>{text.downloadPdf}</button>
@@ -762,7 +762,7 @@ export default function TemplatePreviewPage() {
                         ) : null}
 
                         {pdfStatus === "ready" && pdfObjectUrl ? (
-                            <div className="w-full max-w-5xl h-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] bg-white rounded-sm overflow-hidden border border-slate-400">
+                            <div className="w-full max-w-5xl h-full bg-white rounded-sm overflow-hidden border border-line">
                                 <iframe
                                     src={pdfObjectUrl}
                                     className="w-full h-full"
@@ -773,8 +773,8 @@ export default function TemplatePreviewPage() {
 
                         {pdfStatus === "idle" ? (
                             <div className="flex flex-col items-center animate-pulse">
-                                <div className="w-64 h-80 bg-slate-300 rounded-lg mb-6 shadow-inner"></div>
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">{text.awaitingPdf}</div>
+                                <div className="w-64 h-80 bg-line rounded-lg mb-6"></div>
+                                <div className="text-xs font-medium text-ink-2">{text.awaitingPdf}</div>
                             </div>
                         ) : null}
 

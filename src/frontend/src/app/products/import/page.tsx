@@ -18,25 +18,25 @@ export default function ProductImportPage() {
     const router = useRouter();
     const text = locale === "tr"
         ? {
-            eyebrow: "CSV ice aktarim akisi",
-            title: "Urun Ice Aktarimi",
-            description: "Dry-run dogrulamasi veri commit edilmeden once bir ice aktarim oturumu olusturur.",
-            back: "Urunlere Don",
-            create: "Ice Aktarim Oturumu Olustur",
-            headers: "Basliklar `Sku,Name,Description,CategoryCode,VendorCode` ile eslesmelidir.",
-            processing: "Isleniyor...",
-            initialize: "Dry-Run Baslat",
-            uploadFailed: "Dosya yuklenemedi.",
-            networkError: "API ile iletisim kurulamadi.",
+            eyebrow: "CSV içe aktarım akışı",
+            title: "Ürün İçe Aktarımı",
+            description: "Dosya önce kontrol edilir. Ürünler siz onaylayana kadar kaydedilmez.",
+            back: "Ürünlere Dön",
+            create: "İçe Aktarım Oturumu Oluştur",
+            headers: "Başlıklar `Sku,Name,Description,CategoryCode,VendorCode` ile eşleşmelidir.",
+            processing: "İşleniyor...",
+            initialize: "Dosyayı kontrol et",
+            uploadFailed: "Dosya yüklenemedi.",
+            networkError: "API ile iletişim kurulamadı.",
             sessions: "Son Oturumlar",
-            noSessions: "Ice aktarim oturumu yok",
-            noSessionsDescription: "Ilk ice aktarim oturumunu olusturmak icin bir dry-run dogrulamasi calistirin.",
+            noSessions: "İçe aktarım oturumu yok",
+            noSessionsDescription: "İlk içe aktarım oturumunu oluşturmak için bir dry-run doğrulaması çalıştırın.",
             file: "Dosya",
-            rows: "Satirlar",
-            actor: "Islemi Yapan",
-            created: "Olusturuldu",
+            rows: "Satırlar",
+            actor: "İşlemi Yapan",
+            created: "Oluşturuldu",
             issues: "sorun",
-            open: "Ac",
+            open: "Aç",
         }
         : {
             eyebrow: "CSV import workflow",
@@ -114,12 +114,12 @@ export default function ProductImportPage() {
                 />
 
                 <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                    <div className="rounded-[2rem] border border-dashed border-[color:var(--plms-border-strong)] bg-[color:var(--plms-panel)] p-8 text-center">
+                    <div className="rounded-xl border border-dashed border-line-strong bg-surface p-8 text-center">
                         <div className="mx-auto max-w-md space-y-5">
                             <div className="text-4xl">CSV</div>
                             <div>
-                                <h2 className="text-2xl font-black tracking-[-0.05em] text-white">{text.create}</h2>
-                                <p className="mt-2 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                                <h2 className="text-2xl font-medium text-ink">{text.create}</h2>
+                                <p className="mt-2 text-sm font-medium text-ink-3">
                                     {text.headers}
                                 </p>
                             </div>
@@ -127,24 +127,24 @@ export default function ProductImportPage() {
                             <button className="plms-button-primary w-full" onClick={handleUpload} disabled={!file || loading}>
                                 {loading ? text.processing : text.initialize}
                             </button>
-                            {error ? <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-300">{error}</div> : null}
+                            {error ? <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{error}</div> : null}
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{text.sessions}</div>
+                        <div className="text-sm font-medium text-ink">{text.sessions}</div>
                         {sessions.length === 0 ? (
                             <EmptyState title={text.noSessions} description={text.noSessionsDescription} />
                         ) : (
                             <DataTable columns={[text.file, "Status", text.rows, text.actor, text.created, text.open]}>
                                 {sessions.map((session) => (
                                     <tr key={session.id} className="transition-colors hover:bg-white/5">
-                                        <td className="px-6 py-4 text-sm font-bold text-white">{session.fileName}</td>
+                                        <td className="px-6 py-4 text-sm font-medium text-ink">{session.fileName}</td>
                                         <td className="px-6 py-4"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></td>
-                                        <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{session.totalRows} / {session.errorRows} {text.issues}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{session.createdBy}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">{formatDateTime(session.createdAt)}</td>
-                                        <td className="px-6 py-4"><Link href={`/products/import/sessions/${session.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300">{text.open}</Link></td>
+                                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{session.totalRows} / {session.errorRows} {text.issues}</td>
+                                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{session.createdBy}</td>
+                                        <td className="px-6 py-4 text-sm font-medium text-ink-3">{formatDateTime(session.createdAt)}</td>
+                                        <td className="px-6 py-4"><Link href={`/products/import/sessions/${session.id}`} className="text-xs font-medium text-accent">{text.open}</Link></td>
                                     </tr>
                                 ))}
                             </DataTable>

@@ -2,36 +2,44 @@
 
 import { ReactNode } from "react";
 
+/**
+ * A number with its label and what it compares to. Tone only colors the hint, never the card,
+ * so a row of stats stays quiet and the one that needs attention stands out.
+ */
 export function MetricCard({
     label,
     value,
     hint,
-    accent = "primary",
-    icon,
+    accent = "neutral",
+    href,
 }: {
     label: string;
     value: string | number;
     hint?: string;
-    accent?: "primary" | "success" | "warning" | "neutral";
+    accent?: "primary" | "success" | "warning" | "danger" | "neutral";
     icon?: ReactNode;
+    href?: string;
 }) {
-    const accentClasses = {
-        primary: "border-blue-500/20 bg-blue-500/8",
-        success: "border-emerald-500/20 bg-emerald-500/8",
-        warning: "border-amber-500/20 bg-amber-500/8",
-        neutral: "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)]",
-    };
+    const hintTone = {
+        primary: "text-accent",
+        success: "text-good",
+        warning: "text-warn",
+        danger: "text-bad",
+        neutral: "text-ink-3",
+    }[accent];
 
-    return (
-        <div className={`rounded-3xl border p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${accentClasses[accent]}`}>
-            <div className="flex items-start justify-between gap-3">
-                <div className="space-y-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{label}</p>
-                    <div className="text-3xl font-black tracking-[-0.05em] text-white">{value}</div>
-                    {hint ? <p className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{hint}</p> : null}
-                </div>
-                {icon ? <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-white/80">{icon}</div> : null}
-            </div>
-        </div>
+    const body = (
+        <>
+            <p className="text-sm text-ink-2">{label}</p>
+            <div className="tabular text-xl font-medium text-ink">{value}</div>
+            {hint ? <p className={`text-sm ${hintTone}`}>{hint}</p> : null}
+        </>
+    );
+
+    const className = "flex flex-col gap-1 rounded-xl border border-line bg-surface px-5 py-4";
+    return href ? (
+        <a href={href} className={`${className} transition-colors hover:border-line-strong`}>{body}</a>
+    ) : (
+        <div className={className}>{body}</div>
     );
 }

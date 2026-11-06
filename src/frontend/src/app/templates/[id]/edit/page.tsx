@@ -41,20 +41,20 @@ export default function TemplateEditorPage() {
 
     const text = locale === "tr"
         ? {
-            loadError: "Sablon yuklenemedi.",
-            loadFailed: "Duzenleme icin sablon yuklenemedi.",
-            draftUnavailable: "Taslak surum kullanilabilir degil.",
+            loadError: "Şablon yüklenemedi.",
+            loadFailed: "Düzenleme için şablon yüklenemedi.",
+            draftUnavailable: "Taslak sürüm kullanılabilir değil.",
             saved: "Taslak v{version} kaydedildi.",
-            saveFailed: "Taslak v{version} kaydi basarisiz: {message}",
-            loading: "Editor yukleniyor...",
-            backToDetail: "Detaya Don",
-            notFound: "Sablon bulunamadi.",
-            changeNotes: "Editor uzerinden kaydedildi",
-            networkError: "Kayit sirasinda ag hatasi olustu.",
-            draftTitle: "Bu surum duzenlenemez",
-            draftBody: "Yayinlanmis ve onaylanmis surumler degismez. Degisiklik yapmak icin bu surumden yeni bir taslak olusturun.",
-            draftCreate: "Taslak olustur ve duzenle",
-            draftCreating: "Taslak olusturuluyor",
+            saveFailed: "Taslak v{version} kaydı başarısız: {message}",
+            loading: "Editör yükleniyor...",
+            backToDetail: "Detaya Dön",
+            notFound: "Şablon bulunamadı.",
+            changeNotes: "Editör üzerinden kaydedildi",
+            networkError: "Kayıt sırasında ağ hatası oluştu.",
+            draftTitle: "Bu sürüm düzenlenemez",
+            draftBody: "Yayınlanmış ve onaylanmış sürümler değişmez. Değişiklik yapmak için bu sürümden yeni bir taslak oluşturun.",
+            draftCreate: "Taslak oluştur ve düzenle",
+            draftCreating: "Taslak oluşturuluyor",
         }
         : {
             loadError: "Template could not be loaded.",
@@ -213,8 +213,8 @@ export default function TemplateEditorPage() {
     if (loading) return <div className="p-8">{text.loading}</div>;
     if (error) return (
         <div className="p-8 text-center">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Link href={`/templates/${id}`} className="text-blue-600 underline">{text.backToDetail}</Link>
+            <p className="text-bad mb-4">{error}</p>
+            <Link href={`/templates/${id}`} className="text-accent underline">{text.backToDetail}</Link>
         </div>
     );
     if (template && needsDraft) {
@@ -243,7 +243,7 @@ export default function TemplateEditorPage() {
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
             <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden overscroll-none">
                 {saveMessage ? (
-                    <div className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-5 py-3 text-sm font-bold text-white shadow-[0_18px_40px_rgba(15,23,42,0.25)]">
+                    <div className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded-lg border border-line bg-surface px-5 py-3 text-sm font-medium text-ink">
                         {saveMessage}
                     </div>
                 ) : null}

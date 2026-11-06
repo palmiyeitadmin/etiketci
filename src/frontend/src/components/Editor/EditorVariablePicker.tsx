@@ -15,12 +15,12 @@ export function EditorVariablePicker({
     const { locale } = useI18n();
     const text = locale === "tr"
         ? {
-            title: "Degisken Secici",
-            description: "Mevcut icerik alanina desteklenen yer tutucular ekleyin.",
-            search: "Degiskenleri ara",
-            loading: "Degiskenler yukleniyor...",
-            empty: "Bu eleman tipi icin degisken bulunamadi.",
-            sample: "Ornek",
+            title: "Değişken Seçici",
+            description: "Mevcut içerik alanına desteklenen yer tutucular ekleyin.",
+            search: "Değişkenleri ara",
+            loading: "Değişkenler yükleniyor...",
+            empty: "Bu eleman tipi için değişken bulunamadı.",
+            sample: "Örnek",
         }
         : {
             title: "Variable Picker",
@@ -53,28 +53,28 @@ export function EditorVariablePicker({
     );
 
     return (
-        <div className="space-y-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-4">
+        <div className="space-y-3 rounded-lg border border-line bg-surface p-4">
             <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.title}</div>
-                <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-muted)]">{text.description}</div>
+                <div className="text-xs font-medium text-ink-3">{text.title}</div>
+                <div className="mt-1 text-xs font-medium text-ink-2">{text.description}</div>
             </div>
             <input className="plms-input" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
             <div className="custom-scrollbar max-h-56 space-y-2 overflow-y-auto pr-1">
                 {loading ? (
-                    <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-6 text-center text-xs font-medium text-[color:var(--plms-text-subtle)]">{text.loading}</div>
+                    <div className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-xs font-medium text-ink-3">{text.loading}</div>
                 ) : filtered.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-6 text-center text-xs font-medium text-[color:var(--plms-text-subtle)]">{text.empty}</div>
+                    <div className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-xs font-medium text-ink-3">{text.empty}</div>
                 ) : filtered.map((item) => (
                     <button
                         key={item.key}
                         type="button"
                         onClick={() => onInsert(`{{ ${item.key} }}`)}
-                        className="w-full rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3 text-left transition-colors hover:bg-white/5"
+                        className="w-full rounded-lg border border-line bg-raised px-4 py-3 text-left transition-colors hover:bg-raised"
                     >
-                        <div className="text-sm font-black text-white">{item.label}</div>
-                        <div className="mt-1 font-mono text-[10px] text-blue-300">{`{{ ${item.key} }}`}</div>
-                        <div className="mt-2 text-xs font-medium text-[color:var(--plms-text-muted)]">{item.description}</div>
-                        <div className="mt-1 text-[10px] font-medium text-[color:var(--plms-text-subtle)]">{text.sample}: {item.sampleValue}</div>
+                        <div className="text-sm font-medium text-ink">{item.label}</div>
+                        <div className="mt-1 font-mono text-xs text-accent">{`{{ ${item.key} }}`}</div>
+                        <div className="mt-2 text-xs font-medium text-ink-2">{item.description}</div>
+                        <div className="mt-1 text-xs font-medium text-ink-3">{text.sample}: {item.sampleValue}</div>
                     </button>
                 ))}
             </div>

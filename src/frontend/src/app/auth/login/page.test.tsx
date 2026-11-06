@@ -38,12 +38,13 @@ describe("LoginPage", () => {
   });
 
   it("renders the showcase panel and the login form", () => {
-    const { getByText, getByLabelText } = render(<LoginPage />);
+    const { getByText, getByLabelText, getByRole } = render(<LoginPage />);
 
-    expect(getByText("Etiket operasyonunu tek merkezden yonetin")).not.toBeNull();
-    expect(getByText("Giris Yap")).not.toBeNull();
-    expect(getByLabelText("Kurumsal E-posta")).not.toBeNull();
-    expect(getByLabelText("Erisim Parolasi")).not.toBeNull();
+    expect(getByText("Ürün etiketlerini tasarlayın, onaylatın ve basın")).not.toBeNull();
+    expect(getByRole("heading", { name: "Giriş yap" })).not.toBeNull();
+    expect(getByRole("button", { name: "Giriş yap" })).not.toBeNull();
+    expect(getByLabelText("E-posta")).not.toBeNull();
+    expect(getByLabelText("Parola")).not.toBeNull();
   });
 
   it("redirects authenticated users away from the login page", async () => {

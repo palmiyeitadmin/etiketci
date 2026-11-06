@@ -25,23 +25,23 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
     const text = locale === "tr"
         ? {
             layers: "Katmanlar",
-            description: "Ust katmanlar once goruntulenir. Siralama, PDF render sirasini yansitir.",
-            empty: "Henuz eleman yok.",
+            description: "Üst katmanlar önce görüntülenir. Sıralama, PDF render sırasını yansıtır.",
+            empty: "Henüz eleman yok.",
             hide: "Gizle",
-            show: "Goster",
+            show: "Göster",
             lock: "Kilitle",
-            unlock: "Kilidi Ac",
-            forward: "Ileri",
+            unlock: "Kilidi Aç",
+            forward: "İleri",
             back: "Geri",
-            front: "One",
+            front: "Öne",
             toBack: "Arkaya",
-            duplicate: "Cogalt",
+            duplicate: "Çoğalt",
             delete: "Sil",
             newGroup: "Yeni Grup",
-            ungroup: "Gruptan Cikar",
+            ungroup: "Gruptan Çıkar",
             groupLabel: "Grup",
-            ungrouped: "Gruplanmamis",
-            renameGroup: "Grup adi",
+            ungrouped: "Gruplanmamış",
+            renameGroup: "Grup adı",
         }
         : {
             layers: "Layers",
@@ -93,48 +93,48 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
     }, [layers, text.ungrouped]);
 
     return (
-        <aside className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col overflow-hidden overscroll-none border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] ${className}`}>
-            <div className="shrink-0 border-b border-[color:var(--plms-border)] px-5 py-4">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.layers}</div>
+        <aside className={`flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col overflow-hidden overscroll-none border-l border-line bg-surface ${className}`}>
+            <div className="shrink-0 border-b border-line px-5 py-4">
+                <div className="text-xs font-medium text-ink-3">{text.layers}</div>
                 <div className="mt-1 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{text.description}</div>
-                    <div className="shrink-0 rounded-xl border border-[color:var(--plms-border)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{layers.length}</div>
+                    <div className="min-w-0 flex-1 text-sm font-medium text-ink-2">{text.description}</div>
+                    <div className="shrink-0 rounded-xl border border-line px-2 py-1 text-xs font-medium text-ink-3">{layers.length}</div>
                 </div>
             </div>
             <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pr-2 pb-6" style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
                 <div className="space-y-3">
                 {layers.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-10 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">{text.empty}</div>
+                    <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm font-medium text-ink-3">{text.empty}</div>
                 ) : groupedLayers.map((group) => (
                     <div key={group.key} className="space-y-2">
                         {group.groupId ? (
                             <button
                                 type="button"
-                                className="flex w-full items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3 text-left"
+                                className="flex w-full items-center justify-between rounded-lg border border-line bg-raised px-4 py-3 text-left"
                                 onClick={() => setCollapsedGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}
                             >
                                 <div>
-                                    <div className="text-sm font-black text-white">{group.name}</div>
-                                    <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{group.items.length} {text.layers.toLowerCase()}</div>
+                                    <div className="text-sm font-medium text-ink">{group.name}</div>
+                                    <div className="mt-1 text-xs font-medium text-ink-3">{group.items.length} {text.layers.toLowerCase()}</div>
                                 </div>
-                                <div className="text-xs font-black text-[color:var(--plms-text-subtle)]">{collapsedGroups[group.key] ? "+" : "-"}</div>
+                                <div className="text-xs font-medium text-ink-3">{collapsedGroups[group.key] ? "+" : "-"}</div>
                             </button>
                         ) : null}
                         {!collapsedGroups[group.key] ? group.items.map((layer) => {
                             const isSelected = layer.id === selectedElementId;
                             return (
-                                <div key={layer.id} className={`w-full min-w-0 rounded-2xl border p-4 ${isSelected ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)]"}`}>
+                                <div key={layer.id} className={`w-full min-w-0 rounded-lg border p-4 ${isSelected ? "border-accent/30 bg-accent/10" : "border-line bg-raised"}`}>
                                     <button type="button" onClick={() => setSelectedElementId(layer.id)} className="w-full text-left">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0 flex-1">
-                                                <div className="truncate text-sm font-black text-white">{layer.name || layer.type}</div>
-                                                <div className="mt-1 truncate text-[10px] font-mono uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{layer.type}</div>
+                                                <div className="truncate text-sm font-medium text-ink">{layer.name || layer.type}</div>
+                                                <div className="mt-1 truncate text-xs font-mono text-ink-3">{layer.type}</div>
                                             </div>
                                             <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                                                <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { visible: !(layer.visible !== false) }); }}>
+                                                <button type="button" className="rounded-xl border border-line px-2.5 py-1.5 text-xs font-medium" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { visible: !(layer.visible !== false) }); }}>
                                                     {layer.visible !== false ? text.hide : text.show}
                                                 </button>
-                                                <button type="button" className="rounded-xl border border-[color:var(--plms-border)] px-2.5 py-1.5 text-[9px] font-black uppercase tracking-[0.16em]" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { locked: !(layer.locked === true) }); }}>
+                                                <button type="button" className="rounded-xl border border-line px-2.5 py-1.5 text-xs font-medium" onClick={(event) => { event.stopPropagation(); updateElement(layer.id, { locked: !(layer.locked === true) }); }}>
                                                     {layer.locked ? text.unlock : text.lock}
                                                 </button>
                                             </div>
@@ -145,7 +145,7 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
                                         {isSelected ? (
                                             <>
                                                 <div>
-                                                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{text.groupLabel}</label>
+                                                    <label className="mb-2 block text-xs font-medium text-ink-3">{text.groupLabel}</label>
                                                     <select
                                                         className="plms-select w-full"
                                                         value={layer.groupId || ""}
@@ -186,7 +186,7 @@ export function EditorLayersPanel({ className = "" }: { className?: string }) {
                                             <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "front")}>{text.front}</button>
                                             <button type="button" className="plms-button-compact" onClick={() => reorderElement(layer.id, "back")}>{text.toBack}</button>
                                             <button type="button" className="plms-button-compact" onClick={() => duplicateElement(layer.id)}>{text.duplicate}</button>
-                                            <button type="button" className="inline-flex min-w-0 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white" onClick={() => removeElement(layer.id)}>{text.delete}</button>
+                                            <button type="button" className="inline-flex min-w-0 items-center justify-center rounded-xl bg-bad px-3 py-2 text-xs font-medium text-white" onClick={() => removeElement(layer.id)}>{text.delete}</button>
                                             <button type="button" className="plms-button-compact col-span-2" onClick={() => updateElement(layer.id, { groupId: makeGroupId(), groupName: layer.groupName || layer.name || layer.type })}>{text.newGroup}</button>
                                             {layer.groupId ? <button type="button" className="plms-button-compact col-span-2" onClick={() => updateElement(layer.id, { groupId: undefined, groupName: undefined })}>{text.ungroup}</button> : null}
                                         </div>

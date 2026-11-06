@@ -69,7 +69,9 @@ describe("AppShell", () => {
     expect(shellRoot?.className).toContain("h-screen");
     expect(shellRoot?.className).toContain("overflow-hidden");
     expect(main?.className).toContain("overflow-hidden");
-    expect(main?.className).toContain("p-0");
+    expect(main?.className).not.toContain("px-4");
+    // The editor gets the full height: no top bar.
+    expect(container.querySelector("header")).toBeNull();
   });
 
   it("keeps the standard min-height shell for non-editor routes", () => {
@@ -80,7 +82,9 @@ describe("AppShell", () => {
 
     expect(shellRoot).not.toBeNull();
     expect(shellRoot?.className).toContain("min-h-screen");
-    expect(main?.className).toContain("overflow-y-auto");
+    // Regular pages scroll with the document under a sticky top bar.
+    expect(main?.className).toContain("px-4");
+    expect(container.querySelector("header")).not.toBeNull();
   });
 
   it("bypasses the shell for auth routes", () => {
@@ -110,7 +114,7 @@ describe("AppShell", () => {
   it("renders translated navigation labels from the active locale", () => {
     const { getAllByText, getByText } = render(createElement(AppShell, null, createElement("div", null, "Templates")));
 
-    expect(getAllByText("Sablonlar").length).toBeGreaterThan(0);
+    expect(getAllByText("Şablonlar").length).toBeGreaterThan(0);
     expect(getByText("Operasyonlar")).not.toBeNull();
   });
 });

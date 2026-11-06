@@ -2,191 +2,190 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Palmiye Etiket design tokens.
+ * Direction: precise, calm, close to the workshop. Quiet graphite chrome, one ink-cyan accent,
+ * and the label preview is the only rich element on a screen.
+ * Values are RGB channels so Tailwind opacity modifiers work (bg-accent/10).
+ */
 :root {
-  --plms-bg: #08111f;
-  --plms-panel: #101b2d;
-  --plms-panel-2: #13233b;
-  --plms-border: rgba(148, 163, 184, 0.14);
-  --plms-border-strong: rgba(148, 163, 184, 0.24);
-  --plms-primary: #2463eb;
-  --plms-success: #10b981;
-  --plms-danger: #ef4444;
-  --plms-warning: #f59e0b;
-  --plms-text: #e2e8f0;
-  --plms-text-muted: #cbd5e1;
-  --plms-text-subtle: #8da0bc;
-  --plms-muted-100: rgba(148, 163, 184, 0.08);
+  --canvas: 250 250 250;
+  --surface: 255 255 255;
+  --raised: 244 244 245;
+  --sunken: 247 247 248;
+  --line: 229 229 231;
+  --line-strong: 212 212 216;
+
+  --ink: 23 23 23;
+  --ink-2: 82 82 82;
+  --ink-3: 107 107 112;
+
+  --accent: 14 116 144;
+  --accent-hover: 21 94 117;
+  --accent-soft: 236 246 249;
+  --accent-ink: 255 255 255;
+
+  --good: 21 128 61;
+  --good-soft: 236 247 240;
+  --warn: 180 83 9;
+  --warn-soft: 254 245 231;
+  --bad: 185 28 28;
+  --bad-soft: 253 238 238;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Legacy names still used across pages; they now point at the light ramp. */
+  --plms-bg: rgb(var(--canvas));
+  --plms-panel: rgb(var(--surface));
+  --plms-panel-2: rgb(var(--raised));
+  --plms-border: rgb(var(--line));
+  --plms-border-strong: rgb(var(--line-strong));
+  --plms-primary: rgb(var(--accent));
+  --plms-success: rgb(var(--good));
+  --plms-danger: rgb(var(--bad));
+  --plms-warning: rgb(var(--warn));
+  --plms-text: rgb(var(--ink));
+  --plms-text-muted: rgb(var(--ink-2));
+  --plms-text-subtle: rgb(var(--ink-3));
+  --plms-muted-100: rgb(var(--raised));
+
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  color: var(--plms-text);
-  background:
-    radial-gradient(circle at top left, rgba(36, 99, 235, 0.16), transparent 28%),
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 20%),
-    linear-gradient(180deg, #091221 0%, #070d18 100%);
+  color: rgb(var(--ink));
+  background: rgb(var(--canvas));
+  font-size: 14px;
+  line-height: 20px;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern" 1;
 }
 
-@keyframes plms-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-
-  50% {
-    transform: translate3d(0, -12px, 0);
-  }
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
-@keyframes plms-pulse-soft {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.8;
-    transform: scale(1.08);
-  }
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
 }
 
-@keyframes plms-fade-up {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes plms-orbit-drift {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-
-  50% {
-    transform: translate3d(-16px, 14px, 0) rotate(8deg);
-  }
+::selection {
+  background: rgb(var(--accent) / 0.18);
 }
 
 @layer components {
+  /* Buttons: 36px tall, 8px radius, sentence case. */
   .plms-button-primary {
-    @apply inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-blue-700;
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .plms-button-secondary {
-    @apply inline-flex items-center justify-center rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-[0.22em] transition-colors;
-    border-color: var(--plms-border);
-    color: var(--plms-text-muted);
-    background: rgba(255, 255, 255, 0.02);
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-line bg-surface px-4 text-sm font-medium text-ink shadow-xs transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .plms-button-danger {
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-line bg-surface px-4 text-sm font-medium text-bad shadow-xs transition-colors hover:bg-bad-soft disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .plms-button-ghost {
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-ink-2 transition-colors hover:bg-raised hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .plms-button-compact {
-    @apply inline-flex min-w-0 items-center justify-center rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors whitespace-nowrap;
-    border-color: var(--plms-border);
-    color: var(--plms-text-muted);
-    background: rgba(255, 255, 255, 0.02);
+    @apply inline-flex h-8 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-line bg-surface px-2.5 text-xs font-medium text-ink-2 transition-colors hover:bg-raised hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .plms-input {
-    @apply w-full rounded-2xl border bg-transparent px-4 py-3 text-sm font-medium outline-none transition-colors placeholder:text-slate-500 focus:border-blue-400/40 focus:ring-2 focus:ring-blue-500/10;
-    border-color: var(--plms-border);
-    color: var(--plms-text);
-    background: rgba(255, 255, 255, 0.02);
+    @apply h-9 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:bg-raised disabled:text-ink-3;
+  }
+
+  textarea.plms-input {
+    @apply h-auto py-2;
   }
 
   .plms-select {
-    @apply rounded-2xl border px-4 py-3 text-sm font-medium outline-none transition-colors focus:border-blue-400/40 focus:ring-2 focus:ring-blue-500/10;
-    border-color: var(--plms-border);
-    color: var(--plms-text);
-    background: rgba(255, 255, 255, 0.02);
-    color-scheme: dark;
+    @apply h-9 rounded-lg border border-line bg-surface px-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/15;
   }
 
-  .plms-select option {
-    color: #e2e8f0;
-    background: #101b2d;
+  .plms-label {
+    @apply text-sm font-medium text-ink-2;
   }
 
-  .plms-select option:checked,
-  .plms-select option:hover {
-    color: #ffffff;
-    background: #2463eb;
-  }
-}
-
-@keyframes plms-stagger-in {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 12px, 0);
+  .plms-card {
+    @apply rounded-xl border border-line bg-surface;
   }
 
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes plms-slide-title {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 6px, 0);
-    filter: blur(3px);
+  .plms-kbd {
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded border border-line bg-surface px-1 font-mono text-xs text-ink-3;
   }
 
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    filter: blur(0);
+  .plms-code {
+    @apply font-mono text-xs text-ink-2;
   }
 }
 
 @layer utilities {
-  .animate-plms-float {
-    animation: plms-float 8.6s ease-in-out infinite;
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
-  .animate-plms-pulse-soft {
-    animation: plms-pulse-soft 7s ease-in-out infinite;
-  }
-
+  /* The one entrance used on load: a short fade and rise. */
   .animate-plms-fade-up {
-    animation: plms-fade-up 0.8s ease-out both;
+    animation: plms-fade-up 300ms var(--ease) both;
   }
 
-  .animate-plms-orbit-drift {
-    animation: plms-orbit-drift 12s ease-in-out infinite;
+  /* Route change: opacity only, so the wrapper never becomes a containing block for fixed children. */
+  .animate-plms-fade {
+    animation: plms-fade 160ms var(--ease) both;
+  }
+}
+
+@keyframes plms-fade {
+  from {
+    opacity: 0;
   }
 
-  .animate-plms-stagger-in {
-    animation: plms-stagger-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes plms-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
   }
 
-  .animate-plms-slide-title {
-    animation: plms-slide-title 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-plms-float,
-  .animate-plms-pulse-soft,
   .animate-plms-fade-up,
-  .animate-plms-orbit-drift,
-  .animate-plms-stagger-in,
-  .animate-plms-slide-title {
+  .animate-plms-fade {
     animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }
 
-
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -194,10 +193,6 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgb(var(--line-strong));
+  border-radius: 4px;
 }

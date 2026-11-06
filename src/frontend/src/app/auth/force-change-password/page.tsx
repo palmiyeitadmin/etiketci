@@ -55,7 +55,7 @@ export default function ForceChangePasswordPage() {
   }
 
   if (status === "loading") {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">{t("auth.forcePassword.loading")}</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-surface text-ink">{t("auth.forcePassword.loading")}</div>;
   }
 
   if (!session) {
@@ -63,17 +63,17 @@ export default function ForceChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12">
-      <div className="w-full max-w-md rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-8 shadow-[0_25px_90px_rgba(15,23,42,0.35)]">
-        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("auth.forcePassword.securityAction")}</div>
-        <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-white">{t("auth.forcePassword.title")}</h1>
-        <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
+    <div className="flex min-h-screen items-center justify-center bg-surface px-6 py-12">
+      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-8">
+        <div className="text-xs font-medium text-ink-3">{t("auth.forcePassword.securityAction")}</div>
+        <h1 className="mt-3 text-3xl font-medium text-ink">{t("auth.forcePassword.title")}</h1>
+        <p className="mt-3 text-sm font-medium text-ink-2">
           {t("auth.forcePassword.description")}
         </p>
 
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-          {error ? <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-200">{error}</div> : null}
-          {message ? <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-200">{message}</div> : null}
+          {error ? <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{error}</div> : null}
+          {message ? <div className="rounded-lg border border-good/20 bg-good/10 p-4 text-sm font-medium text-good">{message}</div> : null}
           <input className="plms-input" type="password" placeholder={t("auth.forcePassword.currentPassword")} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
           <input className="plms-input" type="password" placeholder={t("auth.forcePassword.newPassword")} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
           <input className="plms-input" type="password" placeholder={t("auth.forcePassword.confirmPassword")} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} required />

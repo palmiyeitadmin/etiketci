@@ -27,23 +27,23 @@ export default function RolesPage() {
 
   const text = locale === "tr"
     ? {
-        eyebrow: "Yonetim",
+        eyebrow: "Yönetim",
         title: "Roller",
-        description: "Varsayilan ve ozel rolleri yonetin, sonra aksiyon seviyesinde yetki atayin.",
+        description: "Varsayılan ve özel rolleri yönetin, sonra aksiyon seviyesinde yetki atayın.",
         newRole: "Yeni Rol",
         permissionsCount: "{count} yetki",
-        usersCount: "{count} kullanici",
-        roleName: "Rol adi",
-        descriptionLabel: "Aciklama",
-        immutableWarning: "Bu rol degistirilemez. Yetkiler degistirilemez.",
-        saveRole: "Rolu Kaydet",
-        deleteRole: "Rolu Sil",
-        updated: "Rol guncellendi.",
-        created: "Rol olusturuldu.",
+        usersCount: "{count} kullanıcı",
+        roleName: "Rol adı",
+        descriptionLabel: "Açıklama",
+        immutableWarning: "Bu rol değiştirilemez. Yetkiler değiştirilemez.",
+        saveRole: "Rolü Kaydet",
+        deleteRole: "Rolü Sil",
+        updated: "Rol güncellendi.",
+        created: "Rol oluşturuldu.",
         deleted: "Rol silindi.",
         generalSettings: "Genel Ayarlar",
-        permissionsTab: "Yetki Ayarlari",
-        selectedCount: "{count} secili",
+        permissionsTab: "Yetki Ayarları",
+        selectedCount: "{count} seçili",
       }
     : {
         eyebrow: "Administration",
@@ -157,37 +157,37 @@ export default function RolesPage() {
           description={text.description}
           actions={<button className="plms-button-primary" onClick={() => { setSelectedRoleId(""); setForm(emptyRoleForm); }}>{text.newRole}</button>}
         />
-        {message ? <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-100">{message}</div> : null}
+        {message ? <div className="rounded-lg border border-accent/20 bg-accent/10 p-4 text-sm text-accent">{message}</div> : null}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
         ) : (
           <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-4">
               {roles.map((role) => (
-                <button key={role.id} onClick={() => setSelectedRoleId(role.id)} className={`w-full rounded-[2rem] border p-5 text-left transition-colors ${selectedRoleId === role.id ? "border-blue-500/40 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)]"}`}>
+                <button key={role.id} onClick={() => setSelectedRoleId(role.id)} className={`w-full rounded-xl border p-5 text-left transition-colors ${selectedRoleId === role.id ? "border-accent/40 bg-accent/10" : "border-line bg-surface"}`}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-lg font-black text-white">{role.name}</div>
-                      <div className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</div>
+                      <div className="text-lg font-medium text-ink">{role.name}</div>
+                      <div className="mt-1 text-sm text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</div>
                     </div>
-                    <div className="text-right text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.usersCount.replace("{count}", String(role.assignedUserCount))}</div>
+                    <div className="text-right text-xs font-medium text-ink-3">{text.usersCount.replace("{count}", String(role.assignedUserCount))}</div>
                   </div>
                 </button>
               ))}
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+            <div className="rounded-xl border border-line bg-surface p-6">
               {/* TABS HEADER */}
-              <div className="mb-6 flex gap-6 border-b border-[color:var(--plms-border)]">
+              <div className="mb-6 flex gap-6 border-b border-line">
                 <button
-                  className={`pb-3 text-sm font-black uppercase tracking-[0.18em] transition-colors ${activeTab === "general" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-500 hover:text-slate-300"}`}
+                  className={`pb-3 text-sm font-medium transition-colors ${activeTab === "general" ? "border-b-2 border-accent/30 text-accent" : "text-ink-3 hover:text-ink-2"}`}
                   onClick={() => setActiveTab("general")}
                 >
                   {text.generalSettings}
                 </button>
                 <button
-                  className={`pb-3 text-sm font-black uppercase tracking-[0.18em] transition-colors ${activeTab === "permissions" ? "border-b-2 border-blue-500 text-blue-400" : "text-slate-500 hover:text-slate-300"}`}
+                  className={`pb-3 text-sm font-medium transition-colors ${activeTab === "permissions" ? "border-b-2 border-accent/30 text-accent" : "text-ink-3 hover:text-ink-2"}`}
                   onClick={() => setActiveTab("permissions")}
                 >
                   {text.permissionsTab}
@@ -203,12 +203,12 @@ export default function RolesPage() {
                   </div>
 
                   {selectedRole?.isImmutable ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
+                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm text-warn">{text.immutableWarning}</div>
                   ) : null}
 
                   <div className="pt-4 flex flex-wrap gap-3">
                     <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
-                    {selectedRole && !selectedRole.isSystem ? <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
+                    {selectedRole && !selectedRole.isSystem ? <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
                   </div>
                 </div>
               )}
@@ -217,28 +217,28 @@ export default function RolesPage() {
               {activeTab === "permissions" && (
                 <div className="space-y-6">
                   {selectedRole?.isImmutable ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">{text.immutableWarning}</div>
+                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm text-warn">{text.immutableWarning}</div>
                   ) : null}
 
                   <div className="columns-1 lg:columns-2 gap-5 space-y-5">
                     {catalog.map((group) => {
                       const selectedCount = group.items.filter(item => form.permissionKeys.includes(item.key)).length;
                       return (
-                        <details key={group.key} className="break-inside-avoid group rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] overflow-hidden">
-                          <summary className="cursor-pointer bg-white/5 px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-white flex justify-between items-center hover:bg-white/10 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                        <details key={group.key} className="break-inside-avoid group rounded-lg border border-line bg-raised overflow-hidden">
+                          <summary className="cursor-pointer bg-raised px-5 py-4 text-sm font-medium text-ink flex justify-between items-center hover:bg-raised transition-colors list-none [&::-webkit-details-marker]:hidden">
                             <span>{group.label}</span>
-                            <span className="text-[color:var(--plms-text-subtle)] text-xs normal-case font-medium tracking-normal">
+                            <span className="text-ink-3 text-xs normal-case font-medium">
                               {selectedCount > 0 ? text.selectedCount.replace("{count}", String(selectedCount)) : ""}
                             </span>
                           </summary>
-                          <div className="p-5 border-t border-[color:var(--plms-border)] bg-black/20">
+                          <div className="p-5 border-t border-line bg-black/20">
                             <div className="grid gap-3">
                               {group.items.map((item) => (
-                                <label key={item.key} className="flex items-start gap-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-3 text-sm text-white transition-colors hover:border-slate-500">
+                                <label key={item.key} className="flex items-start gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:border-line">
                                   <input type="checkbox" className="mt-1" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={Boolean(selectedRole?.isImmutable)} />
                                   <span>
-                                    <span className="block font-bold">{item.label}</span>
-                                    <span className="block text-xs text-[color:var(--plms-text-subtle)]">{item.description}</span>
+                                    <span className="block font-medium">{item.label}</span>
+                                    <span className="block text-xs text-ink-3">{item.description}</span>
                                   </span>
                                 </label>
                               ))}

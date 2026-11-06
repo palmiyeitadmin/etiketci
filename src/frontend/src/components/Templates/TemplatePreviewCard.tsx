@@ -27,7 +27,7 @@ export function TemplatePreviewCard({
 
   if (!model) {
     return (
-      <div className="flex aspect-[3/4] items-center justify-center rounded-[1.8rem] border border-dashed border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] text-sm text-[color:var(--plms-text-subtle)]">
+      <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed border-line bg-raised text-sm text-ink-3">
         Preview unavailable
       </div>
     );
@@ -37,8 +37,8 @@ export function TemplatePreviewCard({
   const previewHeight = Math.max(180, model.dimensions.heightMm * scale);
 
   return (
-    <div className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-      <div className="relative mx-auto overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]" style={{ width: PREVIEW_WIDTH, height: previewHeight }}>
+    <div className="rounded-xl border border-line bg-raised p-4">
+      <div className="relative mx-auto overflow-hidden rounded-lg border border-line bg-white" style={{ width: PREVIEW_WIDTH, height: previewHeight }}>
         {model.elements.filter((element) => element.visible !== false).map((element) => (
           <div
             key={element.id}
@@ -57,17 +57,17 @@ export function TemplatePreviewCard({
             }}
           >
             {element.type === "text" ? (
-              <div className="h-full w-full truncate font-bold" style={{ fontSize: Math.max(8, (element.fontSizePt || 12) * 0.7), textAlign: element.textAlign || "left" }}>
+              <div className="h-full w-full truncate font-medium" style={{ fontSize: Math.max(8, (element.fontSizePt || 12) * 0.7), textAlign: element.textAlign || "left" }}>
                 {element.content}
               </div>
             ) : null}
             {element.type === "line" ? <div className="h-full w-full" style={{ background: element.stroke || "#0f172a" }} /> : null}
-            {element.type === "barcode" || element.type === "qr" ? <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">{element.type}</div> : null}
+            {element.type === "barcode" || element.type === "qr" ? <div className="flex h-full w-full items-center justify-center bg-raised text-xs font-medium text-ink-3">{element.type}</div> : null}
             {element.type === "image" ? (
                 element.assetId ? (
                     <img src={`/api/assets/${element.assetId}/content`} alt="Asset" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">asset</div>
+                    <div className="flex h-full w-full items-center justify-center bg-raised text-xs font-medium text-ink-3">asset</div>
                 )
             ) : null}
           </div>

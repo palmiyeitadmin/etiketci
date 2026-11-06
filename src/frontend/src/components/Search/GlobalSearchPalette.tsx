@@ -62,22 +62,22 @@ export function GlobalSearchPalette({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="mx-auto mt-[10vh] w-[min(880px,92vw)] overflow-hidden rounded-[2rem] border border-[color:var(--plms-border-strong)] bg-[linear-gradient(180deg,rgba(16,27,45,0.98),rgba(8,17,31,0.98))] shadow-[0_24px_100px_rgba(2,6,23,0.6)]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center gap-3 border-b border-[color:var(--plms-border)] px-5 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03] text-blue-200">
+    <div className="fixed inset-0 z-[60] bg-ink/30" onClick={onClose}>
+      <div className="mx-auto mt-[10vh] w-[min(880px,92vw)] overflow-hidden rounded-xl border border-line-strong" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-raised text-accent">
             <MagnifyingGlass size={18} weight="bold" />
           </div>
           <input
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="w-full bg-transparent text-base font-semibold text-white outline-none placeholder:text-[color:var(--plms-text-subtle)]"
+            className="w-full bg-transparent text-base font-semibold text-ink outline-none placeholder:text-ink-3"
             placeholder={t("search.placeholder")}
           />
-          <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]" onClick={onClose}>{t("common.close")}</button>
+          <button className="rounded-lg border border-line px-3 py-2 text-xs font-medium text-ink-3" onClick={onClose}>{t("common.close")}</button>
         </div>
-        <div className="flex items-center justify-between border-b border-[color:var(--plms-border)] px-5 py-3 text-[11px] font-medium text-[color:var(--plms-text-subtle)]">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3 text-xs font-medium text-ink-3">
           <span>{loading ? t("search.searching") : t("search.results", undefined, { count: resultCount })}</span>
           <span>{t("search.shortcut")}</span>
         </div>
@@ -85,17 +85,17 @@ export function GlobalSearchPalette({
           <div className="space-y-5">
             {groups.map((group) => (
               <section key={group.key} className="space-y-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{group.label}</div>
+                <div className="text-xs font-medium text-ink-3">{group.label}</div>
                 <div className="space-y-2">
                   {group.items.map((item) => (
-                    <Link key={`${group.key}-${item.id}`} href={item.href} onClick={onClose} className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-3 transition-colors hover:bg-white/[0.05]">
+                    <Link key={`${group.key}-${item.id}`} href={item.href} onClick={onClose} className="flex items-center justify-between gap-4 rounded-lg border border-line bg-raised px-4 py-3 transition-colors hover:bg-raised">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold text-white">{item.label}</div>
-                        {item.description ? <div className="mt-1 truncate text-xs text-[color:var(--plms-text-subtle)]">{item.description}</div> : null}
+                        <div className="truncate text-sm font-medium text-ink">{item.label}</div>
+                        {item.description ? <div className="mt-1 truncate text-xs text-ink-3">{item.description}</div> : null}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {item.badge ? <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-blue-200">{item.badge}</span> : null}
-                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{item.type}</span>
+                        {item.badge ? <span className="rounded-full border border-accent/20 bg-accent/10 px-2 py-1 text-xs font-medium text-accent">{item.badge}</span> : null}
+                        <span className="text-xs font-medium text-ink-3">{item.type}</span>
                       </div>
                     </Link>
                   ))}
@@ -103,7 +103,7 @@ export function GlobalSearchPalette({
               </section>
             ))}
             {!loading && resultCount === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-12 text-center text-sm text-[color:var(--plms-text-subtle)]">
+              <div className="rounded-lg border border-dashed border-line px-4 py-12 text-center text-sm text-ink-3">
                 {t("search.noResults")}
               </div>
             ) : null}

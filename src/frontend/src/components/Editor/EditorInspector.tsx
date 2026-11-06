@@ -22,43 +22,43 @@ function useEditorText() {
     const { locale } = useI18n();
     return locale === "tr"
         ? {
-            properties: "Ozellikler",
-            selectElement: "Geometri, stil ve kaynak verisini duzenlemek icin bir eleman secin.",
+            properties: "Özellikler",
+            selectElement: "Geometri, stil ve kaynak verisini düzenlemek için bir eleman seçin.",
             identity: "Kimlik",
             name: "Ad",
             xMm: "X (mm)",
             yMm: "Y (mm)",
-            widthMm: "Genislik (mm)",
-            heightMm: "Yukseklik (mm)",
-            rotation: "Donme",
-            content: "Icerik",
+            widthMm: "Genişlik (mm)",
+            heightMm: "Yükseklik (mm)",
+            rotation: "Dönme",
+            content: "İçerik",
             textStyle: "Metin Stili",
-            fontFamily: "Yazi Tipi",
+            fontFamily: "Yazı Tipi",
             fontSizePt: "Boyut (pt)",
-            fontWeight: "Kalinlik",
+            fontWeight: "Kalınlık",
             textAlign: "Hizalama",
             color: "Renk",
-            barcodeSettings: "Barkod Ayarlari",
+            barcodeSettings: "Barkod Ayarları",
             barcodeType: "Barkod Tipi",
-            barcodeNotice: "CODE_128 disindaki cikti, PDF onizlemede farkli gorunebilir.",
-            barcodeMvp: "Barkod, desteklenen MVP render icin yapilandirildi.",
-            qrSettings: "QR Ayarlari",
-            qrWarning: "Yuksek icerik yogunlugu tarama toleransini dusurur.",
-            qrOk: "QR icerigi tipik onizleme toleransi icerisinde.",
-            imageSource: "Gorsel Kaynagi",
-            fitMode: "Sigdirma Modu",
-            clearImage: "Gorseli Temizle",
-            imageDataPlaceholder: "Gorsel data URI burada saklanir.",
-            imageFormatError: "Yalnizca PNG, JPEG ve SVG gorseller desteklenir.",
-            imageSizeError: "Gorseller 500KB veya daha kucuk olmalidir. Daha buyuk dosyalar icin paylasimli Kutuphane'yi kullanin.",
+            barcodeNotice: "CODE_128 dışındaki çıktı, PDF önizlemede farklı görünebilir.",
+            barcodeMvp: "Bu barkod türü PDF çıktısında desteklenir.",
+            qrSettings: "QR Ayarları",
+            qrWarning: "Yüksek içerik yoğunluğu tarama toleransını düşürür.",
+            qrOk: "QR içeriği tipik önizleme toleransı içerisinde.",
+            imageSource: "Görsel Kaynağı",
+            fitMode: "Sığdırma Modu",
+            clearImage: "Görseli Temizle",
+            imageDataPlaceholder: "Görsel data URI burada saklanır.",
+            imageFormatError: "Yalnızca PNG, JPEG ve SVG görseller desteklenir.",
+            imageSizeError: "Görseller 500KB veya daha küçük olmalıdır. Daha büyük dosyalar için paylaşımlı Kütüphane'yi kullanın.",
             strokeAndFill: "Kenar ve Dolgu",
             fillEnabled: "Dolgu aktif",
             fillColor: "Dolgu rengi",
             strokeEnabled: "Kenar aktif",
             strokeColor: "Kenar rengi",
-            strokeWidthMm: "Kenar Kalinligi (mm)",
-            lineDirection: "Cizgi Yonu",
-            colorInvalid: "Renk gecerli bir #RRGGBB degeri olmalidir.",
+            strokeWidthMm: "Kenar Kalınlığı (mm)",
+            lineDirection: "Çizgi Yönü",
+            colorInvalid: "Renk geçerli bir #RRGGBB değeri olmalıdır.",
         }
         : {
             properties: "Properties",
@@ -153,8 +153,8 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
     if (!selectedElement) {
         return (
-            <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
-                <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-10 text-center text-sm font-medium text-[color:var(--plms-text-subtle)]">
+            <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-line bg-surface p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
+                <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm font-medium text-ink-3">
                     {text.selectElement}
                 </div>
             </aside>
@@ -162,15 +162,15 @@ export function EditorInspector({ className = "" }: { className?: string }) {
     }
 
     return (
-        <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
+        <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-line bg-surface p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
                 <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.properties}</div>
-                    <div className="mt-1 text-lg font-black tracking-[-0.04em] text-white">{selectedElement.name || selectedElement.type}</div>
+                    <div className="text-xs font-medium text-ink-3">{text.properties}</div>
+                    <div className="mt-1 text-lg font-medium text-ink">{selectedElement.name || selectedElement.type}</div>
                 </div>
             </div>
 
-            {inspectorMessage ? <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm font-medium text-amber-200">{inspectorMessage}</div> : null}
+            {inspectorMessage ? <div className="mt-4 rounded-lg border border-warn/20 bg-warn/10 p-3 text-sm font-medium text-warn">{inspectorMessage}</div> : null}
 
             <div className="mt-6 space-y-6">
                 <PropertySection label={text.identity}>
@@ -275,8 +275,8 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
 function PropertySection({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <section className="space-y-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{label}</div>
+        <section className="space-y-3 rounded-lg border border-line bg-raised p-4">
+            <div className="text-xs font-medium text-ink-3">{label}</div>
             <div className="space-y-3">{children}</div>
         </section>
     );
@@ -285,7 +285,7 @@ function PropertySection({ label, children }: { label: string; children: React.R
 function PropertyField({ label, value, onChange, type = "text", disabled = false, step }: { label: string; value: string | number; onChange: (value: any) => void; type?: string; disabled?: boolean; step?: number | string }) {
     return (
         <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
+            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
             <input className="plms-input" type={type} step={step} value={value} disabled={disabled} onChange={(event) => onChange(type === "number" ? Number(event.target.value) : event.target.value)} />
         </div>
     );
@@ -312,10 +312,10 @@ function ColorField({
 
     return (
         <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
+            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
             <div className="flex items-center gap-3">
                 <input
-                    className="h-12 w-16 cursor-pointer rounded-2xl border border-[color:var(--plms-border)] bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-12 w-16 cursor-pointer rounded-lg border border-line bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
                     type="color"
                     value={safeValue}
                     disabled={disabled}
@@ -325,7 +325,7 @@ function ColorField({
                     }}
                 />
                 <input
-                    className="plms-input flex-1 font-mono uppercase"
+                    className="plms-input flex-1 font-mono"
                     value={value}
                     disabled={disabled}
                     onChange={(event) => {
@@ -346,9 +346,9 @@ function ColorField({
 
 function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
     return (
-        <label className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3">
-            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</span>
-            <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-blue-500" />
+        <label className="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3">
+            <span className="text-xs font-medium text-ink-3">{label}</span>
+            <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-accent" />
         </label>
     );
 }
@@ -357,13 +357,13 @@ function RotationField({ label, value, onChange }: { label: string; value: 0 | 9
     const options: Array<0 | 90 | 180 | 270> = [0, 90, 180, 270];
     return (
         <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
+            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
             <div className="grid grid-cols-4 gap-2">
                 {options.map((option) => (
                     <button
                         key={option}
                         type="button"
-                        className={`rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${value === option ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                        className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${value === option ? "border-accent/30 bg-accent/10 text-ink" : "border-line text-ink-3 hover:bg-raised hover:text-ink"}`}
                         onClick={() => onChange(option)}
                     >
                         {option}°
@@ -377,7 +377,7 @@ function RotationField({ label, value, onChange }: { label: string; value: 0 | 9
 function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
     return (
         <div>
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{label}</label>
+            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
             <select className="plms-select w-full" value={value} onChange={(event) => onChange(event.target.value)}>
                 {options.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
@@ -387,8 +387,8 @@ function SelectField({ label, value, options, onChange }: { label: string; value
 
 function InlineNotice({ text, tone }: { text: string; tone: "info" | "warning" }) {
     const classes = tone === "warning"
-        ? "border-amber-500/20 bg-amber-500/10 text-amber-200"
-        : "border-blue-500/20 bg-blue-500/10 text-blue-200";
+        ? "border-warn/20 bg-warn/10 text-warn"
+        : "border-accent/20 bg-accent/10 text-accent";
 
-    return <div className={`rounded-2xl border px-3 py-3 text-xs font-medium ${classes}`}>{text}</div>;
+    return <div className={`rounded-lg border px-3 py-3 text-xs font-medium ${classes}`}>{text}</div>;
 }

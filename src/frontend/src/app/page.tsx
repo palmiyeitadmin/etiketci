@@ -1,23 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ActivityFeed } from "@/components/ui/ActivityFeed";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer
-} from "recharts";
 
 const emptyActivity: DashboardActivity = {
     recentTemplates: [],
@@ -26,44 +19,64 @@ const emptyActivity: DashboardActivity = {
     favoriteTemplates: [],
 };
 
+// Chart colors mirror the CSS tokens (SVG attributes cannot read CSS variables).
+const CHART = { accent: "#0e7490", bar: "#d4d4d8", grid: "#ececee", label: "#6b6b70" };
+
 export default function HomePage() {
-    const { t, locale } = useI18n();
+    const { locale, formatDate } = useI18n();
     const router = useRouter();
     const { data: session, status } = useSession();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [activity, setActivity] = useState<DashboardActivity>(emptyActivity);
     const [loading, setLoading] = useState(true);
+    const numberLocale = locale === "tr" ? "tr-TR" : "en-US";
 
-    const translations = locale === "tr" ? {
-        templates: "Sablonlar",
-        assets: "Kutuphane",
-        categories: "Kategoriler",
-        users: "Kullanicilar",
-        roles: "Roller",
-        auditTitle: "Sistem Hareket Trendi (7 Gun)",
-        auditLegend: "Denetim Kaydi",
-        templateLegend: "Yeni Sablon",
-        recentTemplates: "Son Sablonlar",
-        recentUsers: "Son Kullanicilar",
-        auditActivity: "Denetim Hareketleri",
-        todayAudits: "Bugunku Islem",
-        favoriteTemplates: "Favori Sablonlar",
-        noFavoriteTemplates: "Henuz favori sablon yok."
+    const text = locale === "tr" ? {
+        title: "Panel",
+        loading: "Panel yükleniyor",
+        newPrint: "Baskı talebi oluştur",
+        newTemplate: "Yeni şablon",
+        printedToday: "Bugün basılan etiket",
+        vsYesterday: (diff: number) => diff === 0 ? "Dünle aynı" : `Düne göre ${diff > 0 ? "+" : "−"}${Math.abs(diff).toLocaleString("tr-TR")}`,
+        awaitingOutcome: "Sonucu bekleyen baskı",
+        awaitingHint: (count: number) => count > 0 ? "Operatörün sonucu girmesi gerekiyor" : "Bekleyen yok",
+        openRequests: "Açık baskı talebi",
+        openHint: "Henüz PDF'i açılmamış talepler",
+        pendingApprovals: "Onay bekleyen sürüm",
+        approvalsHint: (count: number) => count > 0 ? "Onaylar sayfasında" : "Bekleyen yok",
+        chartTitle: "Basılan etiketler",
+        chartSubtitle: "Son 14 gün, bugün vurgulu",
+        chartTotal: (total: number) => `Toplam ${total.toLocaleString("tr-TR")} etiket`,
+        labels: "etiket",
+        jobs: "baskı",
+        failed: "hatalı",
+        favorites: "Favori şablonlar",
+        noFavorites: "Şablon listesinde yıldızladığınız şablonlar burada görünür.",
+        recentTemplates: "Son değişen şablonlar",
+        recentActivity: "Son işlemler",
     } : {
-        templates: "Templates",
-        assets: "Library",
-        categories: "Categories",
-        users: "Users",
-        roles: "Roles",
-        auditTitle: "System Activity Trend (7 Days)",
-        auditLegend: "Audit Log",
-        templateLegend: "New Template",
-        recentTemplates: "Recent Templates",
-        recentUsers: "Recent Users",
-        auditActivity: "Audit Activity",
-        todayAudits: "Today's Activity",
-        favoriteTemplates: "Favorite Templates",
-        noFavoriteTemplates: "No favorite templates yet."
+        title: "Dashboard",
+        loading: "Loading dashboard",
+        newPrint: "New print request",
+        newTemplate: "New template",
+        printedToday: "Labels printed today",
+        vsYesterday: (diff: number) => diff === 0 ? "Same as yesterday" : `${diff > 0 ? "+" : "−"}${Math.abs(diff).toLocaleString("en-US")} vs yesterday`,
+        awaitingOutcome: "Prints awaiting outcome",
+        awaitingHint: (count: number) => count > 0 ? "An operator needs to record the result" : "None waiting",
+        openRequests: "Open print requests",
+        openHint: "Requests whose PDF has not been opened yet",
+        pendingApprovals: "Versions awaiting approval",
+        approvalsHint: (count: number) => count > 0 ? "See the approvals page" : "None waiting",
+        chartTitle: "Labels printed",
+        chartSubtitle: "Last 14 days, today highlighted",
+        chartTotal: (total: number) => `${total.toLocaleString("en-US")} labels in total`,
+        labels: "labels",
+        jobs: "prints",
+        failed: "failed",
+        favorites: "Favorite templates",
+        noFavorites: "Templates you star in the template list appear here.",
+        recentTemplates: "Recently changed templates",
+        recentActivity: "Recent activity",
     };
 
     useEffect(() => {
@@ -105,93 +118,131 @@ export default function HomePage() {
         }
     }, [router, status]);
 
+    const chartData = useMemo(() => {
+        const days = summary?.dailyPrints ?? [];
+        return days.map((day, index) => ({
+            ...day,
+            isToday: index === days.length - 1,
+            label: new Date(`${day.date}T00:00:00`).toLocaleDateString(numberLocale, { day: "2-digit", month: "2-digit" }),
+        }));
+    }, [summary, numberLocale]);
+    const chartTotal = chartData.reduce((sum, day) => sum + day.labels, 0);
+
     if (status === "loading" || loading) {
         return (
-            <div className="flex min-h-[60vh] items-center justify-center">
-                <div className="text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
-                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                        {t("dashboard.loading")}
-                    </p>
-                </div>
+            <div className="flex min-h-[60vh] items-center justify-center gap-3 text-sm text-ink-2">
+                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-line-strong border-t-accent" />
+                {text.loading}
             </div>
         );
     }
 
+    const printedToday = summary?.labelsPrintedToday ?? 0;
+    const printedYesterday = summary?.labelsPrintedYesterday ?? 0;
+    const awaiting = summary?.awaitingOutcome ?? 0;
+    const pendingApprovals = summary?.pendingApprovals ?? 0;
+
     return (
-        <div className="mx-auto max-w-7xl space-y-8 pb-10">
+        <div className="flex flex-col gap-6 pb-10">
             <PageHeader
-                eyebrow={t("dashboard.eyebrow")}
-                title={t("dashboard.title")}
-                description={t("dashboard.description")}
+                title={text.title}
+                description={formatDate(new Date(), { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                actions={(
+                    <>
+                        <Link href="/templates/new" className="plms-button-secondary">{text.newTemplate}</Link>
+                        <Link href="/print-intents/new" className="plms-button-primary">{text.newPrint}</Link>
+                    </>
+                )}
             />
 
-            {/* METRICS GRID */}
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <MetricCard label={translations.templates} value={summary?.totalTemplates ?? 0} hint={t("dashboard.metrics.drafts", undefined, { count: summary?.draftTemplates ?? 0 })} accent="primary" />
-                <MetricCard label={translations.assets} value={summary?.totalAssets ?? 0} hint="Digital Assets" accent="success" />
-                <MetricCard label={translations.categories} value={summary?.totalTemplateCategories ?? 0} hint="Organization" accent="warning" />
-                <MetricCard label={translations.todayAudits} value={summary?.todayAuditLogsCount ?? 0} hint="Actions Today" accent="neutral" />
-                <MetricCard label={translations.users} value={summary?.totalUsers ?? 0} hint={summary?.latestUserName || ""} accent="primary" />
-                <MetricCard label={translations.roles} value={summary?.totalRoles ?? 0} hint="Security Groups" accent="success" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard
+                    label={text.printedToday}
+                    value={printedToday.toLocaleString(numberLocale)}
+                    hint={text.vsYesterday(printedToday - printedYesterday)}
+                    href="/print-intents"
+                />
+                <MetricCard
+                    label={text.awaitingOutcome}
+                    value={awaiting.toLocaleString(numberLocale)}
+                    hint={text.awaitingHint(awaiting)}
+                    accent={awaiting > 0 ? "warning" : "neutral"}
+                    href="/print-intents"
+                />
+                <MetricCard
+                    label={text.openRequests}
+                    value={(summary?.pendingPrintIntents ?? 0).toLocaleString(numberLocale)}
+                    hint={text.openHint}
+                    href="/print-intents"
+                />
+                <MetricCard
+                    label={text.pendingApprovals}
+                    value={pendingApprovals.toLocaleString(numberLocale)}
+                    hint={text.approvalsHint(pendingApprovals)}
+                    accent={pendingApprovals > 0 ? "primary" : "neutral"}
+                    href="/approvals"
+                />
             </div>
 
-            {/* CHARTS SECTION */}
-            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
-                <div className="mb-6">
-                   <h2 className="text-sm font-black uppercase tracking-[0.18em] text-white">{translations.auditTitle}</h2>
-                </div>
-                <div className="h-[280px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={summary?.weeklyActivity || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorAudit" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id="colorTemplate" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis 
-                                dataKey="dateString" 
-                                stroke="#64748b" 
-                                fontSize={10} 
-                                fontWeight="bold" 
-                                axisLine={false}
-                                tickLine={false}
-                                dy={10}
-                            />
-                            <YAxis 
-                                stroke="#64748b" 
-                                fontSize={10} 
-                                fontWeight="bold" 
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }}
-                                itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                                cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }}
-                            />
-                            <Area type="monotone" dataKey="auditCount" name={translations.auditLegend} stroke="#3b82f6" fillOpacity={1} fill="url(#colorAudit)" strokeWidth={3} />
-                            <Area type="monotone" dataKey="templateCount" name={translations.templateLegend} stroke="#10b981" fillOpacity={1} fill="url(#colorTemplate)" strokeWidth={3} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                <section className="flex min-w-0 flex-col rounded-xl border border-line bg-surface xl:col-span-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 pt-4">
+                        <div>
+                            <h2 className="text-base font-medium text-ink">{text.chartTitle}</h2>
+                            <p className="text-sm text-ink-3">{text.chartSubtitle}</p>
+                        </div>
+                        <span className="tabular font-mono text-xs text-ink-3">{text.chartTotal(chartTotal)}</span>
+                    </div>
+                    <div className="h-[300px] w-full px-2 pb-3 pt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 4, right: 12, left: 0, bottom: 0 }} barCategoryGap="28%">
+                                <CartesianGrid stroke={CHART.grid} vertical={false} />
+                                <XAxis
+                                    dataKey="label"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: CHART.label, fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}
+                                    interval={0}
+                                    dy={6}
+                                />
+                                <YAxis
+                                    allowDecimals={false}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    width={44}
+                                    tick={{ fill: CHART.label, fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}
+                                    tickFormatter={(value: number) => value.toLocaleString(numberLocale)}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: "rgba(23,23,23,0.04)" }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const day = payload[0].payload as (typeof chartData)[number];
+                                        return (
+                                            <div className="rounded-lg border border-line bg-surface px-3 py-2 text-sm shadow-pop">
+                                                <div className="font-mono text-xs text-ink-3">{day.label}</div>
+                                                <div className="tabular text-ink">{day.labels.toLocaleString(numberLocale)} {text.labels}</div>
+                                                <div className="tabular text-ink-3">{day.jobs} {text.jobs}{day.failed ? ` · ${day.failed} ${text.failed}` : ""}</div>
+                                            </div>
+                                        );
+                                    }}
+                                />
+                                <Bar dataKey="labels" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                                    {chartData.map((day) => (
+                                        <Cell key={day.date} fill={day.isToday ? CHART.accent : CHART.bar} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </section>
+
+                <ActivityFeed title={text.favorites} items={activity.favoriteTemplates} emptyText={text.noFavorites} />
             </div>
 
-            {/* FEEDS GRID */}
-            <div className="grid gap-6 xl:grid-cols-3">
-                <ActivityFeed title={translations.recentTemplates} items={activity.recentTemplates} />
-                <ActivityFeed title={translations.recentUsers} items={activity.recentUsers} />
-                <ActivityFeed title={translations.favoriteTemplates} items={activity.favoriteTemplates} emptyText={translations.noFavoriteTemplates} />
-            </div>
-
-            <div>
-                <ActivityFeed title={translations.auditActivity} items={activity.recentAuditItems} />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                <ActivityFeed title={text.recentTemplates} items={activity.recentTemplates.slice(0, 6)} />
+                <ActivityFeed title={text.recentActivity} items={activity.recentAuditItems.slice(0, 6)} />
             </div>
         </div>
     );

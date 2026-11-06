@@ -25,20 +25,20 @@ export default function ContentLibraryPage() {
   const [message, setMessage] = useState<string | null>(null);
   const text = locale === "tr"
     ? {
-      eyebrow: "Paylasilan icerik",
-      title: "Icerik Kutuphanesi",
-      description: "Yonetimli sablonlar arasinda tekrar kullanmak icin yuklenen gorsellerin tekillestirilmis havuzu.",
-      uploading: "Yukleniyor...",
-      uploadAsset: "Varlik Yukle",
-      reused: "Mevcut paylasilan varlik yeniden kullanildi.",
-      uploaded: "Varlik yuklendi.",
-      search: "Varlik adi veya dosya adina gore ara",
+      eyebrow: "Paylaşılan içerik",
+      title: "İçerik Kütüphanesi",
+      description: "Yönetimli şablonlar arasında tekrar kullanmak için yüklenen görsellerin tekilleştirilmiş havuzu.",
+      uploading: "Yükleniyor...",
+      uploadAsset: "Varlık Yükle",
+      reused: "Mevcut paylaşılan varlık yeniden kullanıldı.",
+      uploaded: "Varlık yüklendi.",
+      search: "Varlık adı veya dosya adına göre ara",
       refresh: "Yenile",
-      uploadStatusTitle: "Yukleniyor",
-      uploadStatusDescription: "Paylasilan kutuphane varliginizi isliyor. Maksimum boyut 5 MB.",
-      emptyTitle: "Paylasilan varlik yok",
-      emptyDescription: "Tekrar kullanilabilir gorselleri bir kez yukleyin ve kutuphaneden istediginiz sablona ekleyin.",
-      removed: "Varlik kaldirildi.",
+      uploadStatusTitle: "Yükleniyor",
+      uploadStatusDescription: "Paylaşılan kütüphane varlığınızı işliyor. Maksimum boyut 5 MB.",
+      emptyTitle: "Paylaşılan varlık yok",
+      emptyDescription: "Tekrar kullanılabilir görselleri bir kez yükleyin ve kütüphaneden istediğiniz şablona ekleyin.",
+      removed: "Varlık kaldırıldı.",
       delete: "Sil",
     }
     : {
@@ -117,35 +117,35 @@ export default function ContentLibraryPage() {
           right={<button className="plms-button-secondary" onClick={() => void load()}>{text.refresh}</button>}
         />
 
-        {message ? <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">{message}</div> : null}
+        {message ? <div className="rounded-lg border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-accent">{message}</div> : null}
         {uploading ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-blue-400/20 bg-[linear-gradient(180deg,rgba(37,99,235,0.14),rgba(14,165,233,0.08))] px-4 py-3 text-sm text-blue-100">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300/30 border-t-blue-200" />
+          <div className="flex items-center gap-3 rounded-lg border border-accent/20 px-4 py-3 text-sm text-accent">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent/30 border-t-accent/30" />
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200">{text.uploadStatusTitle}</div>
-              <div className="mt-1 text-sm text-blue-50">{text.uploadStatusDescription}</div>
+              <div className="text-xs font-medium text-accent">{text.uploadStatusTitle}</div>
+              <div className="mt-1 text-sm text-accent">{text.uploadStatusDescription}</div>
             </div>
           </div>
         ) : null}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
         ) : filtered.length === 0 ? (
           <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {filtered.map((asset) => (
-              <article key={asset.id} className="rounded-[1.8rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-4">
-                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03]">
+              <article key={asset.id} className="rounded-xl border border-line bg-surface p-4">
+                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-line bg-raised">
                   <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                 </div>
-                <div className="mt-4 truncate text-sm font-bold text-white">{asset.name}</div>
-                <div className="mt-1 truncate text-xs text-[color:var(--plms-text-subtle)]">{asset.fileName}</div>
-                <div className="mt-2 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                <div className="mt-4 truncate text-sm font-medium text-ink">{asset.name}</div>
+                <div className="mt-1 truncate text-xs text-ink-3">{asset.fileName}</div>
+                <div className="mt-2 flex items-center justify-between text-xs font-medium text-ink-3">
                   <span>{Math.round(asset.byteSize / 1024)} KB</span>
                   <span>{asset.mimeType.replace("image/", "")}</span>
                 </div>
-                {canDelete ? <button className="mt-4 w-full rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-white" onClick={async () => { const response = await deleteAsset(asset.id); if (response.success) { setMessage(text.removed); await load(); } }}>{text.delete}</button> : null}
+                {canDelete ? <button className="mt-4 w-full rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={async () => { const response = await deleteAsset(asset.id); if (response.success) { setMessage(text.removed); await load(); } }}>{text.delete}</button> : null}
               </article>
             ))}
           </div>

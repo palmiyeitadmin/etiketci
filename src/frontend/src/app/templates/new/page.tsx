@@ -60,33 +60,33 @@ export default function NewTemplatePage() {
     const router = useRouter();
     const text = locale === "tr"
         ? {
-            eyebrow: "Sablon olusturma",
-            title: "Yeni Sablon",
-            description: "Yeni sablon kaydi olustururken kategoriye bagli otomatik kod uretilir ve editor taslak V1 ile acilir.",
-            loadFailed: "Sablon kategorileri yuklenemedi.",
-            invalidDimensions: "Etiket boyutlari pozitif sayilar olmalidir.",
-            createFailed: "Sablon olusturulamadi.",
-            loading: "Sablon kategorileri yukleniyor...",
+            eyebrow: "Şablon oluşturma",
+            title: "Yeni Şablon",
+            description: "Yeni şablon kaydı oluştururken kategoriye bağlı otomatik kod üretilir ve editör taslak V1 ile açılır.",
+            loadFailed: "Şablon kategorileri yüklenemedi.",
+            invalidDimensions: "Etiket boyutları pozitif sayılar olmalıdır.",
+            createFailed: "Şablon oluşturulamadı.",
+            loading: "Şablon kategorileri yükleniyor...",
             identity: "Kimlik",
-            category: "Sablon Kategorisi",
-            manageCategories: "Kategori Yonetimi",
-            noCategory: "Kategori secin",
-            noActiveCategoriesTitle: "Aktif sablon kategorisi yok",
-            noActiveCategoriesDescription: "Yeni sablon olusturabilmek icin once en az bir aktif sablon kategorisi tanimlayin.",
-            code: "Sablon Kodu",
-            name: "Sablon Adi",
-            descriptionLabel: "Aciklama",
-            dimensions: "Yerlesim Boyutlari",
-            width: "Genislik (mm)",
-            height: "Yukseklik (mm)",
-            governance: "Yonetişim Notlari",
-            governanceDescription: "Kategori secimi kodu otomatik belirler. Yeni sablon taslak V1 olarak acilir ve yayin oncesi approval akisindan gecer.",
-            categoryHint: "Kod formati: PLM-{kategori}-{sira}",
-            codeHint: "Kod backend tarafinda kategori sirasi ile uretilir ve degistirilemez.",
-            dimensionsHelp: "Bos yerlesim bu fiziksel boyutlarla olusturulur. Sonraki adimda editor icinde metin, sekil, QR, barkod ve gorsel oge yerlestirebilirsiniz.",
-            cancel: "Iptal",
-            creating: "Olusturuluyor...",
-            create: "Sablon Olustur",
+            category: "Şablon Kategorisi",
+            manageCategories: "Kategori Yönetimi",
+            noCategory: "Kategori seçin",
+            noActiveCategoriesTitle: "Aktif şablon kategorisi yok",
+            noActiveCategoriesDescription: "Yeni şablon oluşturabilmek için önce en az bir aktif şablon kategorisi tanımlayın.",
+            code: "Şablon Kodu",
+            name: "Şablon Adı",
+            descriptionLabel: "Açıklama",
+            dimensions: "Yerleşim Boyutları",
+            width: "Genişlik (mm)",
+            height: "Yükseklik (mm)",
+            governance: "Yonetişim Notları",
+            governanceDescription: "Kategori seçimi kodu otomatik belirler. Yeni şablon taslak V1 olarak açılır ve yayın öncesi approval akışından geçer.",
+            categoryHint: "Kod formatı: PLM-{kategori}-{sıra}",
+            codeHint: "Kod backend tarafında kategori sırası ile üretilir ve değiştirilemez.",
+            dimensionsHelp: "Boş yerleşim bu fiziksel boyutlarla oluşturulur. Sonraki adımda editör içinde metin, şekil, QR, barkod ve görsel öğe yerleştirebilirsiniz.",
+            cancel: "İptal",
+            creating: "Oluşturuluyor...",
+            create: "Şablon Oluştur",
         }
         : {
             eyebrow: "Template creation",
@@ -215,14 +215,14 @@ export default function NewTemplatePage() {
                 />
 
                 {error ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
+                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
                         {error}
                     </div>
                 ) : null}
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
                     </div>
                 ) : activeCategories.length === 0 ? (
                     <EmptyState
@@ -232,22 +232,22 @@ export default function NewTemplatePage() {
                 ) : (
                     <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            <section className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.identity}</div>
+                            <section className="rounded-xl border border-line bg-surface p-6">
+                                <div className="text-xs font-medium text-ink-3">{text.identity}</div>
                                 <div className="mt-5 grid gap-5 md:grid-cols-2">
                                     <label className="space-y-2 md:col-span-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.name}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.name}</span>
                                         <input
                                             value={form.name}
                                             onChange={(e) => handleChange("name", e.target.value)}
                                             required
                                             className="plms-input"
-                                            placeholder={locale === "tr" ? "Yeni etiket sablonu" : "New label template"}
+                                            placeholder={locale === "tr" ? "Yeni etiket şablonu" : "New label template"}
                                         />
                                     </label>
 
                                     <label className="space-y-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.category}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.category}</span>
                                         <select
                                             value={form.templateCategoryId}
                                             onChange={(e) => handleChange("templateCategoryId", e.target.value)}
@@ -264,7 +264,7 @@ export default function NewTemplatePage() {
                                     </label>
 
                                     <label className="space-y-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.code}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.code}</span>
                                         <input
                                             value={codePreview}
                                             readOnly
@@ -274,31 +274,31 @@ export default function NewTemplatePage() {
                                     </label>
 
                                     <label className="space-y-2 md:col-span-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.descriptionLabel}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.descriptionLabel}</span>
                                         <textarea
                                             value={form.description}
                                             onChange={(e) => handleChange("description", e.target.value)}
                                             rows={5}
                                             className="plms-input min-h-36"
-                                            placeholder={locale === "tr" ? "Operasyon notlari, alt malzeme ve kullanim kapsami" : "Operational notes, substrate and usage scope"}
+                                            placeholder={locale === "tr" ? "Operasyon notları, alt malzeme ve kullanım kapsamı" : "Operational notes, substrate and usage scope"}
                                         />
                                     </label>
                                 </div>
                             </section>
 
-                            <section className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.dimensions}</div>
+                            <section className="rounded-xl border border-line bg-surface p-6">
+                                <div className="text-xs font-medium text-ink-3">{text.dimensions}</div>
                                 <div className="mt-5 grid gap-5 md:grid-cols-2">
                                     <label className="space-y-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.width}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.width}</span>
                                         <input type="number" min="1" step="0.1" value={form.widthMm} onChange={(e) => handleChange("widthMm", e.target.value)} required className="plms-input" />
                                     </label>
                                     <label className="space-y-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.height}</span>
+                                        <span className="text-xs font-medium text-ink-3">{text.height}</span>
                                         <input type="number" min="1" step="0.1" value={form.heightMm} onChange={(e) => handleChange("heightMm", e.target.value)} required className="plms-input" />
                                     </label>
                                 </div>
-                                <div className="mt-5 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                                <div className="mt-5 rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-3">
                                     {text.dimensionsHelp}
                                 </div>
                             </section>
@@ -312,33 +312,33 @@ export default function NewTemplatePage() {
                         </form>
 
                         <aside className="space-y-6">
-                            <section className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.governance}</div>
-                                <div className="mt-4 space-y-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                            <section className="rounded-xl border border-line bg-surface p-6">
+                                <div className="text-xs font-medium text-ink-3">{text.governance}</div>
+                                <div className="mt-4 space-y-4 text-sm font-medium text-ink-3">
                                     <p>{text.governanceDescription}</p>
-                                    <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4 text-blue-100">
+                                    <div className="rounded-lg border border-accent/20 bg-accent/10 p-4 text-accent">
                                         {text.categoryHint}
                                     </div>
-                                    <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
+                                    <div className="rounded-lg border border-line bg-raised p-4">
                                         {text.codeHint}
                                     </div>
                                 </div>
                             </section>
 
-                            <section className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.category}</div>
+                            <section className="rounded-xl border border-line bg-surface p-6">
+                                <div className="text-xs font-medium text-ink-3">{text.category}</div>
                                 <div className="mt-4 space-y-3">
                                     {activeCategories.map((category) => (
                                         <div
                                             key={category.id}
-                                            className={`rounded-2xl border px-4 py-3 transition-colors ${form.templateCategoryId === category.id ? "border-blue-400/30 bg-blue-500/10" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)]"}`}
+                                            className={`rounded-lg border px-4 py-3 transition-colors ${form.templateCategoryId === category.id ? "border-accent/30 bg-accent/10" : "border-line bg-raised"}`}
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
-                                                    <div className="text-sm font-bold text-white">{category.name}</div>
-                                                    <div className="mt-1 text-xs font-mono text-[color:var(--plms-text-subtle)]">{category.code}</div>
+                                                    <div className="text-sm font-medium text-ink">{category.name}</div>
+                                                    <div className="mt-1 text-xs font-mono text-ink-3">{category.code}</div>
                                                 </div>
-                                                <div className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
+                                                <div className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">
                                                     PLM-{category.code}-{String(category.nextTemplateSequence).padStart(3, "0")}
                                                 </div>
                                             </div>

@@ -12,27 +12,22 @@ export function DataTable({
     empty?: ReactNode;
 }) {
     return (
-        <div className="overflow-hidden rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] shadow-[0_20px_70px_rgba(15,23,42,0.24)]">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
             <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[color:var(--plms-border)]">
-                    <thead className="bg-[color:var(--plms-panel-2)]/80">
+                <table className="min-w-full divide-y divide-line text-sm">
+                    <thead>
                         <tr>
                             {columns.map((column) => (
-                                <th
-                                    key={column}
-                                    className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]"
-                                >
+                                <th key={column} scope="col" className="h-10 whitespace-nowrap px-4 text-left text-sm font-medium text-ink-3">
                                     {column}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[color:var(--plms-border)]">
-                        {children}
-                    </tbody>
+                    <tbody className="divide-y divide-line">{children}</tbody>
                 </table>
             </div>
-            {empty ? <div className="border-t border-[color:var(--plms-border)]">{empty}</div> : null}
+            {empty ? <div className="border-t border-line p-4">{empty}</div> : null}
         </div>
     );
 }

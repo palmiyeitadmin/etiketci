@@ -7,6 +7,8 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { ProductCategory, Vendor } from "@/types/product";
+import { CaretRight } from "@phosphor-icons/react";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type ProductFormState = {
     sku: string;
@@ -42,16 +44,18 @@ export default function NewProductPage() {
     const router = useRouter();
     const text = locale === "tr"
         ? {
-            parent: "Urunler", current: "Yeni Urun", title: "Urun Olustur", description: "Bir urun ana kaydi olusturun, sonra urun detay ekranindan bir veya daha fazla etiket sablonu baglayin.",
-            referenceLoadFailed: "Referans verileri yuklenemedi.", createFailed: "Urun olusturulamadi.", loading: "Referans verileri yukleniyor...", sku: "SKU", name: "Ad", descriptionLabel: "Aciklama",
-            category: "Kategori", vendor: "Tedarikci", noCategory: "Kategori yok", noVendor: "Tedarikci yok", activeRecord: "Aktif kayit", activeRecordDescription: "Pasif urunler katalogda kalir ancak operasyonel olarak kullanilmamalidir.",
-            cancel: "Iptal", creating: "Olusturuluyor...", create: "Urun Olustur",
+            parent: "Ürünler", title: "Yeni ürün", description: "Ürünü kaydedin, ardından ürün sayfasından etiket şablonlarını bağlayın.",
+            referenceLoadFailed: "Kategori ve tedarikçi listesi yüklenemedi", createFailed: "Ürün oluşturulamadı", loading: "Yükleniyor", sku: "SKU", name: "Ad", descriptionLabel: "Açıklama",
+            namePlaceholder: "Sızma zeytinyağı 500 ml", descriptionPlaceholder: "Ambalaj veya mevzuat notları",
+            category: "Kategori", vendor: "Tedarikçi", noCategory: "Kategori yok", noVendor: "Tedarikçi yok", activeRecord: "Aktif", activeRecordDescription: "Pasif ürünler katalogda kalır ama baskıda kullanılmaz.",
+            cancel: "Vazgeç", creating: "Oluşturuluyor", create: "Ürünü oluştur",
         }
         : {
-            parent: "Products", current: "New Product", title: "Create Product", description: "Register a product master record, then attach one or more label templates from the product detail screen.",
-            referenceLoadFailed: "Reference data could not be loaded.", createFailed: "Product could not be created.", loading: "Loading reference data...", sku: "SKU", name: "Name", descriptionLabel: "Description",
-            category: "Category", vendor: "Vendor", noCategory: "No category", noVendor: "No vendor", activeRecord: "Active record", activeRecordDescription: "Inactive products stay in the catalog but should not be used operationally.",
-            cancel: "Cancel", creating: "Creating...", create: "Create Product",
+            parent: "Products", title: "New product", description: "Save the product, then attach label templates from its product page.",
+            referenceLoadFailed: "Categories and vendors could not be loaded", createFailed: "Product could not be created", loading: "Loading", sku: "SKU", name: "Name", descriptionLabel: "Description",
+            namePlaceholder: "Extra virgin olive oil 500 ml", descriptionPlaceholder: "Packaging or regulatory notes",
+            category: "Category", vendor: "Vendor", noCategory: "No category", noVendor: "No vendor", activeRecord: "Active", activeRecordDescription: "Inactive products stay in the catalog but are not used for printing.",
+            cancel: "Cancel", creating: "Creating", create: "Create product",
         };
     const [form, setForm] = useState<ProductFormState>(initialFormState);
     const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -119,71 +123,68 @@ export default function NewProductPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-            <div className="max-w-3xl mx-auto p-8 space-y-8">
-                <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    <Link href="/products" className="hover:text-blue-600 transition-colors">{text.parent}</Link>
-                    <span>/</span>
-                    <span className="text-slate-900">{text.current}</span>
-                </div>
+            <div className="space-y-6">
+                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                    <Link href="/products" className="transition-colors hover:text-ink">{text.parent}</Link>
+                    <CaretRight size={12} aria-hidden />
+                    <span className="text-ink-2">{text.title}</span>
+                </nav>
 
-                <div className="space-y-3">
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">{text.title}</h1>
-                    <p className="text-sm text-slate-500 max-w-2xl">{text.description}</p>
-                </div>
+                <PageHeader title={text.title} description={text.description} />
 
-                <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-[2rem] shadow-sm p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="plms-card max-w-2xl space-y-5 p-6">
                     {error && (
-                        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                        <div className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">
                             {error}
                         </div>
                     )}
 
                     {loading ? (
-                        <div className="py-10 text-center text-sm font-bold text-slate-500">{text.loading}</div>
+                        <div className="py-10 text-center text-sm text-ink-3">{text.loading}</div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <label className="space-y-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">SKU</span>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <label className="flex flex-col gap-1.5">
+                                    <span className="plms-label">{text.sku}</span>
                                     <input
                                         value={form.sku}
                                         onChange={(e) => handleChange("sku", e.target.value)}
                                         required
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
-                                        placeholder="PRD-001"
+                                        className="plms-input font-mono"
+                                        placeholder="ZYT-0500-SZM"
                                     />
                                 </label>
 
-                                <label className="space-y-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{text.name}</span>
+                                <label className="flex flex-col gap-1.5">
+                                    <span className="plms-label">{text.name}</span>
                                     <input
                                         value={form.name}
                                         onChange={(e) => handleChange("name", e.target.value)}
                                         required
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
-                                        placeholder="Product name"
+                                        className="plms-input"
+                                        placeholder={text.namePlaceholder}
                                     />
                                 </label>
                             </div>
 
-                            <label className="space-y-2 block">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{text.descriptionLabel}</span>
+                            <label className="flex flex-col gap-1.5">
+                                <span className="plms-label">{text.descriptionLabel}</span>
                                 <textarea
                                     value={form.description}
                                     onChange={(e) => handleChange("description", e.target.value)}
                                     rows={4}
-                                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
-                                    placeholder="Operational context, packaging details, or regulatory notes"
+                                    className="plms-input"
+                                    placeholder={text.descriptionPlaceholder}
                                 />
                             </label>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <label className="space-y-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{text.category}</span>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <label className="flex flex-col gap-1.5">
+                                    <span className="plms-label">{text.category}</span>
                                     <select
                                         value={form.categoryId}
                                         onChange={(e) => handleChange("categoryId", e.target.value)}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
+                                        className="plms-select w-full"
                                     >
                                         <option value="">{text.noCategory}</option>
                                         {categories.map((category) => (
@@ -194,12 +195,12 @@ export default function NewProductPage() {
                                     </select>
                                 </label>
 
-                                <label className="space-y-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{text.vendor}</span>
+                                <label className="flex flex-col gap-1.5">
+                                    <span className="plms-label">{text.vendor}</span>
                                     <select
                                         value={form.vendorId}
                                         onChange={(e) => handleChange("vendorId", e.target.value)}
-                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
+                                        className="plms-select w-full"
                                     >
                                         <option value="">{text.noVendor}</option>
                                         {vendors.map((vendor) => (
@@ -211,31 +212,24 @@ export default function NewProductPage() {
                                 </label>
                             </div>
 
-                            <label className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                            <label className="flex items-start gap-3">
                                 <input
                                     type="checkbox"
                                     checked={form.isActive}
                                     onChange={(e) => handleChange("isActive", e.target.checked)}
-                                    className="h-4 w-4 rounded border-slate-300"
+                                    className="mt-0.5 h-4 w-4 rounded border-line accent-accent"
                                 />
-                                <div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-900">{text.activeRecord}</div>
-                                    <div className="text-xs text-slate-500">{text.activeRecordDescription}</div>
-                                </div>
+                                <span className="flex flex-col gap-0.5">
+                                    <span className="text-sm text-ink">{text.activeRecord}</span>
+                                    <span className="text-sm text-ink-3">{text.activeRecordDescription}</span>
+                                </span>
                             </label>
 
-                            <div className="flex justify-end space-x-3 pt-4">
-                                <Link
-                                    href="/products"
-                                    className="rounded-2xl border border-slate-200 px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-900"
-                                >
+                            <div className="flex justify-end gap-2 border-t border-line pt-5">
+                                <Link href="/products" className="plms-button-secondary">
                                     {text.cancel}
                                 </Link>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="rounded-2xl bg-slate-900 px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
-                                >
+                                <button type="submit" disabled={saving} className="plms-button-primary">
                                     {saving ? text.creating : text.create}
                                 </button>
                             </div>

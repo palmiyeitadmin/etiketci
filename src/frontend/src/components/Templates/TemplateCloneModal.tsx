@@ -160,20 +160,20 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
 
     return (
         <Portal>
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-                <div className="w-full max-w-2xl rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.45)]">
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
+                <div className="w-full max-w-2xl rounded-xl border border-line bg-surface p-6">
+                    <div className="text-xs font-medium text-ink-3">
                         {t("templates.detailPage.cloneTemplate")}
                     </div>
-                    <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white">
+                    <h2 className="mt-2 text-2xl font-medium text-ink">
                         {sourceTemplate.code} · v{sourceVersion.versionNumber}
                     </h2>
-                    <p className="mt-3 max-w-2xl text-sm font-medium text-[color:var(--plms-text-muted)]">
+                    <p className="mt-3 max-w-2xl text-sm font-medium text-ink-2">
                         {t("templates.detailPage.cloneTemplateDescription")}
                     </p>
 
                     {error ? (
-                        <div className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
+                        <div className="mt-5 rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
                             {error}
                         </div>
                     ) : null}
@@ -181,19 +181,19 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
                     <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
                         <div className="grid gap-5 md:grid-cols-2">
                             <label className="space-y-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                                <span className="text-xs font-medium text-ink-3">
                                     {t("templates.detailPage.sourceVersion")}
                                 </span>
                                 <input value={`${sourceTemplate.name} · v${sourceVersion.versionNumber}`} readOnly className="plms-input opacity-80" />
                             </label>
                             <label className="space-y-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                                <span className="text-xs font-medium text-ink-3">
                                     {t("templates.detailPage.generatedCode")}
                                 </span>
                                 <input value={codePreview} readOnly className="plms-input opacity-80" placeholder="PLM-ETK-001" />
                             </label>
                             <label className="space-y-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                                <span className="text-xs font-medium text-ink-3">
                                     {t("templates.detailPage.targetCategory")}
                                 </span>
                                 <select
@@ -211,7 +211,7 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
                                 </select>
                             </label>
                             <label className="space-y-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                                <span className="text-xs font-medium text-ink-3">
                                     {t("templates.detailPage.cloneName")}
                                 </span>
                                 <input
@@ -223,7 +223,7 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
                                 />
                             </label>
                             <label className="space-y-2 md:col-span-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+                                <span className="text-xs font-medium text-ink-3">
                                     {t("templates.detailPage.cloneDescriptionLabel")}
                                 </span>
                                 <textarea
@@ -237,9 +237,9 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
                         </div>
 
                         {activeCategories.length === 0 ? (
-                            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">
+                            <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
                                 <div>{t("templates.detailPage.noTemplateCategories")}</div>
-                                <Link href="/templates/categories" className="mt-3 inline-flex text-sm font-black text-blue-200 underline underline-offset-4">
+                                <Link href="/templates/categories" className="mt-3 inline-flex text-sm font-medium text-accent underline underline-offset-4">
                                     {t("templates.detailPage.manageCategories")}
                                 </Link>
                             </div>

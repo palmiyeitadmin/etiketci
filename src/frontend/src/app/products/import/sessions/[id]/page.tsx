@@ -18,27 +18,27 @@ export default function ImportSessionDetailPage() {
     const id = String(params.id);
     const text = locale === "tr"
         ? {
-            eyebrow: "Ice aktarim oturumu",
-            title: "Ice Aktarim Oturumu",
-            description: "Oturum detayi, satir bazli sorunlar ve commit kontrolleri.",
-            back: "Ice Aktarima Don",
-            notFound: "Ice aktarim oturumu bulunamadi",
-            notFoundDescription: "Istenen ice aktarim oturumu yuklenemedi.",
-            totalRows: "Toplam Satir",
-            validRows: "Gecerli Satir",
-            issueRows: "Sorunlu Satir",
+            eyebrow: "İçe aktarım oturumu",
+            title: "İçe Aktarım Oturumu",
+            description: "Oturum detayı, satır bazlı sorunlar ve commit kontrolleri.",
+            back: "İçe Aktarıma Dön",
+            notFound: "İçe aktarım oturumu bulunamadı",
+            notFoundDescription: "İstenen içe aktarım oturumu yüklenemedi.",
+            totalRows: "Toplam Satır",
+            validRows: "Geçerli Satır",
+            issueRows: "Sorunlu Satır",
             status: "Durum",
-            enableOverwrite: "Uzerine Yazmayi Etkinlestir",
-            commitImport: "Ice Aktarimi Commit Et",
-            createdByOn: "Olusturan {user} - {date}",
-            rowIssues: "Satir Sorunlari",
-            noValidation: "Dogrulama sorunu yok",
-            noValidationDescription: "Bu oturum temiz ve dogrudan commit edilebilir.",
-            row: "Satir",
+            enableOverwrite: "Üzerine Yazmayı Etkinleştir",
+            commitImport: "Ürünleri kaydet",
+            createdByOn: "Oluşturan {user} - {date}",
+            rowIssues: "Satır Sorunları",
+            noValidation: "Doğrulama sorunu yok",
+            noValidationDescription: "Bu oturum temiz ve doğrudan commit edilebilir.",
+            row: "Satır",
             notAvailable: "Yok",
-            commitTitle: "Ice aktarim oturumunu commit et",
-            commitDescription: "Bu islem eklemeleri ve uzerine yazma onayli guncellemeleri tek bir transaction icinde uygular.",
-            importedSummary: "Ice aktarilan {imported}, guncellenen {updated}.",
+            commitTitle: "İçe aktarım oturumunu commit et",
+            commitDescription: "Bu işlem eklemeleri ve üzerine yazma onaylı güncellemeleri tek bir transaction içinde uygular.",
+            importedSummary: "İçe aktarılan {imported}, güncellenen {updated}.",
         }
         : {
             eyebrow: "Import session",
@@ -122,44 +122,44 @@ export default function ImportSessionDetailPage() {
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : !session ? (
                     <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
                     <div className="space-y-6">
                         <div className="grid gap-5 md:grid-cols-4">
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5"><div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.totalRows}</div><div className="mt-3 text-3xl font-black text-white">{session.totalRows}</div></div>
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5"><div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.validRows}</div><div className="mt-3 text-3xl font-black text-emerald-300">{session.validRows}</div></div>
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5"><div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.issueRows}</div><div className="mt-3 text-3xl font-black text-amber-300">{session.errorRows}</div></div>
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5"><div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.status}</div><div className="mt-3"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></div></div>
+                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.totalRows}</div><div className="mt-3 text-3xl font-medium text-ink">{session.totalRows}</div></div>
+                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.validRows}</div><div className="mt-3 text-3xl font-medium text-good">{session.validRows}</div></div>
+                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.issueRows}</div><div className="mt-3 text-3xl font-medium text-warn">{session.errorRows}</div></div>
+                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.status}</div><div className="mt-3"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></div></div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
+                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-5">
                             {session.status === "ValidationFailed" && onlyOverwriteConflicts && !session.allowOverwrite ? (
                                 <button className="plms-button-secondary" onClick={enableOverwrite} disabled={submitting}>{text.enableOverwrite}</button>
                             ) : null}
                             {session.status === "ReadyToImport" ? (
                                 <button className="plms-button-primary" onClick={() => setConfirmCommit(true)} disabled={submitting}>{text.commitImport}</button>
                             ) : null}
-                            <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">
+                            <div className="text-xs font-medium text-ink-3">
                                 {text.createdByOn.replace("{user}", session.createdBy).replace("{date}", formatDateTime(session.createdAt))}
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                            <div className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-white">{text.rowIssues}</div>
+                        <div className="rounded-xl border border-line bg-surface p-6">
+                            <div className="mb-4 text-sm font-medium text-ink">{text.rowIssues}</div>
                             {session.issues.length === 0 ? (
                                 <EmptyState title={text.noValidation} description={text.noValidationDescription} />
                             ) : (
                                 <div className="space-y-3">
                                     {session.issues.map((issue) => (
-                                        <div key={`${issue.rowNumber}-${issue.sku}-${issue.errorType}`} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
+                                        <div key={`${issue.rowNumber}-${issue.sku}-${issue.errorType}`} className="rounded-lg border border-line bg-raised p-4">
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="font-mono text-xs text-[color:var(--plms-text-subtle)]">{text.row} {issue.rowNumber}</span>
+                                                <span className="font-mono text-xs text-ink-3">{text.row} {issue.rowNumber}</span>
                                                 <StatusBadge label={issue.errorType} tone={issue.errorType === "DuplicateInDb" ? "warning" : "danger"} />
-                                                <span className="text-sm font-bold text-white">{issue.sku || text.notAvailable}</span>
+                                                <span className="text-sm font-medium text-ink">{issue.sku || text.notAvailable}</span>
                                             </div>
-                                            <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">{issue.message}</p>
+                                            <p className="mt-3 text-sm font-medium text-ink-2">{issue.message}</p>
                                         </div>
                                     ))}
                                 </div>

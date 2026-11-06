@@ -40,14 +40,14 @@ export function PhosphorIconPreview({
 
   if (failed) {
     return (
-      <div className={`flex items-center justify-center text-[11px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)] ${className}`}>
+      <div className={`flex items-center justify-center text-xs font-medium text-ink-3 ${className}`}>
         {iconKey.slice(0, 2)}
       </div>
     );
   }
 
   if (!IconComponent) {
-    return <div className={`h-7 w-7 animate-pulse rounded-lg bg-white/10 ${className}`} />;
+    return <div className={`h-7 w-7 animate-pulse rounded-lg bg-raised ${className}`} />;
   }
 
   return <IconComponent size={size} weight="regular" className={className} />;

@@ -23,29 +23,29 @@ export function AssetLibraryDrawer({
   const { data: session } = useSession();
   const text = locale === "tr"
     ? {
-      title: "Paylasilan Icerik Kutuphanesi",
-      heading: "Varliklar ve ikonlar",
-      description: "Ayni dosyayi her sablona yeniden yuklemeden, yuklenmis gorselleri ve secili Phosphor ikonlarini tekrar kullanin.",
-      uploads: "Yuklemeler",
+      title: "Paylaşılan İçerik Kütüphanesi",
+      heading: "Varlıklar ve ikonlar",
+      description: "Aynı dosyayı her şablona yeniden yüklemeden, yüklenmiş görselleri ve seçili Phosphor ikonlarını tekrar kullanın.",
+      uploads: "Yüklemeler",
       phosphor: "Phosphor",
-      search: "Varlik ara",
+      search: "Varlık ara",
       refresh: "Yenile",
       close: "Kapat",
-      loading: "Kutuphane yukleniyor...",
-      empty: "Paylasilan varlik bulunamadi.",
-      uploading: "Yukleniyor",
-      uploadDescription: "Varlik paylasilan kutuphaneye ekleniyor ve tekrarlar kontrol ediliyor.",
-      uploadCallout: "PNG, JPEG veya SVG dosyasini paylasilan kutuphaneye yukleyin",
-      uploadHint: "Varlik basina 5 MB'a kadar",
-      reused: "Mevcut paylasilan varlik yeniden kullanildi.",
-      uploaded: "Varlik paylasilan kutuphaneye yuklendi.",
-      removed: "Varlik paylasilan kutuphaneden kaldirildi.",
-      insertFailed: "Varlik eklenemedi.",
+      loading: "Kütüphane yükleniyor...",
+      empty: "Paylaşılan varlık bulunamadı.",
+      uploading: "Yükleniyor",
+      uploadDescription: "Varlık paylaşılan kütüphaneye ekleniyor ve tekrarlar kontrol ediliyor.",
+      uploadCallout: "PNG, JPEG veya SVG dosyasını paylaşılan kütüphaneye yükleyin",
+      uploadHint: "Varlık başına 5 MB'a kadar",
+      reused: "Mevcut paylaşılan varlık yeniden kullanıldı.",
+      uploaded: "Varlık paylaşılan kütüphaneye yüklendi.",
+      removed: "Varlık paylaşılan kütüphaneden kaldırıldı.",
+      insertFailed: "Varlık eklenemedi.",
       add: "Ekle",
       adding: "Ekleniyor",
       delete: "Sil",
-      phosphorDescription: "Sik kullanilan ikonlari hizli ekleyin veya tum Phosphor katalogunu arayarak tuvale yerlestirin.",
-      phosphorLoadFailed: "Phosphor ikon tarayicisi yuklenemedi.",
+      phosphorDescription: "Sık kullanılan ikonları hızlı ekleyin veya tüm Phosphor kataloğunu arayarak tuvale yerleştirin.",
+      phosphorLoadFailed: "Phosphor ikon tarayıcısı yüklenemedi.",
       phosphorInsertFailed: "Phosphor ikon eklenemedi.",
     }
     : {
@@ -104,20 +104,20 @@ export function AssetLibraryDrawer({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[55] bg-slate-950/75 backdrop-blur-sm" onClick={onClose}>
-      <div className="absolute inset-y-0 right-0 flex w-full max-w-3xl flex-col border-l border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] shadow-[0_24px_80px_rgba(2,6,23,0.5)]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-start justify-between border-b border-[color:var(--plms-border)] px-6 py-6">
+    <div className="fixed inset-0 z-[55] bg-ink/30" onClick={onClose}>
+      <div className="absolute inset-y-0 right-0 flex w-full max-w-3xl flex-col border-l border-line bg-surface" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-start justify-between border-b border-line px-6 py-6">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.title}</div>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-white">{text.heading}</h2>
-            <p className="mt-2 max-w-xl text-sm text-[color:var(--plms-text-subtle)]">{text.description}</p>
+            <div className="text-xs font-medium text-ink-3">{text.title}</div>
+            <h2 className="mt-2 text-2xl font-medium text-ink">{text.heading}</h2>
+            <p className="mt-2 max-w-xl text-sm text-ink-3">{text.description}</p>
           </div>
           <button className="plms-button-secondary" onClick={onClose}>{text.close}</button>
         </div>
 
-        <div className="flex items-center gap-2 border-b border-[color:var(--plms-border)] px-6 py-4">
-          <button className={`plms-button-compact ${tab === "uploads" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("uploads")}>{text.uploads}</button>
-          <button className={`plms-button-compact ${tab === "phosphor" ? "border-blue-400/30 bg-blue-500/10 text-white" : ""}`} onClick={() => setTab("phosphor")}>{text.phosphor}</button>
+        <div className="flex items-center gap-2 border-b border-line px-6 py-4">
+          <button className={`plms-button-compact ${tab === "uploads" ? "border-accent/30 bg-accent/10 text-ink" : ""}`} onClick={() => setTab("uploads")}>{text.uploads}</button>
+          <button className={`plms-button-compact ${tab === "phosphor" ? "border-accent/30 bg-accent/10 text-ink" : ""}`} onClick={() => setTab("phosphor")}>{text.phosphor}</button>
           {tab === "uploads" ? (
             <div className="ml-auto flex items-center gap-2">
               <input className="plms-input w-72" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
@@ -127,13 +127,13 @@ export function AssetLibraryDrawer({
         </div>
 
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          {message ? <div className="mb-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">{message}</div> : null}
+          {message ? <div className="mb-4 rounded-lg border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-accent">{message}</div> : null}
           {uploading ? (
-            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-blue-400/20 bg-[linear-gradient(180deg,rgba(37,99,235,0.14),rgba(14,165,233,0.08))] px-4 py-3 text-sm text-blue-100">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300/30 border-t-blue-200" />
+            <div className="mb-4 flex items-center gap-3 rounded-lg border border-accent/20 px-4 py-3 text-sm text-accent">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent/30 border-t-accent/30" />
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200">{text.uploading}</div>
-                <div className="mt-1 text-sm text-blue-50">{text.uploadDescription}</div>
+                <div className="text-xs font-medium text-accent">{text.uploading}</div>
+                <div className="mt-1 text-sm text-accent">{text.uploadDescription}</div>
               </div>
             </div>
           ) : null}
@@ -141,7 +141,7 @@ export function AssetLibraryDrawer({
           {tab === "uploads" ? (
             <div className="space-y-5">
               {canUpload ? (
-                <label className={`flex items-center justify-center rounded-2xl border border-dashed border-[color:var(--plms-border-strong)] bg-white/[0.02] px-4 py-5 text-center text-sm text-[color:var(--plms-text-subtle)] transition-colors hover:bg-white/[0.04] ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"}`}>
+                <label className={`flex items-center justify-center rounded-lg border border-dashed border-line-strong bg-raised px-4 py-5 text-center text-sm text-ink-3 transition-colors hover:bg-raised ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"}`}>
                   <input
                     type="file"
                     className="hidden"
@@ -168,23 +168,23 @@ export function AssetLibraryDrawer({
                   />
                   <div>
                     <div>{text.uploadCallout}</div>
-                    <div className="mt-1 text-[11px] text-[color:var(--plms-text-subtle)]/80">{text.uploadHint}</div>
+                    <div className="mt-1 text-xs text-ink-3">{text.uploadHint}</div>
                   </div>
                 </label>
               ) : null}
 
               {assets.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[color:var(--plms-border)] px-4 py-12 text-center text-sm text-[color:var(--plms-text-subtle)]">{emptyText}</div>
+                <div className="rounded-lg border border-dashed border-line px-4 py-12 text-center text-sm text-ink-3">{emptyText}</div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {assets.map((asset) => (
-                    <article key={asset.id} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-                      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03]">
+                    <article key={asset.id} className="rounded-lg border border-line bg-raised p-4">
+                      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-line bg-raised">
                         <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                       </div>
-                      <div className="mt-3 truncate text-sm font-bold text-white">{asset.name}</div>
-                      <div className="mt-1 truncate text-[11px] text-[color:var(--plms-text-subtle)]">{asset.fileName}</div>
-                      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{formatBytes(asset.byteSize)}</div>
+                      <div className="mt-3 truncate text-sm font-medium text-ink">{asset.name}</div>
+                      <div className="mt-1 truncate text-xs text-ink-3">{asset.fileName}</div>
+                      <div className="mt-1 text-xs font-medium text-ink-3">{formatBytes(asset.byteSize)}</div>
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <button
                           type="button"
@@ -206,7 +206,7 @@ export function AssetLibraryDrawer({
                         {canDelete ? (
                           <button
                             type="button"
-                            className="inline-flex min-w-0 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+                            className="inline-flex min-w-0 items-center justify-center rounded-xl bg-bad px-3 py-2 text-xs font-medium text-white"
                             onClick={async () => {
                               const response = await deleteAsset(asset.id);
                               if (response.success) {
@@ -228,12 +228,12 @@ export function AssetLibraryDrawer({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+              <div className="rounded-lg border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-accent">
                 {text.phosphorDescription}
               </div>
               <PickerErrorBoundary
                 fallback={
-                  <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-6 text-sm text-red-100">
+                  <div className="rounded-lg border border-bad/20 bg-bad/10 px-4 py-6 text-sm text-bad">
                     {text.phosphorLoadFailed}
                   </div>
                 }

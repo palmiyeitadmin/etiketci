@@ -456,7 +456,7 @@ export function EditorCanvasStage() {
     const renderableElements = useMemo(() => model.elements.filter((element) => element.visible !== false), [model.elements]);
 
     return (
-        <div ref={ref} className="relative h-full w-full overflow-hidden bg-[#0b1220]">
+        <div ref={ref} className="relative h-full w-full overflow-hidden bg-canvas">
             <EditorRulers labelWidthMm={model.dimensions.widthMm} labelHeightMm={model.dimensions.heightMm} labelX={labelX} labelY={labelY} zoom={viewport.zoom} />
             <Stage
                 ref={stageRef}
@@ -601,7 +601,7 @@ export function EditorCanvasStage() {
                 </Layer>
             </Stage>
             {guideHint ? (
-                <div className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-sky-100">
+                <div className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
                     {guideHint}
                 </div>
             ) : null}

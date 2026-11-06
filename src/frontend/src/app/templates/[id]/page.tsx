@@ -41,17 +41,17 @@ function getTemplateTone(status: string): "neutral" | "info" | "success" | "warn
 function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
   switch (tone) {
     case "info":
-      return "inline-flex items-center justify-center rounded-2xl border border-blue-400/25 bg-blue-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-blue-100 transition-colors hover:bg-blue-500/20";
+      return "inline-flex items-center justify-center rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-xs font-medium text-accent transition-colors hover:bg-accent/20";
     case "warning":
-      return "inline-flex items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-amber-100 transition-colors hover:bg-amber-500/20";
+      return "inline-flex items-center justify-center rounded-lg border border-warn/25 bg-warn/10 px-4 py-3 text-xs font-medium text-warn transition-colors hover:bg-warn/20";
     case "danger":
-      return "inline-flex items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-red-200 transition-colors hover:bg-red-500/20";
+      return "inline-flex items-center justify-center rounded-lg border border-bad/20 bg-bad/10 px-4 py-3 text-xs font-medium text-bad transition-colors hover:bg-bad/20";
     case "primary":
-      return "inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-blue-700";
+      return "inline-flex items-center justify-center rounded-lg bg-accent px-4 py-3 text-xs font-medium text-white transition-colors hover:bg-accent-hover";
     case "success":
-      return "inline-flex items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-emerald-100 transition-colors hover:bg-emerald-500/20";
+      return "inline-flex items-center justify-center rounded-lg border border-good/25 bg-good/10 px-4 py-3 text-xs font-medium text-good transition-colors hover:bg-good/20";
     default:
-      return "inline-flex items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/5 hover:text-white";
+      return "inline-flex items-center justify-center rounded-lg border border-line bg-raised px-4 py-3 text-xs font-medium text-ink-2 transition-colors hover:bg-raised hover:text-ink";
   }
 }
 
@@ -72,7 +72,7 @@ export default function TemplateDetailPage() {
   const roles = ((session?.user as any)?.roles || []) as string[];
   const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canCreate = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesCreate]);
-  const favoriteButtonClass = "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.05]";
+  const favoriteButtonClass = "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-raised text-ink-2 transition-colors hover:bg-raised";
 
   const [template, setTemplate] = useState<LabelTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,22 +85,22 @@ export default function TemplateDetailPage() {
   const [busy, setBusy] = useState(false);
   const [snapshotExpanded, setSnapshotExpanded] = useState(false);
   const archivedMessage = locale === "tr"
-    ? "Bu sablon arsivde. Duzenleme ve yeni taslak olusturma islemleri geri yuklenene kadar kapatildi."
+    ? "Bu şablon arşivde. Düzenleme ve yeni taslak oluşturma işlemleri geri yüklenene kadar kapatıldı."
     : "This template is archived. Editing and new draft creation are disabled until it is restored.";
   const detailText = locale === "tr"
     ? {
-      archiveVersionTitle: "Surumu arsivle",
-      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} surumu arsivlenecek ve aktif zaman cizelgesinden kaldirilacak.`,
-      archiveVersionConfirm: "Surumu Arsivle",
-      deleteVersionTitle: "Surumu sil",
-      deleteVersionDescription: (versionNumber: number) => `v${versionNumber} taslagi kalici olarak silinecek.`,
-      deleteVersionConfirm: "Surumu Sil",
-      archiveVersion: "Arsivle",
+      archiveVersionTitle: "Sürümü arşivle",
+      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} sürümü arşivlenecek ve aktif zaman çizelgesinden kaldırılacak.`,
+      archiveVersionConfirm: "Sürümü Arşivle",
+      deleteVersionTitle: "Sürümü sil",
+      deleteVersionDescription: (versionNumber: number) => `v${versionNumber} taslağı kalıcı olarak silinecek.`,
+      deleteVersionConfirm: "Sürümü Sil",
+      archiveVersion: "Arşivle",
       deleteVersion: "Sil",
-      jsonSnapshot: "Yerlesim JSON Gorunumu",
-      jsonSnapshotDescription: "Kaydedilen canonical yerlesim JSON kaydi.",
-      expandSnapshot: "JSON gorunumunu ac",
-      collapseSnapshot: "JSON gorunumunu kapat",
+      jsonSnapshot: "Yerleşim JSON Görünümü",
+      jsonSnapshotDescription: "Kaydedilen canonical yerleşim JSON kaydı.",
+      expandSnapshot: "JSON görünümünü aç",
+      collapseSnapshot: "JSON görünümünü kapat",
     }
     : {
       archiveVersionTitle: "Archive version",
@@ -271,7 +271,7 @@ export default function TemplateDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>;
+    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>;
   }
 
   if (!template) {
@@ -289,7 +289,7 @@ export default function TemplateDetailPage() {
             <>
               <button
                 type="button"
-                className={`${favoriteButtonClass} ${template.isFavorite ? "border-amber-400/40 bg-amber-500/15 text-amber-200" : ""}`}
+                className={`${favoriteButtonClass} ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
                 onClick={handleToggleFavorite}
                 title={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
                 aria-label={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
@@ -306,49 +306,49 @@ export default function TemplateDetailPage() {
         />
 
         {message ? (
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">{message}</div>
+          <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
         ) : null}
         {template.isArchived ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-200">{archivedMessage}</div>
+          <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{archivedMessage}</div>
         ) : null}
 
         <div className="grid gap-5 md:grid-cols-4">
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.activeVersion")}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.activeVersion")}</div>
             <div className="mt-3 flex items-center gap-3">
-              <div className="text-3xl font-black tracking-[-0.05em] text-white">{template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}</div>
+              <div className="text-3xl font-medium text-ink">{template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}</div>
               {template.currentActiveVersion ? <StatusBadge label={template.currentActiveVersion.status} tone={getTemplateTone(template.currentActiveVersion.status)} /> : null}
             </div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.drafts")}</div>
-            <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">{metrics.drafts}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.drafts")}</div>
+            <div className="mt-3 text-3xl font-medium text-ink">{metrics.drafts}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.inReview")}</div>
-            <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">{metrics.inReview}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.inReview")}</div>
+            <div className="mt-3 text-3xl font-medium text-ink">{metrics.inReview}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.archived")}</div>
-            <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">{metrics.archived}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.archived")}</div>
+            <div className="mt-3 text-3xl font-medium text-ink">{metrics.archived}</div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+            <div className="rounded-xl border border-line bg-surface p-6">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{template.code}</span>
+                <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{template.code}</span>
                 <StatusBadge label={template.isActive ? "Active" : "Inactive"} tone={template.isActive ? "success" : "danger"} />
-                <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.updatedAt", undefined, { date: formatDateTime(template.updatedAt) })}</div>
+                <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.updatedAt", undefined, { date: formatDateTime(template.updatedAt) })}</div>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+            <div className="rounded-xl border border-line bg-surface p-6">
               <div className="flex items-center justify-between">
                   <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.versionTimeline")}</div>
-                  <div className="mt-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.timelineDescription")}</div>
+                  <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.versionTimeline")}</div>
+                  <div className="mt-1 text-sm font-medium text-ink-2">{t("templates.detailPage.timelineDescription")}</div>
                 </div>
                 <RoleGuard allowedRoles={["Admin", "Operator"]}>
                   <button className="plms-button-secondary" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createOrOpenDraft")}</button>
@@ -362,12 +362,12 @@ export default function TemplateDetailPage() {
                   <DataTable columns={[t("templates.detailPage.version"), t("templates.detailPage.status"), t("templates.detailPage.created"), t("templates.detailPage.notes"), t("templates.detailPage.actions")]}>
                     {(template.versions || []).map((version) => (
                       <tr key={version.id} className="transition-colors hover:bg-white/5">
-                        <td className="px-6 py-4 text-sm font-black text-white">v{version.versionNumber}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-ink">v{version.versionNumber}</td>
                         <td className="px-6 py-4"><StatusBadge label={version.status} tone={getTemplateTone(version.status)} /></td>
-                        <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                        <td className="px-6 py-4 text-sm font-medium text-ink-3">
                           {formatDateTime(version.createdAt)}<div className="mt-1 text-xs">{version.createdBy}</div>
                         </td>
-                        <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{version.changeNotes || t("templates.detailPage.noNotesRecorded")}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{version.changeNotes || t("templates.detailPage.noNotesRecorded")}</td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-2">
                             <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className={getActionButtonClass()}>{t("templates.detailPage.preview")}</Link>
@@ -426,7 +426,7 @@ export default function TemplateDetailPage() {
               )}
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+            <div className="rounded-xl border border-line bg-surface p-6">
               <div
                 className="flex cursor-pointer items-center justify-between gap-4"
                 onClick={() => setSnapshotExpanded((current) => !current)}
@@ -443,33 +443,33 @@ export default function TemplateDetailPage() {
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{detailText.jsonSnapshot}</div>
+                    <div className="text-xs font-medium text-ink-3">{detailText.jsonSnapshot}</div>
                     {snapshotVersion ? <StatusBadge label={snapshotVersion.status} tone={getTemplateTone(snapshotVersion.status)} /> : null}
-                    {snapshotVersion ? <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">v{snapshotVersion.versionNumber}</div> : null}
+                    {snapshotVersion ? <div className="text-xs font-medium text-ink-3">v{snapshotVersion.versionNumber}</div> : null}
                   </div>
-                  <div className="mt-2 text-sm font-medium text-[color:var(--plms-text-muted)]">{detailText.jsonSnapshotDescription}</div>
+                  <div className="mt-2 text-sm font-medium text-ink-2">{detailText.jsonSnapshotDescription}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{snapshotTitle}</span>
-                  {snapshotExpanded ? <CaretDown size={18} weight="bold" className="text-[color:var(--plms-text-subtle)]" /> : <CaretRight size={18} weight="bold" className="text-[color:var(--plms-text-subtle)]" />}
+                  <span className="text-xs font-medium text-ink-3">{snapshotTitle}</span>
+                  {snapshotExpanded ? <CaretDown size={18} weight="bold" className="text-ink-3" /> : <CaretRight size={18} weight="bold" className="text-ink-3" />}
                 </div>
               </div>
               {snapshotExpanded ? (
-                <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre rounded-2xl bg-slate-950 p-5 text-xs font-medium leading-6 text-emerald-300">{formattedSnapshotJson}</pre>
+                <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre rounded-lg bg-surface p-5 text-xs font-medium leading-6 text-good">{formattedSnapshotJson}</pre>
               ) : null}
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.editableDraft")}</div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.editableDraft")}</div>
               {editableDraft ? (
                 <div className="mt-4 space-y-4">
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-2xl font-black tracking-[-0.04em] text-white">v{editableDraft.versionNumber}</div>
+                    <div className="text-2xl font-medium text-ink">v{editableDraft.versionNumber}</div>
                     <StatusBadge label={editableDraft.status} tone={getTemplateTone(editableDraft.status)} />
                   </div>
-                  <div className="space-y-2 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                  <div className="space-y-2 text-sm font-medium text-ink-2">
                     <div>{t("templates.detailPage.createdBy", undefined, { date: formatDateTime(editableDraft.createdAt), user: editableDraft.createdBy })}</div>
                     <div>{editableDraft.changeNotes || t("templates.detailPage.noDraftNotes")}</div>
                   </div>
@@ -483,7 +483,7 @@ export default function TemplateDetailPage() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
-                  <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.noEditableDraft")}</div>
+                  <div className="text-sm font-medium text-ink-2">{t("templates.detailPage.noEditableDraft")}</div>
                   <RoleGuard allowedRoles={["Admin", "Operator"]}>
                     <button className="plms-button-primary w-full" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createDraft")}</button>
                   </RoleGuard>
@@ -491,13 +491,13 @@ export default function TemplateDetailPage() {
               )}
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.productionEntry")}</div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.productionEntry")}</div>
               {activeVersion ? (
                 <div className="mt-4 space-y-4">
                   <div>
-                    <div className="text-2xl font-black tracking-[-0.04em] text-white">v{activeVersion.versionNumber}</div>
-                    <div className="mt-1 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.productionDescription")}</div>
+                    <div className="text-2xl font-medium text-ink">v{activeVersion.versionNumber}</div>
+                    <div className="mt-1 text-sm font-medium text-ink-2">{t("templates.detailPage.productionDescription")}</div>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Link href={`/templates/${template.id}/preview?versionId=${activeVersion.id}`} className="plms-button-primary">{t("templates.detailPage.openProductionPreview")}</Link>
@@ -505,16 +505,16 @@ export default function TemplateDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{t("templates.detailPage.noPublished")}</div>
+                <div className="mt-4 text-sm font-medium text-ink-2">{t("templates.detailPage.noPublished")}</div>
               )}
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.templateRecord")}</div>
-              <div className="mt-4 space-y-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.created")}</span><span className="text-white">{formatDateTime(template.createdAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.updated")}</span><span className="text-white">{formatDateTime(template.updatedAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.totalVersions")}</span><span className="text-white">{metrics.total}</span></div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.templateRecord")}</div>
+              <div className="mt-4 space-y-3 text-sm font-medium text-ink-2">
+                <div className="flex items-center justify-between"><span>{t("templates.detailPage.created")}</span><span className="text-ink">{formatDateTime(template.createdAt)}</span></div>
+                <div className="flex items-center justify-between"><span>{t("templates.detailPage.updated")}</span><span className="text-ink">{formatDateTime(template.updatedAt)}</span></div>
+                <div className="flex items-center justify-between"><span>{t("templates.detailPage.totalVersions")}</span><span className="text-ink">{metrics.total}</span></div>
               </div>
             </div>
           </div>
@@ -530,10 +530,10 @@ export default function TemplateDetailPage() {
 
         {reviewModal ? (
           <Portal>
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-xl rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_24px_80px_rgba(15,23,42,0.45)]">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("templates.detailPage.reviewerDecision")}</div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white">{t("templates.detailPage.reviewVersion", undefined, { version: reviewModal.versionNumber })}</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
+            <div className="w-full max-w-xl rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.reviewerDecision")}</div>
+              <h2 className="mt-2 text-2xl font-medium text-ink">{t("templates.detailPage.reviewVersion", undefined, { version: reviewModal.versionNumber })}</h2>
               <textarea
                 className="plms-input mt-5 min-h-36"
                 placeholder={t("templates.detailPage.reviewPlaceholder")}
@@ -542,8 +542,8 @@ export default function TemplateDetailPage() {
               />
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <button className="plms-button-secondary" onClick={() => setReviewModal(null)}>{t("common.cancel")}</button>
-                <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: false, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.reject")}</button>
-                <button className="rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: true, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.approve")}</button>
+                <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: false, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.reject")}</button>
+                <button className="rounded-lg bg-good px-4 py-3 text-xs font-medium text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: true, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.approve")}</button>
               </div>
             </div>
           </div>

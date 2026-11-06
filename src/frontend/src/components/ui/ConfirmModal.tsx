@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { Portal } from "@/components/ui/Portal";
 
 export function ConfirmModal({
     open,
     title,
     description,
     confirmLabel,
-    cancelLabel = "Cancel",
+    cancelLabel,
     tone = "danger",
     onConfirm,
     onCancel,
@@ -25,36 +27,50 @@ export function ConfirmModal({
 }) {
     const { locale } = useI18n();
     const text = locale === "tr"
-        ? { title: "Onay", working: "Calisiyor..." }
-        : { title: "Confirmation", working: "Working..." };
+        ? { working: "İşleniyor", cancel: "Vazgeç" }
+        : { working: "Working", cancel: "Cancel" };
+
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && !loading) onCancel();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open, loading, onCancel]);
 
     if (!open) return null;
 
-    const confirmClasses = tone === "danger"
-        ? "bg-red-600 hover:bg-red-700 text-white"
-        : "bg-blue-600 hover:bg-blue-700 text-white";
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_30px_90px_rgba(15,23,42,0.55)]">
-                <div className="space-y-2">
-                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{text.title}</div>
-                    <h2 className="text-2xl font-black tracking-[-0.04em] text-white">{title}</h2>
-                    <p className="text-sm font-medium text-[color:var(--plms-text-subtle)]">{description}</p>
-                </div>
-                <div className="mt-6 flex justify-end gap-3">
-                    <button className="rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]" onClick={onCancel}>
-                        {cancelLabel}
-                    </button>
-                    <button
-                        className={`rounded-2xl px-4 py-3 text-xs font-black uppercase tracking-[0.22em] ${confirmClasses} disabled:opacity-50`}
-                        onClick={onConfirm}
-                        disabled={loading}
-                    >
-                        {loading ? text.working : confirmLabel}
-                    </button>
+        <Portal>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4" onClick={() => !loading && onCancel()}>
+                <div
+                    role="alertdialog"
+                    aria-modal="true"
+                    aria-labelledby="confirm-modal-title"
+                    className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-line bg-surface p-5 shadow-pop"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <div className="flex flex-col gap-1.5">
+                        <h2 id="confirm-modal-title" className="text-md font-medium text-ink">{title}</h2>
+                        <p className="text-sm text-ink-2">{description}</p>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button type="button" className="plms-button-secondary" onClick={onCancel} disabled={loading}>
+                            {cancelLabel ?? text.cancel}
+                        </button>
+                        <button
+                            type="button"
+                            className={tone === "danger" ? "plms-button-primary !bg-bad hover:!bg-bad/90" : "plms-button-primary"}
+                            onClick={onConfirm}
+                            disabled={loading}
+                            autoFocus
+                        >
+                            {loading ? text.working : confirmLabel}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Portal>
     );
 }

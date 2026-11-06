@@ -28,24 +28,24 @@ export default function CreatePrintIntentPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Baski hazirligi",
-            title: "Print Intent Olustur",
-            description: "Operator aktarimindan once urun, yayinlanmis sablon surumu ve miktar secin.",
-            product: "Urun",
-            selectProduct: "Urun secin",
-            template: "Sablon",
-            selectTemplate: "Sablon secin",
-            publishedVersion: "Yayinlanmis Surum",
-            selectVersion: "Surum secin",
-            version: "Surum",
+            eyebrow: "Baskı hazırlığı",
+            title: "Baskı talebi oluştur",
+            description: "Operatör aktarımından önce ürün, yayınlanmış şablon sürümü ve miktar seçin.",
+            product: "Ürün",
+            selectProduct: "Ürün seçin",
+            template: "Şablon",
+            selectTemplate: "Şablon seçin",
+            publishedVersion: "Yayınlanmış Sürüm",
+            selectVersion: "Sürüm seçin",
+            version: "Sürüm",
             quantity: "Miktar",
-            readinessSnapshot: "Hazirlik Ozeti",
-            selectedTemplate: "Secilen sablon",
-            noTemplateSelected: "Sablon secilmedi",
-            versionState: "Surum durumu",
-            awaitingSelection: "Secim bekleniyor",
-            creating: "Olusturuluyor...",
-            createPrintIntent: "Print Intent Olustur",
+            readinessSnapshot: "Hazırlık Özeti",
+            selectedTemplate: "Seçilen şablon",
+            noTemplateSelected: "Şablon seçilmedi",
+            versionState: "Sürüm durumu",
+            awaitingSelection: "Seçim bekleniyor",
+            creating: "Oluşturuluyor...",
+            createPrintIntent: "Baskı talebi oluştur",
         }
         : {
             eyebrow: "Print preparation",
@@ -142,12 +142,12 @@ export default function CreatePrintIntentPage() {
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : (
                     <form className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]" onSubmit={submit}>
-                        <div className="space-y-6 rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+                        <div className="space-y-6 rounded-xl border border-line bg-surface p-6">
                             <div>
-                                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.product}</label>
+                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.product}</label>
                                 <select className="plms-select w-full" value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} required>
                                     <option value="">{text.selectProduct}</option>
                                     {products.map((product) => (
@@ -157,7 +157,7 @@ export default function CreatePrintIntentPage() {
                             </div>
 
                             <div>
-                                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.template}</label>
+                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.template}</label>
                                 <select className="plms-select w-full" value={form.templateId} onChange={(e) => setForm({ ...form, templateId: e.target.value })} required>
                                     <option value="">{text.selectTemplate}</option>
                                     {templates.map((template) => (
@@ -167,7 +167,7 @@ export default function CreatePrintIntentPage() {
                             </div>
 
                             <div>
-                                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.publishedVersion}</label>
+                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.publishedVersion}</label>
                                 <select className="plms-select w-full" value={form.versionId} onChange={(e) => setForm({ ...form, versionId: e.target.value })} required>
                                     <option value="">{text.selectVersion}</option>
                                     {templateVersions.map((version) => (
@@ -177,23 +177,23 @@ export default function CreatePrintIntentPage() {
                             </div>
 
                             <div>
-                                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.quantity}</label>
+                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.quantity}</label>
                                 <input className="plms-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} required />
                             </div>
                         </div>
 
-                        <div className="space-y-6 rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
+                        <div className="space-y-6 rounded-xl border border-line bg-surface p-6">
                             <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.readinessSnapshot}</div>
+                                <div className="text-xs font-medium text-ink-3">{text.readinessSnapshot}</div>
                                 <div className="mt-4 space-y-3">
-                                    <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-                                        <div className="text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.selectedTemplate}</div>
-                                        <div className="mt-2 text-sm font-bold text-white">
+                                    <div className="rounded-lg border border-line bg-raised p-4">
+                                        <div className="text-xs font-medium text-ink-3">{text.selectedTemplate}</div>
+                                        <div className="mt-2 text-sm font-medium text-ink">
                                             {selectedTemplate ? `${selectedTemplate.code} - ${selectedTemplate.name}` : text.noTemplateSelected}
                                         </div>
                                     </div>
-                                    <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
-                                        <div className="text-xs font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.versionState}</div>
+                                    <div className="rounded-lg border border-line bg-raised p-4">
+                                        <div className="text-xs font-medium text-ink-3">{text.versionState}</div>
                                         <div className="mt-2">
                                             {selectedVersion ? <StatusBadge label={`Published v${selectedVersion.versionNumber}`} tone="success" /> : <StatusBadge label={text.awaitingSelection} tone="warning" />}
                                         </div>

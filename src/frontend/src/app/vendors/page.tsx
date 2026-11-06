@@ -37,27 +37,27 @@ export default function VendorsPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Tedarikci operasyonlari",
-            title: "Tedarikciler",
-            description: "Urun tedarigi, ice aktarma dogrulamasi ve asagi akistaki etiket baglami icin tedarikci kaydi.",
-            newVendor: "Yeni Tedarikci",
-            searchPlaceholder: "Tedarikci kodu veya adinda ara",
-            emptyTitle: "Tedarikci bulunamadi",
-            emptyDescription: "Urun ve ice aktarma akislarini desteklemek icin tedarikci kaydi olusturun.",
+            eyebrow: "Tedarikçi operasyonları",
+            title: "Tedarikçiler",
+            description: "Ürün tedariği, içe aktarma doğrulaması ve aşağı akıştaki etiket bağlamı için tedarikçi kaydı.",
+            newVendor: "Yeni Tedarikçi",
+            searchPlaceholder: "Tedarikçi kodu veya adında ara",
+            emptyTitle: "Tedarikçi bulunamadı",
+            emptyDescription: "Ürün ve içe aktarma akışlarını desteklemek için tedarikçi kaydı oluşturun.",
             columns: ["Kod", "Ad", "Durum", "Aksiyonlar"],
-            edit: "Duzenle",
+            edit: "Düzenle",
             delete: "Sil",
-            editVendor: "Tedarikciyi Duzenle",
-            createVendor: "Tedarikci Olustur",
-            slideSubtitle: "Tedarikci kayitlari urun yonetimi ve CSV dogrulamasi icin kullanilir.",
+            editVendor: "Tedarikçiyi Düzenle",
+            createVendor: "Tedarikçi Oluştur",
+            slideSubtitle: "Tedarikçi kayıtları ürün yönetimi ve CSV doğrulaması için kullanılır.",
             code: "Kod",
             name: "Ad",
             active: "Aktif",
             saving: "Kaydediliyor...",
-            updateVendor: "Tedarikciyi Guncelle",
-            deleteTitle: "Tedarikciyi sil",
-            deleteDescription: `${deleteTarget?.name ?? ""} tedarikcisini sil. Bu islem, urunler hala bu tedarikciye bagliyse engellenir.`,
-            deleteConfirm: "Tedarikciyi Sil",
+            updateVendor: "Tedarikçiyi Güncelle",
+            deleteTitle: "Tedarikçiyi sil",
+            deleteDescription: `${deleteTarget?.name ?? ""} tedarikçisini sil. Bu işlem, ürünler hâlâ bu tedarikçiye bağlıysa engellenir.`,
+            deleteConfirm: "Tedarikçiyi Sil",
         }
         : {
             eyebrow: "Vendor operations",
@@ -164,20 +164,20 @@ export default function VendorsPage() {
                 <FilterBar left={<input className="plms-input max-w-xl" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <DataTable columns={text.columns}>
                         {filtered.map((vendor) => (
                             <tr key={vendor.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4"><span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{vendor.code}</span></td>
-                                <td className="px-6 py-4 text-sm font-bold text-white">{vendor.name}</td>
+                                <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{vendor.code}</span></td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink">{vendor.name}</td>
                                 <td className="px-6 py-4"><StatusBadge label={vendor.isActive ? "Active" : "Inactive"} tone={vendor.isActive ? "success" : "danger"} /></td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-3">
-                                        {canEdit ? <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => openEdit(vendor)}>{text.edit}</button> : null}
-                                        {canDelete ? <button className="text-xs font-black uppercase tracking-[0.22em] text-red-300" onClick={() => setDeleteTarget(vendor)}>{text.delete}</button> : null}
+                                        {canEdit ? <button className="text-xs font-medium text-accent" onClick={() => openEdit(vendor)}>{text.edit}</button> : null}
+                                        {canDelete ? <button className="text-xs font-medium text-bad" onClick={() => setDeleteTarget(vendor)}>{text.delete}</button> : null}
                                     </div>
                                 </td>
                             </tr>
@@ -193,14 +193,14 @@ export default function VendorsPage() {
                 >
                     <form className="space-y-5" onSubmit={submit}>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.code}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.code}</label>
                             <input className="plms-input" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.name}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.name}</label>
                             <input className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
                         </div>
-                        <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-sm font-medium text-white">
+                        <label className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm font-medium text-ink">
                             <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
                             {text.active}
                         </label>

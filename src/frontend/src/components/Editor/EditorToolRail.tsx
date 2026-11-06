@@ -29,10 +29,10 @@ export function EditorToolRail({
     onOpenLibrary: () => void;
 }) {
     const { locale } = useI18n();
-    const libraryLabel = locale === "tr" ? "Kutuphane" : "Library";
+    const libraryLabel = locale === "tr" ? "Kütüphane" : "Library";
 
     return (
-        <aside className="h-full min-h-0 w-16 shrink-0 overflow-hidden border-r border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-2 py-3">
+        <aside className="h-full min-h-0 w-16 shrink-0 overflow-hidden border-r border-line bg-surface px-2 py-3">
             <div className="custom-scrollbar flex h-full min-h-0 flex-col items-center gap-2 overflow-y-auto overscroll-contain pb-4">
             {TOOL_DEFS.map((tool) => (
                 <EditorToolButton

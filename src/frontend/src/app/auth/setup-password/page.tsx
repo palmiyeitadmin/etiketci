@@ -58,11 +58,11 @@ function SetupPasswordContent() {
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-emerald-50 p-6">
-                <div className="w-full max-w-md text-center p-12 bg-white rounded-[2.5rem] shadow-xl border-2 border-emerald-100">
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">✓</div>
-                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">{t("auth.setupPassword.setupComplete")}</h1>
-                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest italic leading-relaxed">
+            <div className="min-h-screen flex items-center justify-center bg-good-soft p-6">
+                <div className="w-full max-w-md text-center p-12 bg-white rounded-xl shadow-pop border-2 border-good/30">
+                    <div className="w-16 h-16 bg-good-soft text-good rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">✓</div>
+                    <h1 className="text-2xl font-medium text-ink mb-2">{t("auth.setupPassword.setupComplete")}</h1>
+                    <p className="text-ink-3 text-sm font-medium leading-relaxed">
                         {t("auth.setupPassword.redirecting")}
                     </p>
                 </div>
@@ -71,42 +71,42 @@ function SetupPasswordContent() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-blue-50 p-6">
-            <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-2xl">
+        <div className="min-h-screen flex items-center justify-center bg-accent-soft p-6">
+            <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-xl shadow-pop">
                 <div className="text-center">
-                    <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">
+                    <div className="inline-block px-3 py-1 bg-accent-soft text-accent text-xs font-medium rounded-full mb-4">
                         {t("auth.setupPassword.activation")}
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-2">{t("auth.setupPassword.title")}</h1>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic">{email}</p>
+                    <h1 className="text-3xl font-medium text-ink mb-2">{t("auth.setupPassword.title")}</h1>
+                    <p className="text-ink-3 text-xs font-medium">{email}</p>
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     {error && (
-                        <div className="bg-red-50 text-red-600 text-[11px] font-bold p-4 rounded-2xl border border-red-100 uppercase tracking-tight">
+                        <div className="bg-bad-soft text-bad text-xs font-medium p-4 rounded-lg border border-bad/30">
                             {error}
                         </div>
                     )}
                     
                     <div className="space-y-4">
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("auth.setupPassword.newPassword")}</label>
+                            <label className="text-xs font-medium text-ink-2 ml-1">{t("auth.setupPassword.newPassword")}</label>
                             <input
                                 type="password"
                                 required
                                 minLength={8}
-                                className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm"
+                                className="mt-1 block w-full px-4 py-3 bg-raised border border-line rounded-lg text-ink font-medium placeholder-ink-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-transparent transition-colors sm:text-sm"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t("auth.setupPassword.confirmNewPassword")}</label>
+                            <label className="text-xs font-medium text-ink-2 ml-1">{t("auth.setupPassword.confirmNewPassword")}</label>
                             <input
                                 type="password"
                                 required
-                                className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm"
+                                className="mt-1 block w-full px-4 py-3 bg-raised border border-line rounded-lg text-ink font-medium placeholder-ink-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-transparent transition-colors sm:text-sm"
                                 placeholder="••••••••"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -118,7 +118,7 @@ function SetupPasswordContent() {
                         <button
                             type="submit"
                             disabled={loading || !!error}
-                            className="w-full py-4 px-4 border border-transparent text-xs font-black uppercase tracking-[0.2em] rounded-2xl text-white bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-200"
+                            className="w-full py-4 px-4 border border-transparent text-xs font-medium rounded-lg text-white bg-accent hover:bg-accent-hover transition-colors disabled:opacity-50 shadow-pop"
                         >
                             {loading ? t("auth.setupPassword.activating") : t("auth.setupPassword.enableAccount")}
                         </button>
@@ -134,7 +134,7 @@ export default function SetupPasswordPage() {
 
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-blue-50 text-blue-600 font-black uppercase tracking-widest italic">
+            <div className="min-h-screen flex items-center justify-center bg-accent-soft text-accent font-medium">
                 {t("auth.setupPassword.initializing")}
             </div>
         }>

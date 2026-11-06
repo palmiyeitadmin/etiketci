@@ -17,6 +17,22 @@ namespace Plms.Api.DTOs.Dashboard
         public int TotalRoles { get; set; }
         public int TodayAuditLogsCount { get; set; }
         public List<WeeklyActivityChartItemDto> WeeklyActivity { get; set; } = new();
+
+        // Print operations (labels = sum of quantities).
+        public int LabelsPrintedToday { get; set; }
+        public int LabelsPrintedYesterday { get; set; }
+        public int FailedPrintsToday { get; set; }
+        public int AwaitingOutcome { get; set; }
+        public List<DailyPrintItemDto> DailyPrints { get; set; } = new();
+    }
+
+    public class DailyPrintItemDto
+    {
+        /// <summary>UTC date, yyyy-MM-dd.</summary>
+        public string Date { get; set; } = string.Empty;
+        public int Labels { get; set; }
+        public int Jobs { get; set; }
+        public int Failed { get; set; }
     }
 
     public class WeeklyActivityChartItemDto

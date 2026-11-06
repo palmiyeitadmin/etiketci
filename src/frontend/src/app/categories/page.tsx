@@ -37,26 +37,26 @@ export default function CategoriesPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Kategori yonetimi",
+            eyebrow: "Kategori yönetimi",
             title: "Kategoriler",
-            description: "Urun ana verisi ve ice aktarma dogrulamasi icin kullanilan kontrollu kategori kaydi.",
+            description: "Ürün ana verisi ve içe aktarma doğrulaması için kullanılan kontrollü kategori kaydı.",
             newCategory: "Yeni Kategori",
-            searchPlaceholder: "Kategori kodu veya adinda ara",
-            emptyTitle: "Kategori bulunamadi",
-            emptyDescription: "Urun yonetimi ve ice aktarma dogrulamasi icin kategoriler olusturun.",
+            searchPlaceholder: "Kategori kodu veya adında ara",
+            emptyTitle: "Kategori bulunamadı",
+            emptyDescription: "Ürün yönetimi ve içe aktarma doğrulaması için kategoriler oluşturun.",
             columns: ["Kod", "Ad", "Durum", "Aksiyonlar"],
-            edit: "Duzenle",
+            edit: "Düzenle",
             delete: "Sil",
-            editCategory: "Kategoriyi Duzenle",
-            createCategory: "Kategori Olustur",
-            slideSubtitle: "Kategori kayitlari urunler, ice aktarmalar ve raporlama tarafinda kullanilir.",
+            editCategory: "Kategoriyi Düzenle",
+            createCategory: "Kategori Oluştur",
+            slideSubtitle: "Kategori kayıtları ürünler, içe aktarmalar ve raporlama tarafında kullanılır.",
             code: "Kod",
             name: "Ad",
             active: "Aktif",
             saving: "Kaydediliyor...",
-            updateCategory: "Kategoriyi Guncelle",
+            updateCategory: "Kategoriyi Güncelle",
             deleteTitle: "Kategoriyi sil",
-            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu islem, urunler hala bu kategoriye bagliyse engellenir.`,
+            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu işlem, ürünler hâlâ bu kategoriye bağlıysa engellenir.`,
             deleteConfirm: "Kategoriyi Sil",
         }
         : {
@@ -164,20 +164,20 @@ export default function CategoriesPage() {
                 <FilterBar left={<input className="plms-input max-w-xl" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <DataTable columns={text.columns}>
                         {filtered.map((category) => (
                             <tr key={category.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4"><span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{category.code}</span></td>
-                                <td className="px-6 py-4 text-sm font-bold text-white">{category.name}</td>
+                                <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{category.code}</span></td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink">{category.name}</td>
                                 <td className="px-6 py-4"><StatusBadge label={category.isActive ? "Active" : "Inactive"} tone={category.isActive ? "success" : "danger"} /></td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-3">
-                                        {canEdit ? <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => openEdit(category)}>{text.edit}</button> : null}
-                                        {canDelete ? <button className="text-xs font-black uppercase tracking-[0.22em] text-red-300" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
+                                        {canEdit ? <button className="text-xs font-medium text-accent" onClick={() => openEdit(category)}>{text.edit}</button> : null}
+                                        {canDelete ? <button className="text-xs font-medium text-bad" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
                                     </div>
                                 </td>
                             </tr>
@@ -193,14 +193,14 @@ export default function CategoriesPage() {
                 >
                     <form className="space-y-5" onSubmit={submit}>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.code}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.code}</label>
                             <input className="plms-input" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.name}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.name}</label>
                             <input className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
                         </div>
-                        <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-sm font-medium text-white">
+                        <label className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm font-medium text-ink">
                             <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
                             {text.active}
                         </label>

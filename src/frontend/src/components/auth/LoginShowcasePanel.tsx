@@ -1,115 +1,81 @@
 "use client";
 
-import Image from "next/image";
-import { FlowArrow, Printer, SealCheck, Stack } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n";
+import { LabelProof } from "@/components/ui/LabelProof";
 
-const showcasePointConfig = [
-    {
-        key: "templates",
-        icon: Stack,
-        tone: "from-blue-500/20 to-blue-400/5 text-blue-100",
-    },
-    {
-        key: "approvals",
-        icon: SealCheck,
-        tone: "from-emerald-500/20 to-emerald-400/5 text-emerald-100",
-    },
-    {
-        key: "print",
-        icon: Printer,
-        tone: "from-amber-500/20 to-amber-400/5 text-amber-100",
-    },
-] as const;
+/** Deterministic bar pattern so the sample barcode looks real without encoding anything. */
+const BARS = [3, 1, 1, 2, 3, 1, 2, 1, 1, 3, 2, 1, 1, 1, 3, 2, 2, 1, 1, 3, 1, 2, 1, 1, 2, 3, 1, 1, 2, 1, 3, 1, 1, 2, 2, 1, 3, 1, 1, 2];
 
+function SampleBarcode() {
+    let x = 0;
+    const rects = BARS.map((width, index) => {
+        const rect = index % 2 === 0 ? <rect key={index} x={x} y={0} width={width} height={40} /> : null;
+        x += width;
+        return rect;
+    });
+    return (
+        <svg viewBox={`0 0 ${x} 40`} preserveAspectRatio="none" className="h-full w-full" aria-hidden>
+            <g fill="#111111">{rects}</g>
+        </svg>
+    );
+}
+
+/** A 21×21 module pattern with the three finder squares, so it reads as a QR code (it encodes nothing). */
+function SampleQr() {
+    const size = 21;
+    const cells: JSX.Element[] = [];
+    const inFinder = (x: number, y: number) => (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+    let seed = 11;
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            if (!inFinder(x, y) && seed / 233280 > 0.5) {
+                cells.push(<rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} />);
+            }
+        }
+    }
+    const finder = (ox: number, oy: number) => (
+        <g key={`${ox}-${oy}`}>
+            <rect x={ox} y={oy} width={7} height={7} />
+            <rect x={ox + 1} y={oy + 1} width={5} height={5} fill="#ffffff" />
+            <rect x={ox + 2} y={oy + 2} width={3} height={3} />
+        </g>
+    );
+    return (
+        <svg viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges" className="h-full w-full" aria-hidden>
+            <g fill="#111111">
+                {cells}
+                {finder(0, 0)}
+                {finder(14, 0)}
+                {finder(0, 14)}
+            </g>
+        </svg>
+    );
+}
+
+/** Left half of the login: what the product makes, shown as a real label on its liner. */
 export function LoginShowcasePanel() {
     const { t } = useI18n();
 
     return (
-        <section className="relative hidden min-h-[680px] overflow-hidden rounded-[2.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.28),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.18),transparent_28%),linear-gradient(180deg,#081120_0%,#0d1a2c_100%)] p-8 shadow-[0_30px_120px_rgba(2,6,23,0.45)] lg:flex lg:flex-col xl:p-10">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:76px_76px] opacity-[0.08]" />
-            <div className="pointer-events-none absolute -left-12 top-16 h-48 w-48 rounded-full bg-blue-500/20 blur-3xl animate-plms-pulse-soft" />
-            <div className="pointer-events-none absolute bottom-8 right-8 h-40 w-40 rounded-full border border-white/10 animate-plms-orbit-drift" />
-            <div className="pointer-events-none absolute right-20 top-20 h-20 w-20 rounded-full border border-blue-300/20 bg-white/5 animate-plms-float" />
+        <section className="flex flex-col justify-center gap-10 px-2 py-10 lg:py-0">
+            <div className="flex max-w-md flex-col gap-3">
+                <h2 className="text-xl font-medium text-ink">{t("auth.login.showcaseTitle")}</h2>
+                <p className="text-base text-ink-2">{t("auth.login.showcaseDescription")}</p>
+            </div>
 
-            <div className="relative z-10 flex h-full flex-col">
-                <div className="max-w-xl space-y-6">
-                    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-blue-100/80">
-                        {t("auth.login.showcaseEyebrow")}
-                    </div>
-
-                    <div className="relative h-12 w-44">
-                        <Image
-                            src="/assets/palmiye_logo_white.png"
-                            alt={t("shell.title")}
-                            fill
-                            sizes="176px"
-                            className="object-contain object-left"
-                            priority
-                        />
-                    </div>
-
-                    <div className="space-y-4">
-                        <h2 className="max-w-lg text-5xl font-black tracking-[-0.07em] text-white">
-                            {t("auth.login.showcaseTitle")}
-                        </h2>
-                        <p className="max-w-xl text-base font-medium leading-7 text-slate-300">
-                            {t("auth.login.showcaseDescription")}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="relative mt-10 grid gap-4 xl:grid-cols-3">
-                    {showcasePointConfig.map((item, index) => {
-                        const Icon = item.icon;
-                        return (
-                            <article
-                                key={item.key}
-                                className="animate-plms-fade-up rounded-[1.9rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm"
-                                style={{ animationDelay: `${index * 120}ms` }}
-                            >
-                                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${item.tone}`}>
-                                    <Icon size={22} weight="duotone" />
-                                </div>
-                                <div className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-white">
-                                    {t(`auth.login.showcasePoint${item.key.charAt(0).toUpperCase()}${item.key.slice(1)}Title`)}
-                                </div>
-                                <p className="mt-3 text-sm font-medium leading-6 text-slate-300">
-                                    {t(`auth.login.showcasePoint${item.key.charAt(0).toUpperCase()}${item.key.slice(1)}Body`)}
-                                </p>
-                            </article>
-                        );
-                    })}
-                </div>
-
-                <div className="relative mt-auto pt-10">
-                    <div className="animate-plms-float rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] p-6 shadow-[0_22px_70px_rgba(15,23,42,0.28)] backdrop-blur-sm">
-                        <div className="flex items-start justify-between gap-6">
-                            <div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-                                    {t("auth.login.showcaseSignalLabel")}
-                                </div>
-                                <div className="mt-3 text-2xl font-black tracking-[-0.05em] text-white">
-                                    {t("auth.login.showcaseSignalValue")}
-                                </div>
-                            </div>
-                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-blue-500/10 text-blue-100">
-                                <FlowArrow size={24} weight="duotone" />
-                            </div>
-                        </div>
-                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-200">
-                                {t("auth.login.showcaseSignalTemplates")}
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-200">
-                                {t("auth.login.showcaseSignalApprovals")}
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-200">
-                                {t("auth.login.showcaseSignalPrint")}
-                            </div>
+            <div className="rounded-2xl bg-[#eef2f0] px-10 py-14 sm:px-16">
+                <LabelProof widthMm={60} heightMm={40} caption={t("auth.login.showcaseCaption")} className="mx-auto max-w-[360px]">
+                    <div className="grid h-full grid-rows-[22%_1fr] font-sans text-[#111111]">
+                        <div className="flex items-center bg-[#1f5d3a] px-[5%] text-[clamp(11px,2.4vw,15px)] font-semibold text-white">PALMİYE</div>
+                        <div className="grid min-h-0 grid-cols-[1fr_auto] grid-rows-[auto_auto_1fr] gap-x-[5%] px-[5%] pb-[5%] pt-[4%]">
+                            <div className="col-span-2 text-[clamp(11px,2.2vw,15px)] font-medium">Sızma zeytinyağı 500 ml</div>
+                            <div className="col-span-2 font-mono text-[clamp(8px,1.5vw,10px)] text-[#444]">ZYT-0500-SZM</div>
+                            <div className="mt-[4%] min-h-0"><SampleBarcode /></div>
+                            <div className="mt-[4%] aspect-square h-full min-h-0"><SampleQr /></div>
                         </div>
                     </div>
-                </div>
+                </LabelProof>
             </div>
         </section>
     );

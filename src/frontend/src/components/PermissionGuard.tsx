@@ -1,7 +1,9 @@
 "use client";
 
+import { useContext } from "react";
 import { useSession } from "next-auth/react";
 import { hasAnyPermission, PermissionKey } from "@/lib/permissions";
+import { AccessDenied, GuardDepthContext } from "@/components/RoleGuard";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
@@ -9,8 +11,9 @@ interface PermissionGuardProps {
   fallback?: React.ReactNode;
 }
 
-export function PermissionGuard({ children, permissions, fallback = null }: PermissionGuardProps) {
+export function PermissionGuard({ children, permissions, fallback }: PermissionGuardProps) {
   const { data: session, status } = useSession();
+  const nested = useContext(GuardDepthContext);
 
   if (status === "loading") {
     return null;
@@ -21,8 +24,9 @@ export function PermissionGuard({ children, permissions, fallback = null }: Perm
   const isAuthorized = userRoles.includes("Admin") || hasAnyPermission(userPermissions, permissions);
 
   if (!isAuthorized) {
-    return <>{fallback}</>;
+    if (fallback !== undefined) return <>{fallback}</>;
+    return nested ? null : <AccessDenied />;
   }
 
-  return <>{children}</>;
+  return <GuardDepthContext.Provider value={true}>{children}</GuardDepthContext.Provider>;
 }

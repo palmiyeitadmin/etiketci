@@ -11,11 +11,12 @@
         "generate:phosphor": "node scripts/generate-phosphor-catalog.mjs"
     },
     "dependencies": {
+        "@fontsource/ibm-plex-mono": "^5.1.1",
+        "@fontsource/ibm-plex-sans": "^5.1.1",
         "@phosphor-icons/react": "^2.1.10",
         "autoprefixer": "^10.4.27",
         "bwip-js": "^4.8.0",
         "konva": "^9.3.22",
-        "motion": "^12.38.0",
         "next": "14.2.3",
         "next-auth": "^4.24.13",
         "react": "^18",

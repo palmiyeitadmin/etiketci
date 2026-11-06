@@ -38,26 +38,26 @@ export default function TemplateCategoriesPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Sablon kategori yonetimi",
-            title: "Sablon Kategorileri",
-            description: "Otomatik sablon kodu ureten kategori kayitlari ve kategori bazli sira yonetimi.",
+            eyebrow: "Şablon kategori yönetimi",
+            title: "Şablon Kategorileri",
+            description: "Otomatik şablon kodu üreten kategori kayıtları ve kategori bazlı sıra yönetimi.",
             newCategory: "Yeni Kategori",
-            searchPlaceholder: "Kategori kodu veya adinda ara",
-            emptyTitle: "Sablon kategorisi bulunamadi",
-            emptyDescription: "Yeni sablonlarin otomatik kod uretebilmesi icin kategori tanimlayin.",
-            columns: ["Kod", "Ad", "Siradaki Kod", "Durum", "Aksiyonlar"],
-            edit: "Duzenle",
+            searchPlaceholder: "Kategori kodu veya adında ara",
+            emptyTitle: "Şablon kategorisi bulunamadı",
+            emptyDescription: "Yeni şablonların otomatik kod üretebilmesi için kategori tanımlayın.",
+            columns: ["Kod", "Ad", "Sıradaki Kod", "Durum", "Aksiyonlar"],
+            edit: "Düzenle",
             delete: "Sil",
-            editCategory: "Kategoriyi Duzenle",
-            createCategory: "Kategori Olustur",
-            slideSubtitle: "Kategori kodlari sablon kodu uretiminde kullanilir ve olusturulduktan sonra degistirilemez.",
+            editCategory: "Kategoriyi Düzenle",
+            createCategory: "Kategori Oluştur",
+            slideSubtitle: "Kategori kodları şablon kodu üretiminde kullanılır ve oluşturulduktan sonra değiştirilemez.",
             code: "Kod",
             name: "Ad",
             active: "Aktif",
             saving: "Kaydediliyor...",
-            updateCategory: "Kategoriyi Guncelle",
+            updateCategory: "Kategoriyi Güncelle",
             deleteTitle: "Kategoriyi sil",
-            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu islem, sablonlar hala bu kategoriye bagliyse engellenir.`,
+            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu işlem, şablonlar hâlâ bu kategoriye bağlıysa engellenir.`,
             deleteConfirm: "Kategoriyi Sil",
         }
         : {
@@ -166,27 +166,27 @@ export default function TemplateCategoriesPage() {
                 />
 
                 {message ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">{message}</div>
+                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
                 ) : null}
 
                 <FilterBar left={<input className="plms-input max-w-xl" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <DataTable columns={text.columns}>
                         {filtered.map((category) => (
                             <tr key={category.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4"><span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{category.code}</span></td>
-                                <td className="px-6 py-4 text-sm font-bold text-white">{category.name}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{`PLM-${category.code}-${String(category.nextTemplateSequence).padStart(3, "0")}`}</td>
+                                <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{category.code}</span></td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink">{category.name}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{`PLM-${category.code}-${String(category.nextTemplateSequence).padStart(3, "0")}`}</td>
                                 <td className="px-6 py-4"><StatusBadge label={category.isActive ? "Active" : "Inactive"} tone={category.isActive ? "success" : "danger"} /></td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-3">
-                                        {canEdit ? <button className="text-xs font-black uppercase tracking-[0.22em] text-blue-300" onClick={() => openEdit(category)}>{text.edit}</button> : null}
-                                        {canDelete ? <button className="text-xs font-black uppercase tracking-[0.22em] text-red-300" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
+                                        {canEdit ? <button className="text-xs font-medium text-accent" onClick={() => openEdit(category)}>{text.edit}</button> : null}
+                                        {canDelete ? <button className="text-xs font-medium text-bad" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
                                     </div>
                                 </td>
                             </tr>
@@ -202,14 +202,14 @@ export default function TemplateCategoriesPage() {
                 >
                     <form className="space-y-5" onSubmit={submit}>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.code}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.code}</label>
                             <input className="plms-input" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} required />
                         </div>
                         <div>
-                            <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.name}</label>
+                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.name}</label>
                             <input className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
                         </div>
-                        <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-sm font-medium text-white">
+                        <label className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm font-medium text-ink">
                             <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
                             {text.active}
                         </label>

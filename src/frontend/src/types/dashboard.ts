@@ -10,6 +10,22 @@ export interface DashboardSummary {
     totalRoles: number;
     todayAuditLogsCount: number;
     weeklyActivity: WeeklyActivityChartItem[];
+    totalProducts?: number;
+    activeProducts?: number;
+    pendingPrintIntents?: number;
+    labelsPrintedToday?: number;
+    labelsPrintedYesterday?: number;
+    failedPrintsToday?: number;
+    awaitingOutcome?: number;
+    dailyPrints?: DailyPrintItem[];
+}
+
+export interface DailyPrintItem {
+    /** UTC date, yyyy-MM-dd */
+    date: string;
+    labels: number;
+    jobs: number;
+    failed: number;
 }
 
 export interface WeeklyActivityChartItem {

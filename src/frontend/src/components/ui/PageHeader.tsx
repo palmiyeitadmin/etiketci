@@ -2,6 +2,10 @@
 
 import type { ReactNode } from "react";
 
+/**
+ * Page title row. The eyebrow prop is kept for compatibility but only shown as a quiet breadcrumb,
+ * so pages do not repeat the same idea three times (eyebrow, title, description).
+ */
 export function PageHeader({
     eyebrow,
     title,
@@ -14,23 +18,13 @@ export function PageHeader({
     actions?: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-6 border-b border-[color:var(--plms-border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-                {eyebrow ? (
-                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--plms-text-subtle)]">
-                        {eyebrow}
-                    </div>
-                ) : null}
-                <div>
-                    <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">{title}</h1>
-                    {description ? (
-                        <p className="mt-2 max-w-3xl text-sm font-medium text-[color:var(--plms-text-subtle)]">
-                            {description}
-                        </p>
-                    ) : null}
-                </div>
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex min-w-0 flex-col gap-1">
+                {eyebrow ? <div className="text-sm text-ink-3">{eyebrow}</div> : null}
+                <h1 className="text-xl font-medium text-ink">{title}</h1>
+                {description ? <p className="max-w-2xl text-sm text-ink-2">{description}</p> : null}
             </div>
-            {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
-        </div>
+            {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        </header>
     );
 }

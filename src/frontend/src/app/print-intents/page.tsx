@@ -59,27 +59,27 @@ export default function PrintIntentsPage() {
                 />
 
                 <div className="grid gap-5 md:grid-cols-3">
-                    <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("printIntents.pendingReview")}</div>
-                        <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">
+                    <div className="rounded-xl border border-line bg-surface p-5">
+                        <div className="text-xs font-medium text-ink-3">{t("printIntents.pendingReview")}</div>
+                        <div className="mt-3 text-3xl font-medium text-ink">
                             {intents.filter((intent) => intent.status === "Pending").length}
                         </div>
                     </div>
-                    <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("printIntents.awaitingDispatch")}</div>
-                        <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">
+                    <div className="rounded-xl border border-line bg-surface p-5">
+                        <div className="text-xs font-medium text-ink-3">{t("printIntents.awaitingDispatch")}</div>
+                        <div className="mt-3 text-3xl font-medium text-ink">
                             {intents.filter((intent) => intent.status === "ReadyForPrint").length}
                         </div>
                     </div>
-                    <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("printIntents.awaitingConfirmation")}</div>
-                        <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">
+                    <div className="rounded-xl border border-line bg-surface p-5">
+                        <div className="text-xs font-medium text-ink-3">{t("printIntents.awaitingConfirmation")}</div>
+                        <div className="mt-3 text-3xl font-medium text-ink">
                             {intents.filter((intent) => intent.status === "SentToClient").length}
                         </div>
                     </div>
-                    <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("printIntents.completed")}</div>
-                        <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">
+                    <div className="rounded-xl border border-line bg-surface p-5">
+                        <div className="text-xs font-medium text-ink-3">{t("printIntents.completed")}</div>
+                        <div className="mt-3 text-3xl font-medium text-ink">
                             {intents.filter((intent) => intent.status === "UserPrinted" || intent.status === "Failed" || intent.status === "Cancelled").length}
                         </div>
                     </div>
@@ -98,7 +98,7 @@ export default function PrintIntentsPage() {
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
                     </div>
                 ) : filtered.length === 0 ? (
                     <EmptyState
@@ -109,17 +109,17 @@ export default function PrintIntentsPage() {
                     <DataTable columns={[t("printIntents.table.product"), t("printIntents.table.template"), t("printIntents.table.version"), t("printIntents.table.quantity"), t("printIntents.table.status"), t("printIntents.table.requestedBy"), t("printIntents.table.created"), t("printIntents.table.open")]}>
                         {filtered.map((intent) => (
                             <tr key={intent.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4 text-sm font-bold text-white">{intent.productName}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{intent.templateName}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">v{intent.versionNumber}</td>
-                                <td className="px-6 py-4 text-sm font-bold text-white">{intent.quantity}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink">{intent.productName}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{intent.templateName}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink-2">v{intent.versionNumber}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink">{intent.quantity}</td>
                                 <td className="px-6 py-4"><StatusBadge label={getPrintIntentStatusLabel(intent.status)} tone={getPrintIntentStatusTone(intent.status)} /></td>
-                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{intent.requestedBy}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{intent.requestedBy}</td>
+                                <td className="px-6 py-4 text-sm font-medium text-ink-3">
                                     {formatDateTime(intent.createdAt)}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <Link href={`/print-intents/${intent.id}`} className="text-xs font-black uppercase tracking-[0.22em] text-blue-300 hover:text-blue-200">
+                                    <Link href={`/print-intents/${intent.id}`} className="text-xs font-medium text-accent hover:text-accent">
                                         {t("common.open")}
                                     </Link>
                                 </td>

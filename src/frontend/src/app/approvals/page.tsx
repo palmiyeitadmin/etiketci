@@ -60,7 +60,7 @@ export default function ApprovalQueuePage() {
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
+                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
                     </div>
                 ) : approvals.length === 0 && restorations.length === 0 ? (
                     <EmptyState
@@ -70,30 +70,30 @@ export default function ApprovalQueuePage() {
                 ) : (
                     <div className="space-y-8">
                         <section className="space-y-4">
-                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{t("approvals.templateReviews")}</div>
+                            <div className="text-sm font-medium text-ink">{t("approvals.templateReviews")}</div>
                             {approvals.length === 0 ? (
                                 <EmptyState title={t("approvals.noTemplateReviews")} description={t("approvals.noTemplateReviewsDescription")} />
                             ) : approvals.map((item) => (
                                 <div
                                     key={item.versionId}
-                                    className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]"
+                                    className="rounded-xl border border-line bg-surface p-6"
                                 >
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                         <div className="space-y-3">
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">
+                                                <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">
                                                     {item.templateCode}
                                                 </span>
                                                 <StatusBadge label={`v${item.versionNumber}`} tone="warning" />
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
-                                                <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
+                                                <h2 className="text-xl font-medium text-ink">{item.templateName}</h2>
+                                                <div className="mt-1 text-xs font-medium text-ink-3">
                                                     {t("approvals.requestedByOn", undefined, { user: item.requestedBy, date: formatDateTime(item.requestedAt) })}
                                                 </div>
                                             </div>
                                             {item.reviewCommentSummary || item.changeNotes ? (
-                                                <p className="max-w-3xl text-sm font-medium text-[color:var(--plms-text-muted)]">{item.reviewCommentSummary || item.changeNotes}</p>
+                                                <p className="max-w-3xl text-sm font-medium text-ink-2">{item.reviewCommentSummary || item.changeNotes}</p>
                                             ) : null}
                                         </div>
                                         <Link href={`/approvals/templates/${item.versionId}`} className="plms-button-primary">
@@ -105,25 +105,25 @@ export default function ApprovalQueuePage() {
                         </section>
 
                         <section className="space-y-4">
-                            <div className="text-sm font-black uppercase tracking-[0.18em] text-white">{t("approvals.restorationRequests")}</div>
+                            <div className="text-sm font-medium text-ink">{t("approvals.restorationRequests")}</div>
                             {restorations.length === 0 ? (
                                 <EmptyState title={t("approvals.noRestorationRequests")} description={t("approvals.noRestorationRequestsDescription")} />
                             ) : restorations.map((item) => (
-                                <div key={item.id} className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                                <div key={item.id} className="rounded-xl border border-line bg-surface p-6">
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                         <div className="space-y-3">
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{item.templateCode}</span>
+                                                <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{item.templateCode}</span>
                                                 <StatusBadge label={`v${item.templateVersionNumber}`} tone="danger" />
                                                 <StatusBadge label={item.status} tone={item.status === "Pending" ? "warning" : item.status === "Approved" ? "success" : "danger"} />
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-black tracking-[-0.04em] text-white">{item.templateName}</h2>
-                                                <div className="mt-1 text-xs font-medium text-[color:var(--plms-text-subtle)]">
+                                                <h2 className="text-xl font-medium text-ink">{item.templateName}</h2>
+                                                <div className="mt-1 text-xs font-medium text-ink-3">
                                                     {t("approvals.requestedByOn", undefined, { user: item.requestedBy, date: formatDateTime(item.requestedAt) })}
                                                 </div>
                                             </div>
-                                            <p className="max-w-3xl text-sm font-medium text-[color:var(--plms-text-muted)]">{item.businessJustification}</p>
+                                            <p className="max-w-3xl text-sm font-medium text-ink-2">{item.businessJustification}</p>
                                         </div>
                                         <Link href={`/approvals/restorations/${item.id}`} className="plms-button-primary">
                                             {t("approvals.openRequest")}

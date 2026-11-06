@@ -30,16 +30,16 @@ export function PhosphorIconPicker({
   const text = locale === "tr"
     ? {
         placeholder: "Phosphor ikon ara",
-        featured: "Sik Kullanilanlar",
-        featuredDescription: "Hizli ekleme icin secili Phosphor ikonlari.",
+        featured: "Sık Kullanılanlar",
+        featuredDescription: "Hızlı ekleme için seçili Phosphor ikonları.",
         icons: "ikon",
-        fullCatalog: "Tum Katalog",
-        fullCatalogDescription: "Tum Phosphor ikonlarini arayip gorsel olarak ekleyin.",
-        showAll: "Tumunu Goster",
-        showLess: "Daha Az Goster",
-        empty: "Sonuc bulunamadi.",
+        fullCatalog: "Tüm Katalog",
+        fullCatalogDescription: "Tüm Phosphor ikonlarını arayıp görsel olarak ekleyin.",
+        showAll: "Tümünü Göster",
+        showLess: "Daha Az Göster",
+        empty: "Sonuç bulunamadı.",
         insertFailed: "Phosphor ikon eklenemedi.",
-        loadMore: "Daha Fazla Yukle",
+        loadMore: "Daha Fazla Yükle",
       }
     : {
         placeholder: "Search Phosphor icons",
@@ -81,7 +81,7 @@ export function PhosphorIconPicker({
       />
 
       {pickerError ? (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-lg border border-bad/20 bg-bad/10 px-4 py-3 text-sm text-bad">
           {pickerError}
         </div>
       ) : null}
@@ -90,20 +90,20 @@ export function PhosphorIconPicker({
         <section className="space-y-3">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--plms-text-subtle)]">{text.featured}</div>
-              <p className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{text.featuredDescription}</p>
+              <div className="text-xs font-medium text-ink-3">{text.featured}</div>
+              <p className="mt-1 text-sm text-ink-3">{text.featuredDescription}</p>
             </div>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{featuredIcons.length} {text.icons}</div>
+            <div className="text-xs font-medium text-ink-3">{featuredIcons.length} {text.icons}</div>
           </div>
           <IconGrid items={featuredIcons} onInsert={handleInsert} insertingKey={insertingKey} />
         </section>
       ) : null}
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-raised px-4 py-3">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--plms-text-subtle)]">{text.fullCatalog}</div>
-            <p className="mt-1 text-sm text-[color:var(--plms-text-subtle)]">{text.fullCatalogDescription}</p>
+            <div className="text-xs font-medium text-ink-3">{text.fullCatalog}</div>
+            <p className="mt-1 text-sm text-ink-3">{text.fullCatalogDescription}</p>
           </div>
           <button
             type="button"
@@ -117,7 +117,7 @@ export function PhosphorIconPicker({
 
         {shouldShowFullCatalog ? (
           visibleIcons.length === 0 ? (
-            <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-6 text-sm text-[color:var(--plms-text-subtle)]">
+            <div className="rounded-lg border border-line bg-raised px-4 py-6 text-sm text-ink-3">
               {text.empty}
             </div>
           ) : (
@@ -154,14 +154,14 @@ function IconGrid({
           key={item.key}
           type="button"
           onClick={() => void onInsert(item)}
-          className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-left transition-colors hover:bg-white/[0.05] disabled:cursor-wait disabled:opacity-60"
+          className="rounded-lg border border-line bg-raised p-4 text-left transition-colors hover:bg-raised disabled:cursor-wait disabled:opacity-60"
           disabled={insertingKey === item.key}
         >
-          <div className="flex h-16 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03] text-white">
+          <div className="flex h-16 items-center justify-center rounded-lg border border-line bg-raised text-ink">
             <PhosphorIconPreview iconKey={item.key} size={28} />
           </div>
-          <div className="mt-3 truncate text-sm font-bold text-white">{item.label}</div>
-          <div className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">{item.key}</div>
+          <div className="mt-3 truncate text-sm font-medium text-ink">{item.label}</div>
+          <div className="mt-1 truncate text-xs font-medium text-ink-3">{item.key}</div>
         </button>
       ))}
     </div>

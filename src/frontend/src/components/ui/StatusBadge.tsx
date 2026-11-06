@@ -4,19 +4,21 @@ import { useI18n } from "@/lib/i18n";
 
 export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
 
-const toneClasses: Record<StatusTone, string> = {
-    neutral: "bg-[color:var(--plms-muted-100)] text-[color:var(--plms-text-muted)] border-[color:var(--plms-border-strong)]",
-    info: "bg-blue-500/10 text-blue-300 border-blue-400/20",
-    success: "bg-emerald-500/10 text-emerald-300 border-emerald-400/20",
-    warning: "bg-amber-500/10 text-amber-300 border-amber-400/20",
-    danger: "bg-red-500/10 text-red-300 border-red-400/20",
+const dotClasses: Record<StatusTone, string> = {
+    neutral: "bg-ink-3",
+    info: "bg-accent",
+    success: "bg-good",
+    warning: "bg-warn",
+    danger: "bg-bad",
 };
 
+/** Status as quiet text with a colored dot; the dot carries the meaning, not a filled pill. */
 export function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: StatusTone }) {
     const { translateLabel } = useI18n();
 
     return (
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] ${toneClasses[tone]}`}>
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-ink-2">
+            <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClasses[tone]}`} />
             {translateLabel(label)}
         </span>
     );

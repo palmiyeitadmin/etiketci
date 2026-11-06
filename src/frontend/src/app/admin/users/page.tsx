@@ -35,32 +35,32 @@ export default function AdminUsersPage() {
 
   const text = locale === "tr"
     ? {
-        eyebrow: "Yonetim",
-        title: "Kullanicilar",
-        description: "Kullanicilar olusturun, rol atamalarini yonetin ve onboarding yapisini kontrol edin.",
+        eyebrow: "Yönetim",
+        title: "Kullanıcılar",
+        description: "Kullanıcılar oluşturun, rol atamalarını yönetin ve onboarding yapısını kontrol edin.",
         close: "Kapat",
-        newUser: "Yeni Kullanici",
+        newUser: "Yeni Kullanıcı",
         email: "E-posta",
         fullName: "Ad soyad",
-        inviteMode: "Davet et ve sifre belirlet",
-        directMode: "Yonetici gecici sifre belirlesin",
-        temporaryPassword: "Gecici sifre",
-        mustChangePassword: "Ilk giriste sifre degistirilsin",
+        inviteMode: "Davet et ve şifre belirlet",
+        directMode: "Yönetici geçici şifre belirlesin",
+        temporaryPassword: "Geçici şifre",
+        mustChangePassword: "İlk girişte şifre değiştirilsin",
         roles: "Roller",
         permissionsCount: "{count} yetki",
-        creating: "Olusturuluyor...",
-        createUser: "Kullanici Olustur",
-        userCreated: "Kullanici olusturuldu.",
-        setupLink: "Kurulum baglantisi",
-        searchUsers: "Kullanicilarda ara",
-        allStatuses: "Tum durumlar",
+        creating: "Oluşturuluyor...",
+        createUser: "Kullanıcı Oluştur",
+        userCreated: "Kullanıcı oluşturuldu.",
+        setupLink: "Kurulum bağlantısı",
+        searchUsers: "Kullanıcılarda ara",
+        allStatuses: "Tüm durumlar",
         active: "Aktif",
         inactive: "Pasif",
-        allRoles: "Tum roller",
-        emptyTitle: "Kullanici bulunamadi",
-        emptyDescription: "Mevcut filtrelerle eslesen kullanici yok.",
-        mustChangePasswordBadge: "Sifre degistirmeli",
-        open: "Ac",
+        allRoles: "Tüm roller",
+        emptyTitle: "Kullanıcı bulunamadı",
+        emptyDescription: "Mevcut filtrelerle eşleşen kullanıcı yok.",
+        mustChangePasswordBadge: "Şifre değiştirmeli",
+        open: "Aç",
       }
     : {
         eyebrow: "Administration",
@@ -164,7 +164,7 @@ export default function AdminUsersPage() {
         />
 
         {createOpen ? (
-          <form className="grid gap-4 rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6 lg:grid-cols-2" onSubmit={handleCreate}>
+          <form className="grid gap-4 rounded-xl border border-line bg-surface p-6 lg:grid-cols-2" onSubmit={handleCreate}>
             <div className="space-y-4">
               <input className="plms-input" placeholder={text.email} value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} required />
               <input className="plms-input" placeholder={text.fullName} value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} required />
@@ -175,15 +175,15 @@ export default function AdminUsersPage() {
               {form.mode === "direct" ? (
                 <input className="plms-input" type="password" placeholder={text.temporaryPassword} value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} required />
               ) : null}
-              <label className="flex items-center gap-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
+              <label className="flex items-center gap-3 text-sm font-medium text-ink-2">
                 <input type="checkbox" checked={form.mustChangePassword} onChange={(event) => setForm((current) => ({ ...current, mustChangePassword: event.target.checked }))} />
                 {text.mustChangePassword}
               </label>
             </div>
-            <div className="space-y-3 rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.roles}</div>
+            <div className="space-y-3 rounded-xl border border-line bg-raised p-5">
+              <div className="text-xs font-medium text-ink-3">{text.roles}</div>
               {roles.map((role) => (
-                <label key={role.id} className="flex items-start gap-3 rounded-2xl border border-[color:var(--plms-border)] px-4 py-3 text-sm text-white">
+                <label key={role.id} className="flex items-start gap-3 rounded-lg border border-line px-4 py-3 text-sm text-ink">
                   <input
                     type="checkbox"
                     checked={form.roleIds.includes(role.id)}
@@ -195,16 +195,16 @@ export default function AdminUsersPage() {
                     }))}
                   />
                   <span>
-                    <span className="block font-bold">{role.name}</span>
-                    <span className="block text-xs text-[color:var(--plms-text-subtle)]">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                    <span className="block font-medium">{role.name}</span>
+                    <span className="block text-xs text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
                   </span>
                 </label>
               ))}
             </div>
             <div className="lg:col-span-2 flex flex-wrap items-center gap-3">
               <button className="plms-button-primary" type="submit" disabled={busy}>{busy ? text.creating : text.createUser}</button>
-              {message ? <div className="text-sm font-medium text-[color:var(--plms-text-muted)]">{message}</div> : null}
-              {setupLink ? <div className="w-full rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-100 break-all">{text.setupLink}: {setupLink}</div> : null}
+              {message ? <div className="text-sm font-medium text-ink-2">{message}</div> : null}
+              {setupLink ? <div className="w-full rounded-lg border border-accent/20 bg-accent/10 p-4 text-sm text-accent break-all">{text.setupLink}: {setupLink}</div> : null}
             </div>
           </form>
         ) : null}
@@ -223,21 +223,21 @@ export default function AdminUsersPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
         ) : filteredUsers.length === 0 ? (
           <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
         ) : (
           <div className="grid gap-4">
             {filteredUsers.map((user) => (
-              <div key={user.id} className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+              <div key={user.id} className="rounded-xl border border-line bg-surface p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="space-y-2">
-                    <div className="text-xl font-black tracking-[-0.04em] text-white">{user.fullName}</div>
-                    <div className="text-sm font-medium text-[color:var(--plms-text-subtle)]">{user.email}</div>
+                    <div className="text-xl font-medium text-ink">{user.fullName}</div>
+                    <div className="text-sm font-medium text-ink-3">{user.email}</div>
                     <div className="flex flex-wrap gap-2">
-                      {user.roles.map((role) => <span key={role.id} className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 text-xs font-black text-blue-200">{role.name}</span>)}
-                      <span className={`rounded-xl px-2 py-1 text-xs font-black ${user.isActive ? "bg-emerald-500/10 text-emerald-200" : "bg-red-500/10 text-red-200"}`}>{user.isActive ? text.active : text.inactive}</span>
-                      {user.mustChangePassword ? <span className="rounded-xl bg-amber-500/10 px-2 py-1 text-xs font-black text-amber-200">{text.mustChangePasswordBadge}</span> : null}
+                      {user.roles.map((role) => <span key={role.id} className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 text-xs font-medium text-accent">{role.name}</span>)}
+                      <span className={`rounded-xl px-2 py-1 text-xs font-medium ${user.isActive ? "bg-good/10 text-good" : "bg-bad/10 text-bad"}`}>{user.isActive ? text.active : text.inactive}</span>
+                      {user.mustChangePassword ? <span className="rounded-xl bg-warn/10 px-2 py-1 text-xs font-medium text-warn">{text.mustChangePasswordBadge}</span> : null}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">

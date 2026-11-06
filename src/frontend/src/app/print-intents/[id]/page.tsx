@@ -27,16 +27,16 @@ export default function PrintIntentDetailPage() {
   const id = String(params.id);
   const text = locale === "tr"
     ? {
-      back: "Kuyruga Don", proof: "Proof PDF Ac", notFound: "Baski niyeti bulunamadi", notFoundDescription: "Istenen baski niyeti yuklenemedi.",
-      status: "Durum", requestedBy: "Talep Eden", quantity: "Adet", safety: "Guvenlik", safe: "Guvenli", attention: "Dikkat",
-      safetyReadiness: "Guvenlik ve Hazirlik", finalSafety: "Son Guvenlik Kontrolu", noSafetyWarnings: "Aktif guvenlik uyarisi yok.",
-      readinessSnapshot: "Orijinal Hazirlik Anlik Goruntusu", noReadinessIssues: "Kayitli engel veya uyari yok.", readinessUnavailable: "Hazirlik anlik goruntusu yok.",
-      operationalTimeline: "Operasyon Zaman Cizelgesi", requested: "Talep Edildi", operatorReview: "Operator Incelemesi", notCompleted: "Tamamlanmadi",
-      pdfDispatch: "PDF Gonderimi", notDispatched: "Gonderilmedi", completion: "Tamamlama", awaitingOutcome: "Sonuc bekleniyor", auditTrail: "Denetim Izi",
-      noAudit: "Bu niyet icin denetim kaydi bulunamadi.", lifecycleActions: "Yasam Dongusu Islemleri", confirmReadiness: "Hazirligi Onayla", dispatchPdf: "PDF'yi Tarayiciya Gonder",
-      failureReason: "Basarisiz baski icin istege bagli neden...", markFailed: "Basarisiz Olarak Isle", confirmPrinted: "Yazdirildi Olarak Onayla", cancelIntent: "Niyeti Iptal Et",
-      printConfirmed: "Baski operator tarafindan onaylandi.", noFailureReason: "Neden kaydedilmedi.", cancelled: "Niyet gonderimden once iptal edildi.", recordContext: "Kayit Baglami",
-      template: "Sablon", version: "Surum", product: "Urun", popupBlocked: "PDF sekmesi acilamadi. Popup iznini acin veya Proof PDF baglantisini kullanin.",
+      back: "Kuyruğa Dön", proof: "Prova PDF'ini aç", notFound: "Baskı talebi bulunamadı", notFoundDescription: "Baskı talebi yüklenemedi.",
+      status: "Durum", requestedBy: "Talep Eden", quantity: "Adet", safety: "Güvenlik", safe: "Güvenli", attention: "Dikkat",
+      safetyReadiness: "Güvenlik ve Hazırlık", finalSafety: "Son Güvenlik Kontrolü", noSafetyWarnings: "Aktif güvenlik uyarısı yok.",
+      readinessSnapshot: "Orijinal Hazırlık Anlık Görüntüsü", noReadinessIssues: "Kayıtlı engel veya uyarı yok.", readinessUnavailable: "Hazırlık anlık görüntüsü yok.",
+      operationalTimeline: "Operasyon Zaman Çizelgesi", requested: "Talep Edildi", operatorReview: "Operatör İncelemesi", notCompleted: "Tamamlanmadı",
+      pdfDispatch: "PDF Gönderimi", notDispatched: "Gönderilmedi", completion: "Tamamlama", awaitingOutcome: "Sonuç bekleniyor", auditTrail: "Denetim İzi",
+      noAudit: "Bu talep için denetim kaydı yok.", lifecycleActions: "Yaşam Döngüsü İşlemleri", confirmReadiness: "Hazırlığı Onayla", dispatchPdf: "PDF'yi Tarayıcıya Gönder",
+      failureReason: "Başarısız baskı için isteğe bağlı neden...", markFailed: "Başarısız Olarak İşle", confirmPrinted: "Yazdırıldı Olarak Onayla", cancelIntent: "Talebi iptal et",
+      printConfirmed: "Baskı operatör tarafından onaylandı.", noFailureReason: "Neden kaydedilmedi.", cancelled: "Talep, PDF gönderilmeden iptal edildi.", recordContext: "Kayıt Bağlamı",
+      template: "Şablon", version: "Sürüm", product: "Ürün", popupBlocked: "PDF sekmesi açılamadı. Tarayıcıda açılır pencerelere izin verin veya prova PDF'ini açın.",
     }
     : {
       back: "Back to Queue", proof: "Open Proof PDF", notFound: "Print intent not found", notFoundDescription: "The requested print intent could not be loaded.",
@@ -130,7 +130,7 @@ export default function PrintIntentDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>;
+    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>;
   }
 
   if (!intent) {
@@ -163,77 +163,77 @@ export default function PrintIntentDetailPage() {
           }
         />
 
-        {message ? <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-medium text-amber-200">{message}</div> : null}
+        {message ? <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div> : null}
 
         <div className="grid gap-5 md:grid-cols-4">
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.status}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.status}</div>
             <div className="mt-3"><StatusBadge label={getPrintIntentStatusLabel(intent.status)} tone={getPrintIntentStatusTone(intent.status)} /></div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.requestedBy}</div>
-            <div className="mt-3 text-lg font-black tracking-[-0.04em] text-white">{intent.requestedBy}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.requestedBy}</div>
+            <div className="mt-3 text-lg font-medium text-ink">{intent.requestedBy}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.quantity}</div>
-            <div className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">{intent.quantity}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.quantity}</div>
+            <div className="mt-3 text-3xl font-medium text-ink">{intent.quantity}</div>
           </div>
-          <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.safety}</div>
+          <div className="rounded-xl border border-line bg-surface p-5">
+            <div className="text-xs font-medium text-ink-3">{text.safety}</div>
             <div className="mt-3"><StatusBadge label={isSafe ? text.safe : text.attention} tone={isSafe ? "success" : "danger"} /></div>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.safetyReadiness}</div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.safetyReadiness}</div>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div className="rounded-[1.5rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-white">{text.finalSafety}</div>
+                <div className="rounded-xl border border-line bg-raised p-5">
+                  <div className="text-xs font-medium text-ink">{text.finalSafety}</div>
                   {safetyMessages.length > 0 ? (
-                    <ul className="mt-4 space-y-2 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                    <ul className="mt-4 space-y-2 text-sm font-medium text-ink-2">
                       {safetyMessages.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                     </ul>
-                  ) : <div className="mt-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{text.noSafetyWarnings}</div>}
+                  ) : <div className="mt-4 text-sm font-medium text-ink-2">{text.noSafetyWarnings}</div>}
                 </div>
-                <div className="rounded-[1.5rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-white">{text.readinessSnapshot}</div>
+                <div className="rounded-xl border border-line bg-raised p-5">
+                  <div className="text-xs font-medium text-ink">{text.readinessSnapshot}</div>
                   {readiness ? (
-                    <div className="mt-4 space-y-2 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                    <div className="mt-4 space-y-2 text-sm font-medium text-ink-2">
                       {(readiness.errors || []).length > 0 ? (readiness.errors || []).map((item, index) => <div key={`${item}-${index}`}>{item}</div>) : null}
                       {(readiness.warnings || []).length > 0 ? (readiness.warnings || []).map((item, index) => <div key={`${item}-${index}`}>{item}</div>) : null}
                       {(readiness.errors || []).length === 0 && (readiness.warnings || []).length === 0 ? <div>{text.noReadinessIssues}</div> : null}
                     </div>
-                  ) : <div className="mt-4 text-sm font-medium text-[color:var(--plms-text-muted)]">{text.readinessUnavailable}</div>}
+                  ) : <div className="mt-4 text-sm font-medium text-ink-2">{text.readinessUnavailable}</div>}
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.operationalTimeline}</div>
-              <div className="mt-5 space-y-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
-                <div className="flex items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3"><span>{text.requested}</span><span className="text-white">{formatDateTime(intent.createdAt)}</span></div>
-                <div className="flex items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3"><span>{text.operatorReview}</span><span className="text-white">{intent.operatorReviewedAt ? `${formatDateTime(intent.operatorReviewedAt)} · ${intent.operatorReviewedBy}` : text.notCompleted}</span></div>
-                <div className="flex items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3"><span>{text.pdfDispatch}</span><span className="text-white">{intent.dispatchedAt ? `${formatDateTime(intent.dispatchedAt)} · ${intent.dispatchedBy}` : text.notDispatched}</span></div>
-                <div className="flex items-center justify-between rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] px-4 py-3"><span>{text.completion}</span><span className="text-white">{intent.completedAt ? `${formatDateTime(intent.completedAt)} · ${intent.completedBy}` : text.awaitingOutcome}</span></div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.operationalTimeline}</div>
+              <div className="mt-5 space-y-3 text-sm font-medium text-ink-2">
+                <div className="flex items-center justify-between rounded-lg border border-line bg-raised px-4 py-3"><span>{text.requested}</span><span className="text-ink">{formatDateTime(intent.createdAt)}</span></div>
+                <div className="flex items-center justify-between rounded-lg border border-line bg-raised px-4 py-3"><span>{text.operatorReview}</span><span className="text-ink">{intent.operatorReviewedAt ? `${formatDateTime(intent.operatorReviewedAt)} · ${intent.operatorReviewedBy}` : text.notCompleted}</span></div>
+                <div className="flex items-center justify-between rounded-lg border border-line bg-raised px-4 py-3"><span>{text.pdfDispatch}</span><span className="text-ink">{intent.dispatchedAt ? `${formatDateTime(intent.dispatchedAt)} · ${intent.dispatchedBy}` : text.notDispatched}</span></div>
+                <div className="flex items-center justify-between rounded-lg border border-line bg-raised px-4 py-3"><span>{text.completion}</span><span className="text-ink">{intent.completedAt ? `${formatDateTime(intent.completedAt)} · ${intent.completedBy}` : text.awaitingOutcome}</span></div>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.auditTrail}</div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.auditTrail}</div>
               {auditLogs.length === 0 ? (
-                <div className="mt-5 text-sm font-medium text-[color:var(--plms-text-muted)]">{text.noAudit}</div>
+                <div className="mt-5 text-sm font-medium text-ink-2">{text.noAudit}</div>
               ) : (
                 <div className="mt-5 space-y-3">
                   {auditLogs.map((log) => (
-                    <div key={log.id} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
+                    <div key={log.id} className="rounded-lg border border-line bg-raised p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-sm font-black text-white">{log.action}</div>
-                        <div className="text-xs font-medium text-[color:var(--plms-text-subtle)]">{formatDateTime(log.timestamp)}</div>
+                        <div className="text-sm font-medium text-ink">{log.action}</div>
+                        <div className="text-xs font-medium text-ink-3">{formatDateTime(log.timestamp)}</div>
                       </div>
-                      <div className="mt-2 text-sm font-medium text-[color:var(--plms-text-muted)]">{log.details}</div>
-                      <div className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300">{log.userId}</div>
+                      <div className="mt-2 text-sm font-medium text-ink-2">{log.details}</div>
+                      <div className="mt-3 text-xs font-medium text-accent">{log.userId}</div>
                     </div>
                   ))}
                 </div>
@@ -242,8 +242,8 @@ export default function PrintIntentDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.lifecycleActions}</div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.lifecycleActions}</div>
               <div className="mt-5 space-y-3">
                 {isPending ? (
                   <button className="plms-button-primary w-full" onClick={() => runAction("handoff")} disabled={submitting || !isSafe}>{text.confirmReadiness}</button>
@@ -255,8 +255,8 @@ export default function PrintIntentDetailPage() {
                   <>
                     <textarea className="plms-input min-h-28" placeholder={text.failureReason} value={failureReason} onChange={(event) => setFailureReason(event.target.value)} />
                     <div className="grid gap-3 md:grid-cols-2">
-                      <button className="rounded-2xl bg-red-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={() => runAction("mark-failed")} disabled={submitting}>{text.markFailed}</button>
-                      <button className="rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-black uppercase tracking-[0.22em] text-white" onClick={() => runAction("confirm-print")} disabled={submitting}>{text.confirmPrinted}</button>
+                      <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => runAction("mark-failed")} disabled={submitting}>{text.markFailed}</button>
+                      <button className="rounded-lg bg-good px-4 py-3 text-xs font-medium text-white" onClick={() => runAction("confirm-print")} disabled={submitting}>{text.confirmPrinted}</button>
                     </div>
                   </>
                 ) : null}
@@ -264,19 +264,19 @@ export default function PrintIntentDetailPage() {
                   <button className="plms-button-secondary w-full" onClick={() => runAction("cancel")} disabled={submitting}>{text.cancelIntent}</button>
                 ) : null}
                 {isTerminal ? (
-                  <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4 text-sm font-medium text-[color:var(--plms-text-muted)]">
+                  <div className="rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-2">
                     {intent.status === "UserPrinted" ? text.printConfirmed : intent.status === "Failed" ? `Print failed. ${intent.failureReason || text.noFailureReason}` : text.cancelled}
                   </div>
                 ) : null}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.recordContext}</div>
-              <div className="mt-4 space-y-3 text-sm font-medium text-[color:var(--plms-text-muted)]">
-                <div className="flex items-center justify-between"><span>{text.template}</span><span className="text-white">{intent.templateName}</span></div>
-                <div className="flex items-center justify-between"><span>{text.version}</span><span className="text-white">v{intent.versionNumber}</span></div>
-                <div className="flex items-center justify-between"><span>{text.product}</span><span className="text-white">{intent.productName}</span></div>
+            <div className="rounded-xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium text-ink-3">{text.recordContext}</div>
+              <div className="mt-4 space-y-3 text-sm font-medium text-ink-2">
+                <div className="flex items-center justify-between"><span>{text.template}</span><span className="text-ink">{intent.templateName}</span></div>
+                <div className="flex items-center justify-between"><span>{text.version}</span><span className="text-ink">v{intent.versionNumber}</span></div>
+                <div className="flex items-center justify-between"><span>{text.product}</span><span className="text-ink">{intent.productName}</span></div>
               </div>
             </div>
           </div>

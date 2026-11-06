@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { useI18n } from "@/lib/i18n";
 import { LoginShowcasePanel } from "@/components/auth/LoginShowcasePanel";
 
@@ -95,90 +96,66 @@ function LoginContent() {
 
     if (status === "authenticated") {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">
-                    {t("auth.login.initializing")}
-                </div>
+            <div className="flex min-h-screen items-center justify-center bg-canvas text-sm text-ink-2">
+                {t("auth.login.initializing")}
             </div>
         );
     }
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.22),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.14),transparent_24%),linear-gradient(180deg,#040b16_0%,#091221_48%,#060d17_100%)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.06),transparent_22%),radial-gradient(circle_at_80%_10%,rgba(37,99,235,0.08),transparent_20%)]" />
-            <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-8 lg:px-10 lg:py-12">
-                <div className="w-full lg:grid lg:grid-cols-[1.08fr_0.92fr] lg:gap-8 xl:gap-12">
+        <div className="min-h-screen bg-canvas">
+            <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 items-center gap-8 px-4 py-10 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+                <div className="order-2 lg:order-1">
                     <LoginShowcasePanel />
+                </div>
 
-                    <div className="flex items-center justify-center">
-                        <div className="w-full max-w-md space-y-8 rounded-[2.5rem] bg-white p-8 shadow-[0_30px_90px_rgba(15,23,42,0.4)] sm:p-10">
-                            <div className="text-center">
-                                <div className="inline-block rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-                                    {t("auth.login.gateway")}
-                                </div>
-                                <h1 className="mb-2 mt-5 text-4xl font-black uppercase tracking-tighter text-slate-900">
-                                    {t("auth.login.title")}
-                                </h1>
-                                <p className="text-xs font-bold uppercase tracking-widest italic text-slate-500">
-                                    {t("auth.login.subtitle")}
-                                </p>
-                            </div>
-
-                            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                                {error ? (
-                                    <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-[11px] font-bold uppercase tracking-tight text-red-600">
-                                        {error}
-                                    </div>
-                                ) : null}
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label htmlFor="login-email" className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            {t("auth.login.email")}
-                                        </label>
-                                        <input
-                                            id="login-email"
-                                            type="email"
-                                            required
-                                            className="mt-1 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 font-bold placeholder-slate-300 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
-                                            placeholder="name@domain.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="login-password" className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            {t("auth.login.password")}
-                                        </label>
-                                        <input
-                                            id="login-password"
-                                            type="password"
-                                            required
-                                            className="mt-1 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 font-bold placeholder-slate-300 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
-                                            placeholder="••••••••"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="group relative flex w-full justify-center rounded-2xl border border-transparent bg-slate-900 px-4 py-4 text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-black focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50"
-                                    >
-                                        {loading ? t("auth.login.loading") : t("auth.login.authorize")}
-                                    </button>
-                                </div>
-                            </form>
-
-                            <div className="border-t border-slate-100 pt-4 text-center">
-                                <p className="text-[10px] font-bold uppercase tracking-widest italic leading-relaxed text-slate-400">
-                                    {t("auth.login.governanceNote")}
-                                </p>
-                            </div>
+                <div className="order-1 flex flex-col gap-8 lg:order-2">
+                    <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={122} height={40} priority className="h-8 w-auto self-start" />
+                    <div className="flex w-full max-w-sm flex-col gap-6 rounded-xl border border-line bg-surface p-6 sm:p-8">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="text-lg font-medium text-ink">{t("auth.login.title")}</h1>
+                            <p className="text-sm text-ink-2">{t("auth.login.subtitle")}</p>
                         </div>
+
+                        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                            {error ? (
+                                <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">
+                                    {error}
+                                </div>
+                            ) : null}
+
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="login-email" className="plms-label">{t("auth.login.email")}</label>
+                                <input
+                                    id="login-email"
+                                    type="email"
+                                    autoComplete="username"
+                                    required
+                                    className="plms-input"
+                                    placeholder="ad.soyad@palmiye.com.tr"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="login-password" className="plms-label">{t("auth.login.password")}</label>
+                                <input
+                                    id="login-password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    required
+                                    className="plms-input"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                            </div>
+
+                            <button type="submit" disabled={loading} className="plms-button-primary mt-2 h-10 w-full">
+                                {loading ? t("auth.login.loading") : t("auth.login.authorize")}
+                            </button>
+                        </form>
+
+                        <p className="text-sm text-ink-3">{t("auth.login.governanceNote")}</p>
                     </div>
                 </div>
             </div>
@@ -191,7 +168,7 @@ export default function LoginPage() {
 
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-black uppercase tracking-widest italic">
+            <div className="flex min-h-screen items-center justify-center bg-canvas text-sm text-ink-2">
                 {t("auth.login.initializing")}
             </div>
         }>

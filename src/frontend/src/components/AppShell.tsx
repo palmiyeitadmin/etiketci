@@ -4,19 +4,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useEffect, useMemo, useRef, useState, type ForwardRefExoticComponent, type RefAttributes } from "react";
-import { MagnifyingGlass, List, CaretDoubleLeft, CaretDoubleRight } from "@phosphor-icons/react";
-import { BlocksIcon } from "@/components/ui/blocks-icon";
-import { BookOpenCheckIcon } from "@/components/ui/book-open-check-icon";
-import { BookmarkIcon } from "@/components/ui/bookmark-icon";
-import { BoxesIcon } from "@/components/ui/boxes-icon";
-import { FolderOpenIcon } from "@/components/ui/folder-open-icon";
-import { HouseIcon } from "@/components/ui/house-icon";
-import { LayoutGridIcon } from "@/components/ui/layout-grid-icon";
-import { LayoutListIcon } from "@/components/ui/layout-list-icon";
-import { ShieldCheckIcon } from "@/components/ui/shield-check-icon";
-import { ShieldUserIcon } from "@/components/ui/shield-user-icon";
-import { UsersRoundIcon } from "@/components/ui/users-round-icon";
+import { useEffect, useMemo, useState } from "react";
+import {
+    ClockCounterClockwise,
+    FolderOpen,
+    House,
+    List,
+    MagnifyingGlass,
+    Package,
+    Printer,
+    SealCheck,
+    ShieldCheck,
+    SidebarSimple,
+    SignOut,
+    SquaresFour,
+    Tag,
+    Truck,
+    UsersThree,
+    type Icon,
+} from "@phosphor-icons/react";
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { PageTransition } from "@/components/PageTransition";
@@ -29,7 +35,7 @@ import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 type NavItem = {
     labelKey: string;
     href: string;
-    icon: AnimatedNavIcon;
+    icon: Icon;
     permissions?: string[];
 };
 
@@ -38,43 +44,31 @@ type NavGroup = {
     items: NavItem[];
 };
 
-type AnimatedIconHandle = {
-    startAnimation: () => void;
-    stopAnimation: () => void;
-};
-
-type AnimatedNavIconProps = {
-    size?: number;
-    duration?: number;
-    isAnimated?: boolean;
-    className?: string;
-};
-
-type AnimatedNavIcon = ForwardRefExoticComponent<AnimatedNavIconProps & RefAttributes<AnimatedIconHandle>>;
-
 const navGroups: NavGroup[] = [
     {
         labelKey: "nav.operations",
         items: [
-            { labelKey: "nav.dashboard", href: "/", icon: HouseIcon as AnimatedNavIcon, permissions: [permissions.dashboardView] },
-            { labelKey: "nav.products", href: "/products", icon: BoxesIcon as AnimatedNavIcon, permissions: [permissions.productsView] },
-            { labelKey: "nav.templates", href: "/templates", icon: LayoutGridIcon as AnimatedNavIcon, permissions: [permissions.templatesView] },
-            { labelKey: "nav.printIntents", href: "/print-intents", icon: BookOpenCheckIcon as AnimatedNavIcon, permissions: [permissions.printIntentsView] },
-            { labelKey: "nav.approvals", href: "/approvals", icon: ShieldCheckIcon as AnimatedNavIcon, permissions: [permissions.templatesReview, permissions.templatesPublish] },
-            { labelKey: "nav.library", href: "/content-library", icon: FolderOpenIcon as AnimatedNavIcon, permissions: [permissions.assetsView] },
+            { labelKey: "nav.dashboard", href: "/", icon: House, permissions: [permissions.dashboardView] },
+            { labelKey: "nav.printIntents", href: "/print-intents", icon: Printer, permissions: [permissions.printIntentsView] },
+            { labelKey: "nav.products", href: "/products", icon: Package, permissions: [permissions.productsView] },
+            { labelKey: "nav.templates", href: "/templates", icon: SquaresFour, permissions: [permissions.templatesView] },
+            { labelKey: "nav.approvals", href: "/approvals", icon: SealCheck, permissions: [permissions.templatesReview, permissions.templatesPublish] },
+            { labelKey: "nav.library", href: "/content-library", icon: FolderOpen, permissions: [permissions.assetsView] },
         ],
     },
     {
         labelKey: "nav.administration",
         items: [
-            { labelKey: "nav.vendors", href: "/vendors", icon: BlocksIcon as AnimatedNavIcon, permissions: [permissions.vendorsView] },
-            { labelKey: "nav.categories", href: "/categories", icon: BookmarkIcon as AnimatedNavIcon, permissions: [permissions.categoriesView] },
-            { labelKey: "nav.auditLogs", href: "/audit-logs", icon: LayoutListIcon as AnimatedNavIcon, permissions: [permissions.auditView] },
-            { labelKey: "nav.users", href: "/admin/users", icon: UsersRoundIcon as AnimatedNavIcon, permissions: [permissions.usersView] },
-            { labelKey: "nav.roles", href: "/admin/roles", icon: ShieldUserIcon as AnimatedNavIcon, permissions: [permissions.rolesView] },
+            { labelKey: "nav.vendors", href: "/vendors", icon: Truck, permissions: [permissions.vendorsView] },
+            { labelKey: "nav.categories", href: "/categories", icon: Tag, permissions: [permissions.categoriesView] },
+            { labelKey: "nav.auditLogs", href: "/audit-logs", icon: ClockCounterClockwise, permissions: [permissions.auditView] },
+            { labelKey: "nav.users", href: "/admin/users", icon: UsersThree, permissions: [permissions.usersView] },
+            { labelKey: "nav.roles", href: "/admin/roles", icon: ShieldCheck, permissions: [permissions.rolesView] },
         ],
     },
 ];
+
+const collapsedStorageKey = "plms.sidebar.collapsed";
 
 function ShellNavLink({
     active,
@@ -90,27 +84,20 @@ function ShellNavLink({
     collapsed?: boolean;
 }) {
     const Icon = item.icon;
-    const iconRef = useRef<AnimatedIconHandle>(null);
 
     return (
         <Link
             href={item.href}
             aria-current={active ? "page" : undefined}
             title={collapsed ? label : undefined}
-            className={`group relative flex items-center gap-3 rounded-[1.05rem] px-3 py-2.5 transition-all ${collapsed ? "justify-center" : ""} ${active
-                ? "bg-[linear-gradient(90deg,rgba(37,99,235,0.18),rgba(37,99,235,0.07))] text-white shadow-[inset_0_0_0_1px_rgba(96,165,250,0.22)]"
-                : "text-[color:var(--plms-text-subtle)] hover:bg-white/[0.04] hover:text-white"}`}
-            onMouseEnter={() => iconRef.current?.startAnimation()}
-            onMouseLeave={() => iconRef.current?.stopAnimation()}
-            onFocus={() => iconRef.current?.startAnimation()}
-            onBlur={() => iconRef.current?.stopAnimation()}
             onClick={onClick}
+            className={`relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-base transition-colors ${collapsed ? "justify-center" : ""} ${active
+                ? "bg-raised font-medium text-ink"
+                : "text-ink-2 hover:bg-raised hover:text-ink"}`}
         >
-            <span className={`absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full transition-opacity ${active ? "bg-blue-400 opacity-100 shadow-[0_0_12px_rgba(96,165,250,0.6)]" : "bg-white/25 opacity-0 group-hover:opacity-60"}`} />
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center transition-colors ${active ? "text-blue-100" : "text-slate-300 group-hover:text-white"}`}>
-                <Icon ref={iconRef} size={17} duration={0.9} />
-            </span>
-            {!collapsed && <span className="min-w-0 truncate text-[13px] font-bold">{label}</span>}
+            {active ? <span aria-hidden className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" /> : null}
+            <Icon size={18} weight={active ? "fill" : "regular"} className={`shrink-0 ${active ? "text-accent" : "text-ink-3"}`} />
+            {!collapsed && <span className="min-w-0 truncate">{label}</span>}
         </Link>
     );
 }
@@ -131,6 +118,22 @@ function getPageTitleKey(pathname: string) {
     return "pageTitle.fallback";
 }
 
+function initials(value: string) {
+    const parts = value.trim().split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toLocaleUpperCase("tr-TR") || "?";
+}
+
+function ShellSpinner({ label }: { label: string }) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-canvas">
+            <div className="flex items-center gap-3 text-sm text-ink-2">
+                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-line-strong border-t-accent" />
+                {label}
+            </div>
+        </div>
+    );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -146,6 +149,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     const isAuthRoute = pathname.startsWith("/auth/");
     const isEditorRoute = /^\/templates\/[^/]+\/edit$/.test(pathname);
+    // The editor needs the width: the sidebar collapses to icons there.
+    const collapsed = desktopCollapsed || isEditorRoute;
     const userRoles = ((session?.user as any)?.roles || []) as string[];
     const userPermissions = ((session?.user as any)?.permissions || []) as string[];
     const mustChangePassword = Boolean((session?.user as any)?.mustChangePassword);
@@ -161,11 +166,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
 
     useEffect(() => {
-        if (!session) {
-            return;
+        try {
+            setDesktopCollapsed(window.localStorage.getItem(collapsedStorageKey) === "1");
+        } catch {
+            // Storage can be unavailable (private mode); the sidebar simply starts expanded.
         }
+    }, []);
 
-        if (mustChangePassword && pathname !== "/auth/force-change-password") {
+    const toggleCollapsed = () => {
+        setDesktopCollapsed((current) => {
+            const next = !current;
+            try {
+                window.localStorage.setItem(collapsedStorageKey, next ? "1" : "0");
+            } catch {
+                // Not critical.
+            }
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        if (session && mustChangePassword && pathname !== "/auth/force-change-password") {
             router.replace("/auth/force-change-password");
         }
     }, [mustChangePassword, pathname, router, session]);
@@ -200,7 +221,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, [session]);
+        // Refresh when the user moves between pages, so the pulse does not go stale.
+    }, [session, pathname]);
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -228,197 +250,169 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     if (status === "loading") {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-[color:var(--plms-bg)] text-white">
-                <div className="text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
-                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                        {t("common.loading")}
-                    </p>
-                </div>
-            </div>
-        );
+        return <ShellSpinner label={t("common.loading")} />;
     }
 
     if (!session && isProtectedAppPath(pathname)) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-[color:var(--plms-bg)] text-white">
-                <div className="text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" />
-                    <p className="mt-4 text-sm font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
-                        {t("auth.login.initializing")}
-                    </p>
-                </div>
-            </div>
-        );
+        return <ShellSpinner label={t("auth.login.initializing")} />;
     }
 
     if (!session) {
         return <>{children}</>;
     }
 
-    const sidebarWidthClass = desktopCollapsed ? "w-[88px]" : "w-64 xl:w-72";
-    const contentPaddingClass = desktopCollapsed ? "md:pl-[88px]" : "md:pl-64 xl:pl-72";
-
-    const shellRootClassName = isEditorRoute
-        ? "h-screen overflow-hidden bg-[color:var(--plms-bg)] text-white"
-        : "min-h-screen bg-[color:var(--plms-bg)] text-white";
-    const shellFrameClassName = isEditorRoute ? "flex h-screen" : "flex min-h-screen";
-    const contentColumnClassName = isEditorRoute
-        ? `flex h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out md:min-h-0 ${contentPaddingClass}`
-        : `flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out md:min-h-0 ${contentPaddingClass}`;
+    const userName = session.user?.name || session.user?.email || "";
+    const sidebarWidthClass = collapsed ? "md:w-16" : "md:w-[248px]";
+    const contentPaddingClass = collapsed ? "md:pl-16" : "md:pl-[248px]";
 
     return (
-        <div className={shellRootClassName}>
+        <div className={isEditorRoute ? "h-screen overflow-hidden bg-canvas text-ink" : "min-h-screen bg-canvas text-ink"}>
             <GlobalSearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
-            <div className={shellFrameClassName}>
-                <div className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm transition-opacity md:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMobileOpen(false)} />
-                <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-[color:var(--plms-border)] bg-[linear-gradient(180deg,#0e192b_0%,#0a1220_100%)] px-4 py-4 transition-all duration-300 ease-in-out ${sidebarWidthClass} md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
-                    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-                        <div className={`rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[radial-gradient(circle_at_top_left,rgba(36,99,235,0.2),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-2.5 shadow-[0_18px_60px_rgba(2,6,23,0.35)] shrink-0 transition-all duration-300 ${desktopCollapsed ? "px-1 text-center" : ""}`}>
-                            <Link
-                                href="/"
-                                aria-label={t("shell.title")}
-                                className={`block overflow-hidden rounded-[1.1rem] border border-white/10 bg-slate-950/20 transition-colors hover:bg-slate-950/28 ${desktopCollapsed ? "p-2" : "px-2.5 py-2"}`}
-                            >
-                                <div className={`relative w-full ${desktopCollapsed ? "h-8" : "h-[52px]"}`}>
-                                    {desktopCollapsed ? (
-                                        <div className="flex h-full items-center justify-center font-black text-white text-lg tracking-tighter">P</div>
-                                    ) : (
-                                        <Image
-                                            src="/assets/palmiye_logo_white.png"
-                                            alt={t("shell.title")}
-                                            fill
-                                            priority
-                                            sizes="(max-width: 1279px) 220px, 252px"
-                                            className="object-contain object-center"
-                                        />
-                                    )}
-                                </div>
-                            </Link>
-                        </div>
 
-                        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
-                            <div className="space-y-5">
-                                {visibleGroups.map((group) => (
-                                    <section key={group.labelKey} className={desktopCollapsed ? "space-y-1.5 pt-2" : "space-y-1.5"}>
-                                        {!desktopCollapsed && <div className="px-2 text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t(group.labelKey)}</div>}
-                                        {desktopCollapsed && <div className="mx-auto w-6 border-b border-white/[0.06] mb-3 mt-1" />}
-                                        <div className="space-y-1">
-                                            {group.items.map((item) => {
-                                                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                                                return (
-                                                    <ShellNavLink
-                                                        key={item.href}
-                                                        item={item}
-                                                        active={active}
-                                                        label={t(item.labelKey)}
-                                                        collapsed={desktopCollapsed}
-                                                        onClick={() => setMobileOpen(false)}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    </section>
-                                ))}
-                            </div>
-                        </div>
+            <div
+                className={`fixed inset-0 z-40 bg-ink/30 transition-opacity md:hidden ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
+                onClick={() => setMobileOpen(false)}
+            />
 
-                        <div className={`mt-auto shrink-0 rounded-[1.55rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(19,35,59,0.9),rgba(12,22,37,0.94))] shadow-[0_18px_40px_rgba(2,6,23,0.35)] transition-all duration-300 overflow-hidden ${desktopCollapsed ? "px-2 py-3" : "p-3.5"}`}>
-                            {!desktopCollapsed ? (
-                                <>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-[color:var(--plms-text-subtle)]">{t("shell.session")}</div>
-                                    <div className="mt-2.5 text-[15px] font-black tracking-[-0.04em] text-white truncate">{session.user?.name || session.user?.email}</div>
-                                    <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-300 truncate">
-                                        {userRoles.length > 0 ? userRoles.join(" / ") : t("common.unknown")}
-                                    </div>
-                                    {mustChangePassword ? <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">{t("shell.passwordRotationRequired")}</div> : null}
-                                    <button
-                                        onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                                        className="mt-3.5 inline-flex w-full items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-muted)] transition-colors hover:bg-white/[0.06] hover:text-white"
-                                    >
-                                        {t("shell.signOut")}
-                                    </button>
-                                </>
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col border-r border-line bg-surface transition-transform md:translate-x-0 ${sidebarWidthClass} ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+            >
+                <div className={`flex h-14 shrink-0 items-center border-b border-line ${collapsed ? "justify-center px-2" : "px-4"}`}>
+                    <Link href="/" aria-label="Palmiye Etiket" className="flex min-w-0 items-center gap-2" onClick={() => setMobileOpen(false)}>
+                        {collapsed ? (
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-medium text-white">P</span>
+                        ) : (
+                            <>
+                                <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={98} height={32} priority className="h-6 w-auto" />
+                                <span className="text-sm text-ink-3">Etiket</span>
+                            </>
+                        )}
+                    </Link>
+                </div>
+
+                <nav className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Palmiye Etiket">
+                    {visibleGroups.map((group, index) => (
+                        <section key={group.labelKey} className={index === 0 ? "" : "mt-6"}>
+                            {collapsed ? (
+                                index === 0 ? null : <div className="mx-auto mb-2 w-6 border-t border-line" />
                             ) : (
-                                <div className="flex flex-col items-center gap-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-sm font-black text-blue-300 border border-blue-500/20">
-                                        {(session.user?.name || session.user?.email || "U").charAt(0).toUpperCase()}
-                                    </div>
-                                    <button
-                                        title={t("shell.signOut")}
-                                        onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-muted)] hover:bg-white/[0.06] hover:text-white transition-colors"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H104a8,8,0,0,0,0,16H204.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"></path></svg>
-                                    </button>
-                                </div>
+                                <div className="mb-1 px-2.5 text-xs text-ink-3">{t(group.labelKey)}</div>
                             )}
-                        </div>
-                    </div>
-                </aside>
+                            <div className="flex flex-col gap-0.5">
+                                {group.items.map((item) => {
+                                    const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                                    return (
+                                        <ShellNavLink
+                                            key={item.href}
+                                            item={item}
+                                            active={active}
+                                            label={t(item.labelKey)}
+                                            collapsed={collapsed}
+                                            onClick={() => setMobileOpen(false)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    ))}
+                </nav>
 
-                <div className={contentColumnClassName}>
-                    <header className="sticky top-0 z-30 border-b border-[color:var(--plms-border)] bg-[color:var(--plms-bg)]/88 px-4 py-4 backdrop-blur md:px-8">
-                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                            <div className="flex items-center gap-3">
-                                <button className="rounded-2xl border border-[color:var(--plms-border)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)] md:hidden" onClick={() => setMobileOpen(true)}>
-                                    {t("shell.menu")}
-                                </button>
-                                <button
-                                    onClick={() => setDesktopCollapsed(c => !c)}
-                                    className="hidden md:flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.02] text-[color:var(--plms-text-subtle)] hover:bg-white/[0.06] hover:text-white transition-colors shrink-0"
-                                >
-                                    <List size={18} weight="bold" />
-                                </button>
-                                <div className="min-w-0">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.suite")}</div>
-                                    <div className="text-xl font-black tracking-[-0.04em] text-white animate-plms-slide-title" key={pathname}>{t(getPageTitleKey(pathname))}</div>
-                                </div>
+                <div className={`shrink-0 border-t border-line ${collapsed ? "px-2 py-3" : "p-3"}`}>
+                    {mustChangePassword && !collapsed ? (
+                        <p className="mb-2 rounded-lg bg-warn-soft px-2.5 py-2 text-sm text-warn">{t("shell.passwordRotationRequired")}</p>
+                    ) : null}
+                    <div className={`flex items-center gap-2.5 ${collapsed ? "flex-col" : ""}`}>
+                        <span
+                            aria-hidden
+                            title={collapsed ? userName : undefined}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-medium text-ink-2"
+                        >
+                            {initials(userName)}
+                        </span>
+                        {!collapsed ? (
+                            <div className="min-w-0 flex-1">
+                                <div className="truncate text-base text-ink">{userName}</div>
+                                <div className="truncate text-xs text-ink-3">{userRoles.length > 0 ? userRoles.join(", ") : t("common.unknown")}</div>
                             </div>
-                            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchOpen(true)}
-                                    className="flex min-w-[300px] items-center gap-3 rounded-[1.6rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(16,27,45,0.96),rgba(11,18,32,0.96))] px-4 py-3 text-left shadow-[0_16px_40px_rgba(2,6,23,0.25)] transition-colors hover:bg-white/[0.04]"
-                                >
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--plms-border)] bg-white/[0.03] text-blue-200">
-                                        <MagnifyingGlass size={18} weight="bold" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{t("shell.searchTitle")}</div>
-                                        <div className="truncate text-sm font-medium text-white/80">{t("shell.searchDescription")}</div>
-                                    </div>
-                                    <div className="rounded-full border border-[color:var(--plms-border)] px-2 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">Ctrl K</div>
-                                </button>
-                                <div className="inline-flex items-center rounded-[1.2rem] border border-[color:var(--plms-border)] bg-[linear-gradient(180deg,rgba(16,27,45,0.98),rgba(10,20,35,0.98))] p-1 shadow-[0_18px_50px_rgba(3,8,20,0.18)]">
-                                    {(Object.keys(localeLabels) as Locale[]).map((option) => {
-                                        const active = locale === option;
-                                        return (
-                                            <button
-                                                key={option}
-                                                type="button"
-                                                className={`rounded-[0.95rem] px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-colors ${active ? "bg-blue-500 text-white" : "text-[color:var(--plms-text-subtle)] hover:text-white"}`}
-                                                onClick={() => setLocale(option)}
-                                            >
-                                                {localeLabels[option]}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <OperationalPulse
-                                    summary={summary}
-                                    activity={activity}
-                                    expanded={pulseExpanded}
-                                    onToggle={() => setPulseExpanded((current) => !current)}
-                                />
-                            </div>
+                        ) : null}
+                        <button
+                            type="button"
+                            onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                            className="plms-button-ghost h-8 w-8 shrink-0 px-0"
+                            title={t("shell.signOut")}
+                            aria-label={t("shell.signOut")}
+                        >
+                            <SignOut size={16} />
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <div className={`flex min-w-0 flex-col ${isEditorRoute ? "h-screen" : "min-h-screen"} ${contentPaddingClass}`}>
+                {isEditorRoute ? null : (
+                    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line bg-canvas/95 px-4 md:px-6">
+                        <button
+                            type="button"
+                            className="plms-button-ghost h-8 w-8 px-0 md:hidden"
+                            onClick={() => setMobileOpen(true)}
+                            aria-label={t("shell.menu")}
+                        >
+                            <List size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={toggleCollapsed}
+                            className="plms-button-ghost hidden h-8 w-8 px-0 md:inline-flex"
+                            aria-label={desktopCollapsed ? t("shell.expand") : t("shell.collapse")}
+                            title={desktopCollapsed ? t("shell.expand") : t("shell.collapse")}
+                        >
+                            <SidebarSimple size={18} />
+                        </button>
+                        <div className="min-w-0 flex-1 truncate text-base font-medium text-ink">{t(getPageTitleKey(pathname))}</div>
+
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen(true)}
+                            className="flex h-8 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-sm text-ink-3 transition-colors hover:border-line-strong hover:text-ink-2 sm:w-56"
+                            aria-label={t("shell.searchTitle")}
+                        >
+                            <MagnifyingGlass size={16} />
+                            <span className="hidden flex-1 text-left sm:inline">{t("shell.searchTitle")}</span>
+                            <kbd className="plms-kbd hidden sm:inline-flex">Ctrl K</kbd>
+                        </button>
+
+                        <OperationalPulse
+                            summary={summary}
+                            activity={activity}
+                            expanded={pulseExpanded}
+                            onToggle={() => setPulseExpanded((current) => !current)}
+                        />
+
+                        <div className="hidden items-center rounded-lg border border-line bg-surface p-0.5 sm:inline-flex" role="group" aria-label="Dil / Language">
+                            {(Object.keys(localeLabels) as Locale[]).map((option) => {
+                                const active = locale === option;
+                                return (
+                                    <button
+                                        key={option}
+                                        type="button"
+                                        aria-pressed={active}
+                                        className={`h-7 rounded-md px-2 text-xs font-medium transition-colors ${active ? "bg-raised text-ink" : "text-ink-3 hover:text-ink"}`}
+                                        onClick={() => setLocale(option)}
+                                    >
+                                        {localeLabels[option]}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </header>
-                    <main className={`min-h-0 min-w-0 flex-1 ${isEditorRoute ? "overflow-hidden overscroll-none p-0" : "overflow-y-auto px-4 py-6 md:px-8 md:py-8"}`}>
-                        {isEditorRoute ? children : <PageTransition>{children}</PageTransition>}
-                    </main>
-                </div>
+                )}
+                <main className={`min-h-0 min-w-0 flex-1 ${isEditorRoute ? "overflow-hidden overscroll-none" : "px-4 py-6 md:px-8"}`}>
+                    {isEditorRoute ? children : (
+                        <div className="mx-auto w-full max-w-[1440px]">
+                            <PageTransition>{children}</PageTransition>
+                        </div>
+                    )}
+                </main>
             </div>
         </div>
     );

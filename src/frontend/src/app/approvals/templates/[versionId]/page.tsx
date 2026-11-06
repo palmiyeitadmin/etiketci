@@ -29,14 +29,14 @@ export default function ApprovalReviewDetailPage() {
     const text = locale === "tr"
         ? {
             eyebrow: "Onay incelemesi",
-            title: "Sablon Onay Detayi",
-            description: "Incelemedeki sablon surumu icin odakli inceleme giris noktasi.",
-            open: "Sablon Incelemesini Ac",
-            notFound: "Onay kaydi bulunamadi",
-            notFoundDescription: "Hedef surum artik onay kuyrugunda degil.",
+            title: "Şablon Onay Detayı",
+            description: "İncelemedeki şablon sürümü için odaklı inceleme giriş noktası.",
+            open: "Şablon İncelemesini Aç",
+            notFound: "Onay kaydı bulunamadı",
+            notFoundDescription: "Hedef sürüm artık onay kuyruğunda değil.",
             requestedByOn: "Talep eden {user} - {date}",
-            changeNotes: "Degisiklik Notlari",
-            noNotes: "Inceleme notu girilmedi.",
+            changeNotes: "Değişiklik Notları",
+            noNotes: "İnceleme notu girilmedi.",
         }
         : {
             eyebrow: "Approval review",
@@ -75,24 +75,24 @@ export default function ApprovalReviewDetailPage() {
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : !item ? (
                     <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
-                    <div className="space-y-6 rounded-[2rem] border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-8">
+                    <div className="space-y-6 rounded-xl border border-line bg-surface p-8">
                         <div className="flex flex-wrap items-center gap-3">
-                            <span className="rounded-xl border border-blue-400/20 bg-blue-500/10 px-2 py-1 font-mono text-xs font-black text-blue-300">{item.templateCode}</span>
+                            <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{item.templateCode}</span>
                             <StatusBadge label={`v${item.versionNumber}`} tone="warning" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black tracking-[-0.05em] text-white">{item.templateName}</h2>
-                            <p className="mt-2 text-sm font-medium text-[color:var(--plms-text-subtle)]">
+                            <h2 className="text-3xl font-medium text-ink">{item.templateName}</h2>
+                            <p className="mt-2 text-sm font-medium text-ink-3">
                                 {text.requestedByOn.replace("{user}", item.requestedBy).replace("{date}", formatDateTime(item.requestedAt))}
                             </p>
                         </div>
-                        <div className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-5">
-                            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">{text.changeNotes}</div>
-                            <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">{item.reviewCommentSummary || item.changeNotes || text.noNotes}</p>
+                        <div className="rounded-lg border border-line bg-raised p-5">
+                            <div className="text-xs font-medium text-ink-3">{text.changeNotes}</div>
+                            <p className="mt-3 text-sm font-medium text-ink-2">{item.reviewCommentSummary || item.changeNotes || text.noNotes}</p>
                         </div>
                     </div>
                 )}

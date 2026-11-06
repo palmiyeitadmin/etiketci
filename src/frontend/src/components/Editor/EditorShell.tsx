@@ -253,7 +253,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
     : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem]";
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-[#08111f] text-white">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-canvas text-ink">
       <AssetLibraryDrawer open={libraryOpen} onClose={() => setLibraryOpen(false)} onInsertImage={insertImageFromLibrary} />
       <EditorTopBar
         name={model.name}
@@ -281,18 +281,18 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
       <div className={layoutClassName}>
         <EditorToolRail activeTool={ui.activeTool} onSelectTool={setTool} onOpenLibrary={() => setLibraryOpen(true)} />
 
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#0b1220]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--plms-border)] px-4 py-3 xl:px-6">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 xl:px-6">
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">
+              <div className="text-xs font-medium text-ink-3">
                 {ui.isSpacePanning || ui.activeTool === "pan"
-                  ? (locale === "tr" ? "Kaydirma modu" : "Pan mode")
+                  ? (locale === "tr" ? "Kaydırma modu" : "Pan mode")
                   : ui.activeTool === "select"
-                    ? (locale === "tr" ? "Secim modu" : "Select mode")
-                    : (locale === "tr" ? `Tuvale ${ui.activeTool} yerlestirmek icin tiklayin` : `Click canvas to place ${ui.activeTool}`)}
+                    ? (locale === "tr" ? "Seçim modu" : "Select mode")
+                    : (locale === "tr" ? `Tuvale ${ui.activeTool} yerleştirmek için tıklayın` : `Click canvas to place ${ui.activeTool}`)}
               </div>
               {selectedLabel ? (
-                <div className="mt-2 max-w-full truncate rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)]">
+                <div className="mt-2 max-w-full truncate rounded-lg border border-line bg-surface px-4 py-2 text-xs font-medium text-ink-3">
                   {selectedLabel.name || selectedLabel.type} | {selectedLabel.xMm}mm / {selectedLabel.yMm}mm
                 </div>
               ) : null}
@@ -300,7 +300,7 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${!panelsCollapsed && rightPanelTab === "layers" ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${!panelsCollapsed && rightPanelTab === "layers" ? "border-accent/30 bg-accent/10 text-ink" : "border-line bg-surface text-ink-3 hover:bg-raised hover:text-ink"}`}
                 onClick={() => {
                   setPanelsCollapsed(false);
                   setRightPanelTab("layers");
@@ -310,20 +310,20 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
               </button>
               <button
                 type="button"
-                className={`rounded-2xl border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${!panelsCollapsed && rightPanelTab === "properties" ? "border-blue-400/30 bg-blue-500/10 text-white" : "border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] text-[color:var(--plms-text-subtle)] hover:bg-white/5 hover:text-white"}`}
+                className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${!panelsCollapsed && rightPanelTab === "properties" ? "border-accent/30 bg-accent/10 text-ink" : "border-line bg-surface text-ink-3 hover:bg-raised hover:text-ink"}`}
                 onClick={() => {
                   setPanelsCollapsed(false);
                   setRightPanelTab("properties");
                 }}
               >
-                {locale === "tr" ? "Ozellikler" : "Properties"}
+                {locale === "tr" ? "Özellikler" : "Properties"}
               </button>
               <button
                 type="button"
-                className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--plms-text-subtle)] transition-colors hover:bg-white/5 hover:text-white"
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink-3 transition-colors hover:bg-raised hover:text-ink"
                 onClick={() => setPanelsCollapsed((current) => !current)}
               >
-                {panelsCollapsed ? (locale === "tr" ? "Panelleri Goster" : "Show Panels") : (locale === "tr" ? "Panelleri Gizle" : "Hide Panels")}
+                {panelsCollapsed ? (locale === "tr" ? "Panelleri Göster" : "Show Panels") : (locale === "tr" ? "Panelleri Gizle" : "Hide Panels")}
               </button>
             </div>
           </div>

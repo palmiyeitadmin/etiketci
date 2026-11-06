@@ -65,36 +65,36 @@ export default function TemplateComparePage() {
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
                 ) : !comparison ? (
                     <EmptyState title="Comparison unavailable" description="Select two template versions to generate a structural diff." />
                 ) : (
                     <div className="space-y-6">
                         <div className="grid gap-5 md:grid-cols-2">
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Left Version</div>
-                                <div className="mt-3 text-2xl font-black text-white">v{comparison.leftVersionNumber}</div>
+                            <div className="rounded-xl border border-line bg-surface p-5">
+                                <div className="text-xs font-medium text-ink-3">Left Version</div>
+                                <div className="mt-3 text-2xl font-medium text-ink">v{comparison.leftVersionNumber}</div>
                             </div>
-                            <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-5">
-                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--plms-text-subtle)]">Right Version</div>
-                                <div className="mt-3 text-2xl font-black text-white">v{comparison.rightVersionNumber}</div>
+                            <div className="rounded-xl border border-line bg-surface p-5">
+                                <div className="text-xs font-medium text-ink-3">Right Version</div>
+                                <div className="mt-3 text-2xl font-medium text-ink">v{comparison.rightVersionNumber}</div>
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel)] p-6">
-                            <div className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-white">Element Changes</div>
+                        <div className="rounded-xl border border-line bg-surface p-6">
+                            <div className="mb-4 text-sm font-medium text-ink">Element Changes</div>
                             <div className="space-y-3">
                                 {changes.length === 0 ? (
                                     <EmptyState title="No changes detected" description="These versions are structurally identical at the element level." />
                                 ) : (
                                     changes.map((change) => (
-                                        <div key={`${change.changeType}-${change.elementId}`} className="rounded-2xl border border-[color:var(--plms-border)] bg-[color:var(--plms-panel-2)] p-4">
+                                        <div key={`${change.changeType}-${change.elementId}`} className="rounded-lg border border-line bg-raised p-4">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <StatusBadge label={change.changeType} tone={change.changeType === "Added" ? "success" : change.changeType === "Removed" ? "danger" : "warning"} />
-                                                <span className="text-sm font-bold text-white">{change.elementType}</span>
-                                                <span className="font-mono text-xs text-[color:var(--plms-text-subtle)]">{change.elementId}</span>
+                                                <span className="text-sm font-medium text-ink">{change.elementType}</span>
+                                                <span className="font-mono text-xs text-ink-3">{change.elementId}</span>
                                             </div>
-                                            <p className="mt-3 text-sm font-medium text-[color:var(--plms-text-muted)]">{change.summary}</p>
+                                            <p className="mt-3 text-sm font-medium text-ink-2">{change.summary}</p>
                                         </div>
                                     ))
                                 )}
