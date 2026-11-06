@@ -10,8 +10,6 @@ import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
-import { openPdfDocument } from "@/lib/pdf-print";
-import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion, resolveTemplateCloneSourceVersion, resolveTemplatePrintVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateStatus, TemplateVersion } from "@/types/template";
@@ -75,7 +73,6 @@ export default function TemplatesPage() {
             archive: "Arsivle",
             delete: "Sil",
             activeVersionRequired: "Aktif surum gerekli",
-            printPopupBlocked: "PDF sekmesi acilamadi. Tarayicinizda popup engelini kaldirin.",
             archiveTitle: "Sablonu arsivle",
             archiveDescription: (name: string) => `${name} ana listeden cikacak, gecmis surumleri korunacak ve arsiv ekranindan geri alinabilecek.`,
             archiveConfirm: "Sablonu Arsivle",
@@ -119,7 +116,6 @@ export default function TemplatesPage() {
             archive: "Archive",
             delete: "Delete",
             activeVersionRequired: "Active version required",
-            printPopupBlocked: "The PDF tab could not be opened. Allow popups in your browser and try again.",
             archiveTitle: "Archive template",
             archiveDescription: (name: string) => `${name} will leave the active list, keep its history and remain restorable from the archive view.`,
             archiveConfirm: "Archive Template",
@@ -352,10 +348,8 @@ export default function TemplatesPage() {
             return;
         }
 
-        const opened = openPdfDocument(buildTemplatePreviewFileUrl(template.id, version.id));
-        if (!opened) {
-            setMessage(text.printPopupBlocked);
-        }
+        // Printing goes through the preview page: pick a product, check readiness, open a print request.
+        router.push(`/templates/${template.id}/preview?versionId=${version.id}`);
     }
 
     function handleClone(template: LabelTemplate, preferredVersion?: TemplateVersion) {

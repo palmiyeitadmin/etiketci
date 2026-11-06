@@ -6,7 +6,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { apiFetch } from "@/lib/api-client";
 import { normalizeLabelTemplate } from "@/lib/template-status";
-import { resolveEditorDraftVersion } from "@/lib/template-versioning";
+import { findEditorDraftVersion, findTemplateVersion, resolveEditorDraftVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
 import { EditorWorkspace } from "@/components/Editor/EditorWorkspace";
 import { CanonicalLabelModel } from "@/types/canvas";
@@ -26,6 +26,8 @@ export default function TemplateEditorPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const [needsDraft, setNeedsDraft] = useState(false);
+    const [creatingDraft, setCreatingDraft] = useState(false);
     const initialModel = useMemo(() => {
         if (!template || !editableVersion) {
             return null;
@@ -49,6 +51,10 @@ export default function TemplateEditorPage() {
             notFound: "Sablon bulunamadi.",
             changeNotes: "Editor uzerinden kaydedildi",
             networkError: "Kayit sirasinda ag hatasi olustu.",
+            draftTitle: "Bu surum duzenlenemez",
+            draftBody: "Yayinlanmis ve onaylanmis surumler degismez. Degisiklik yapmak icin bu surumden yeni bir taslak olusturun.",
+            draftCreate: "Taslak olustur ve duzenle",
+            draftCreating: "Taslak olusturuluyor",
         }
         : {
             loadError: "Template could not be loaded.",
@@ -61,6 +67,10 @@ export default function TemplateEditorPage() {
             notFound: "Template not found.",
             changeNotes: "Saved from editor",
             networkError: "Network error while saving.",
+            draftTitle: "This version cannot be edited",
+            draftBody: "Published and approved versions do not change. Create a new draft from this version to make changes.",
+            draftCreate: "Create draft and edit",
+            draftCreating: "Creating draft",
         };
 
     useEffect(() => {
@@ -71,18 +81,20 @@ export default function TemplateEditorPage() {
                 const res = await apiFetch<LabelTemplate>(`/api/Templates/${id}`);
                 if (res.success && res.data) {
                     const templateData = normalizeLabelTemplate(res.data);
-                    const version = await resolveEditorDraftVersion(templateData, requestedVersionId);
+                    // Opening the editor never creates a draft by itself; the user confirms it below.
+                    const version = findEditorDraftVersion(templateData, requestedVersionId);
 
                     if (cancelled) {
                         return;
                     }
 
                     setTemplate(templateData);
-                    setEditableVersion(version);
+                    setEditableVersion(version ?? null);
+                    setNeedsDraft(!version);
                     setSaveMessage(null);
                     setError(null);
 
-                    if (requestedVersionId !== version.id) {
+                    if (version && requestedVersionId !== version.id) {
                         router.replace(`/templates/${id}/edit?versionId=${version.id}`);
                     }
                 } else {
@@ -106,6 +118,22 @@ export default function TemplateEditorPage() {
             cancelled = true;
         };
     }, [id, requestedVersionId, router]);
+
+    const handleCreateDraft = async () => {
+        if (!template) {
+            return;
+        }
+
+        setCreatingDraft(true);
+        try {
+            const draft = await resolveEditorDraftVersion(template, requestedVersionId);
+            router.replace(`/templates/${id}/edit?versionId=${draft.id}`);
+        } catch (err) {
+            setError((err as Error).message || text.loadFailed);
+        } finally {
+            setCreatingDraft(false);
+        }
+    };
 
     const handleSave = async (model: CanonicalLabelModel): Promise<EditorSaveResult> => {
         if (!editableVersion) {
@@ -189,6 +217,26 @@ export default function TemplateEditorPage() {
             <Link href={`/templates/${id}`} className="text-blue-600 underline">{text.backToDetail}</Link>
         </div>
     );
+    if (template && needsDraft) {
+        const sourceVersion = findTemplateVersion(template, requestedVersionId) ?? template.currentActiveVersion ?? undefined;
+        return (
+            <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                <div className="mx-auto mt-16 flex max-w-lg flex-col gap-4 rounded-xl border border-line bg-surface p-6">
+                    <h1 className="text-lg font-medium text-ink">{text.draftTitle}</h1>
+                    <p className="text-sm text-ink-2">
+                        {template.name}{sourceVersion ? ` · v${sourceVersion.versionNumber}` : ""}
+                    </p>
+                    <p className="text-sm text-ink-2">{text.draftBody}</p>
+                    <div className="flex flex-wrap gap-2">
+                        <button type="button" className="plms-button-primary" onClick={handleCreateDraft} disabled={creatingDraft}>
+                            {creatingDraft ? text.draftCreating : text.draftCreate}
+                        </button>
+                        <Link href={`/templates/${id}`} className="plms-button-secondary">{text.backToDetail}</Link>
+                    </div>
+                </div>
+            </RoleGuard>
+        );
+    }
     if (!template || !editableVersion || !initialModel) return <div className="p-8">{text.notFound}</div>;
 
     return (

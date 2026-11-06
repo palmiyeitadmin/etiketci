@@ -26,6 +26,7 @@ yarn-error.log*
 logs/
 *.log
 backend_debug_log*.txt
+backend_log*.txt
 backend_hardening_log.txt
 build_error.txt
 test_build_error*.txt

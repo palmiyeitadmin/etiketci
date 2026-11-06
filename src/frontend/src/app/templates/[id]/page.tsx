@@ -10,8 +10,6 @@ import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
-import { openPdfDocument } from "@/lib/pdf-print";
-import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
@@ -213,10 +211,8 @@ export default function TemplateDetailPage() {
       return;
     }
 
-    const opened = openPdfDocument(buildTemplatePreviewFileUrl(template.id, version.id));
-    if (!opened) {
-      setMessage(t("templates.detailPage.printPopupBlocked"));
-    }
+    // Printing goes through the preview page: pick a product, check readiness, open a print request.
+    router.push(`/templates/${template.id}/preview?versionId=${version.id}`);
   }
 
   async function handleToggleFavorite() {

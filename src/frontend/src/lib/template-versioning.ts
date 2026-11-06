@@ -95,6 +95,27 @@ export async function ensureEditableVersion(template: LabelTemplate, preferredVe
   };
 }
 
+/**
+ * Finds a draft the editor can open without creating anything on the server.
+ * Returns undefined when the user first has to confirm creating a new draft.
+ */
+export function findEditorDraftVersion(template: LabelTemplate, requestedVersionId?: string | null): TemplateVersion | undefined {
+  if (!requestedVersionId) {
+    return getLatestDraftVersion(template);
+  }
+
+  const requestedVersion = findTemplateVersion(template, requestedVersionId);
+  if (!requestedVersion) {
+    throw new Error("Requested template version could not be found.");
+  }
+
+  if (requestedVersion.status === "Draft") {
+    return requestedVersion;
+  }
+
+  return getLatestDerivedDraft(template, requestedVersion.id) ?? getLatestDraftVersion(template);
+}
+
 export async function resolveEditorDraftVersion(template: LabelTemplate, requestedVersionId?: string | null): Promise<TemplateVersion> {
   if (!requestedVersionId) {
     return ensureEditableVersion(template);

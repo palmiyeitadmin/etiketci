@@ -245,17 +245,17 @@ export function OperationalPulse({
                     label={t("nav.templates")}
                   />
                   <ShortcutLink
-                    href="/admin/categories"
+                    href="/categories"
                     icon={Package}
                     label={text.categories}
                   />
                   <ShortcutLink
-                    href="/admin/audit-logs"
+                    href="/audit-logs"
                     icon={ClockCounterClockwise}
                     label={text.auditLogs}
                   />
                   <ShortcutLink
-                    href="/library"
+                    href="/content-library"
                     icon={Images}
                     label={text.library}
                   />
