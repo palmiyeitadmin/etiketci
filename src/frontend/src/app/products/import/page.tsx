@@ -130,7 +130,11 @@ export default function ProductImportPage() {
                         </label>
                         <div className="space-y-1.5">
                             <div className="text-sm text-ink-3">{text.headers}</div>
-                            <code className="block break-all rounded-md bg-raised px-2.5 py-1.5 font-mono text-xs text-ink-2">Sku,Name,Description,CategoryCode,VendorCode</code>
+                            <ul className="flex flex-wrap gap-1.5">
+                                {["Sku", "Name", "Description", "CategoryCode", "VendorCode"].map((column) => (
+                                    <li key={column} className="rounded-md bg-raised px-1.5 py-0.5 font-mono text-xs text-ink-2">{column}</li>
+                                ))}
+                            </ul>
                         </div>
                         <button className="plms-button-primary w-full" onClick={handleUpload} disabled={!file || loading}>
                             {loading ? text.processing : text.initialize}

@@ -149,7 +149,7 @@ export function GlobalSearchPalette({
             onChange={(event) => setQuery(event.target.value)}
             aria-label={text.label}
             aria-controls="global-search-results"
-            className="h-12 w-full bg-transparent text-md text-ink outline-none placeholder:text-ink-3"
+            className="h-12 w-full bg-transparent text-md text-ink outline-none placeholder:text-ink-3 focus-visible:outline-none"
             placeholder={text.placeholder}
           />
           {loading ? <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-line border-t-accent" /> : null}

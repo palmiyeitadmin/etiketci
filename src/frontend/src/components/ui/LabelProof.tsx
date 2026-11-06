@@ -34,7 +34,7 @@ export function LabelProof({
                 ))}
                 <div className="absolute inset-0 overflow-hidden rounded-[3%] bg-white shadow-pop">{children}</div>
             </div>
-            <figcaption className="tabular flex gap-4 font-mono text-xs text-ink-3">
+            <figcaption className="tabular flex flex-wrap justify-center gap-x-4 gap-y-1 whitespace-nowrap font-mono text-xs text-ink-3">
                 <span>{widthMm} × {heightMm} mm</span>
                 {caption ? <span>{caption}</span> : null}
             </figcaption>

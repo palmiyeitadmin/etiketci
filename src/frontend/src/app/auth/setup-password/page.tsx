@@ -162,7 +162,7 @@ function SetupPasswordContent() {
                     />
                 </div>
 
-                <button type="submit" disabled={loading || !!error} className="plms-button-primary mt-2 h-10 w-full">
+                <button type="submit" disabled={loading || !email || !token} className="plms-button-primary mt-2 h-10 w-full">
                     {loading ? text.activating : text.enableAccount}
                 </button>
             </form>

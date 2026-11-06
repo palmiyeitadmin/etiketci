@@ -327,7 +327,7 @@ export default function NewTemplatePage() {
                                 <div className="mt-4 flex justify-center rounded-lg border border-line bg-canvas px-8 pb-5 pt-8">
                                     {previewValid ? (
                                         <div style={{ width: previewBoxWidth }}>
-                                            <LabelProof widthMm={previewWidthMm} heightMm={previewHeightMm} caption={codePreview || undefined}>
+                                            <LabelProof widthMm={previewWidthMm} heightMm={previewHeightMm}>
                                                 <div className="flex h-full w-full flex-col justify-between p-3">
                                                     <span className="truncate text-sm text-ink">{form.name || text.blankLabel}</span>
                                                     <span className="truncate font-mono text-xs text-ink-3">{codePreview}</span>

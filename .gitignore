@@ -46,3 +46,6 @@ stitch/
 *.sql
 agent.md
 git_status_full.txt
+
+# TypeScript incremental build info
+*.tsbuildinfo

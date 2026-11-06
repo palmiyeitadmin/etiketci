@@ -49,7 +49,7 @@ export default function ProductsPage() {
             <div className="space-y-6">
                 <PageHeader
                     title={t("products.title")}
-                    description={t("products.description")}
+                    description={locale === "tr" ? "Ürünler, kategorileri ve tedarikçileri" : "Products with their categories and vendors"}
                     actions={
                         <>
                             <Link href="/products/import" className="plms-button-secondary">
@@ -89,7 +89,7 @@ export default function ProductsPage() {
                         title={t("products.emptyTitle")}
                         description={t("products.emptyDescription")}
                         action={
-                            <Link href="/products/import" className="plms-button-primary">
+                            <Link href="/products/import" className="plms-button-secondary">
                                 {csvImportLabel}
                             </Link>
                         }

@@ -519,6 +519,92 @@ Tüm fazlarda `agent.md` kısıtları korunur: yalnızca Epson, ZPL yok, QZ Tray
 
 ---
 
+## F. Uygulama durumu (6 Kasım 2026)
+
+Faz 0 ve Faz 1, yön onayından sonra `claude/peaceful-planck-5w48cq` dalında uygulandı.
+
+### Faz 0: tamamlandı
+
+| C.2 # | Hata | Durum |
+|---|---|---|
+| 1 | Editörün kendiliğinden taslak açması | Editör artık sormadan taslak oluşturmuyor; backend şablon başına tek açık taslak kuralı uyguluyor ve revizyonu denetim kaydına yazıyor |
+| 2 | Kategori/tedarikçi değişkenli şablonda talep engeli | Ürün, kategori ve tedarikçiyle birlikte yükleniyor |
+| 3 | PostgreSQL'de ürün silme hatası | Sorgu çevrilebilir hale getirildi; gerçek PostgreSQL testiyle doğrulandı |
+| 4 | Ürün silinince baskı geçmişinin silinmesi | FK'lar `Restrict` (migration `RestrictPrintIntentDeletes`); geçmişi olan ürün pasife alınıyor |
+| 5 | Silinen görselin yayınlanmış etiketi bozması | Render, pasif varlıkları da çiziyor |
+| 6 | Yanlış "popup engellendi" uyarısı | `noopener` kaldırıldı, opener elle kesiliyor |
+| 7 | CODE_39 | Destekleniyor; bilinmeyen tür sessizce CODE_128 olmuyor, görünür hata çiziyor |
+| 10 | Kaba yetki politikası | Tüm endpoint'ler izin bazlı (`HasPermission`); yazar kendi sürümünü onaylayamıyor (admin onaylarsa denetim kaydında işaretleniyor) |
+| 11 | Denetimsiz baskı | Onaysız sürüm PDF'lerinde "PROVA" filigranı; listedeki "Yazdır" artık baskı talebi akışına gidiyor |
+| 12, 13 | Opaklık sınıfları, kırık linkler | Düzeltildi |
+
+Ayrıca:
+- **Temizlik:** ölü kod (legacy editör, GlobalNavigation, TestAuthController) ve repoya commit edilmiş log dosyaları kaldırıldı.
+- **Testler:**
+  - Test projesi `net8.0`'a alındı.
+  - Regresyon testleri ve gerçek PostgreSQL entegrasyon testleri eklendi (35/35). Düzeltmeler geri alındığında yeni testlerin başarısız olduğu kontrol edildi.
+  - xUnit v3 testleri `dotnet test` yerine `dotnet run --project src/backend/Plms.Tests` ile çalışıyor.
+- **CI:** GitHub Actions eklendi; yalnızca `main` dalına push'ta ve PR'larda çalışıyor.
+
+Açık kalanlar: adet ve yeniden baskı (#9, Faz 2'nin konusu), barkod çözünürlüğü (#8, Faz 4).
+
+### Faz 1: tamamlandı
+
+- **Tasarım sistemi:**
+  - Açık graphite token'lar ve tek vurgu rengi (`#0e7490`).
+  - IBM Plex Sans + Mono, sunucuda barındırılıyor (Google Fonts gerekmiyor).
+  - Tip ölçeği 12/13/14/16/20/28 ve ortak bileşen sınıfları (`plms-button-*`, `plms-input`, `plms-kbd`…).
+  - Palmiye logosunun koyu yazılı sürümü.
+- **Ortak bileşenler:**
+  - PageHeader, MetricCard (yalnızca sayı), StatusBadge (nokta ve metin), DataTable, ActivityFeed, ConfirmModal, SlideOver.
+  - Yeni `LabelProof`: etiketin kesim işaretleri ve mm ölçüsüyle gösterimi. Bu, tasarımın imza detayı.
+- **Kabuk:**
+  - 248px kenar menü, 36px satırlar, tek ikon seti (Phosphor).
+  - 56px üst bar ve daraltılabilir menü.
+  - Editörde tam yükseklik; sayfa geçişi yalnızca opaklıkla.
+- **Panel:**
+  - Bugün basılan etiket, sonucu bekleyen baskı, açık talep, onay bekleyen sürüm.
+  - Son 14 günün baskı grafiği, bugün vurgulu (backend özetine yeni alanlar eklendi).
+  - Üst bardaki durum özeti cümleyle konuşuyor ("3 onay bekliyor").
+- **Ekranlar:** giriş, şablonlar (liste, detay, karşılaştırma, arşiv, kategoriler, yeni), önizleme, baskı talepleri (kuyruk, yeni, detay), editör, ürünler ve içe aktarma, tedarikçiler, kategoriler, kütüphane, denetim kaydı, onaylar, kullanıcılar, roller, parola ekranları ve arama paleti. Her biri unslop'un dokuz geçişinden geçirildi.
+- **Metin:**
+  - 776 Türkçe metinde Türkçe karakterler düzeltildi.
+  - Jargon kaldırıldı: niyet → talep; kabuk, kanonik, yönetişim, sinyal.
+  - Cümle düzenine geçildi; denetim işlemleri Türkçe; durumlar "PDF açıldı", "Basıldı", "Hatalı".
+- **Erişim:** yetkisiz sayfada boş ekran yerine "Bu sayfaya erişim yetkiniz yok" mesajı gösteriliyor.
+
+| Ölçüm (frontend) | Önce | Sonra |
+|---|---|---|
+| `font-black` | 384 | 0 |
+| `uppercase` | 319 | 0 |
+| `text-[10px]` / `[9px]` | 222 / 26 | 0 / 0 |
+| Gradient / radyal parıltı | 33 | 0 |
+| `backdrop-blur` | 12 | 0 |
+| `transition-all` | 21 | 0 |
+| Messages.ts'te Türkçe karakter | 0 | var |
+| İkon sistemi | 4 | 1 |
+
+### Önce ve sonra
+
+| Önce | Sonra |
+|---|---|
+| ![](screens/02-dashboard.webp) | ![](screens-after/02-dashboard.webp) |
+| ![](screens/01-login.webp) | ![](screens-after/01-login.webp) |
+| ![](screens/04-templates.webp) | ![](screens-after/04-templates.webp) |
+| ![](screens/06-template-preview.webp) | ![](screens-after/06-template-preview.webp) |
+| ![](screens/07-editor.webp) | ![](screens-after/07-editor.webp) |
+| ![](screens/12-print-intent-detail.webp) | ![](screens-after/12-print-intent-detail.webp) |
+
+Diğer ekranların "sonra" görüntüleri `screens-after/` klasöründe, aynı dosya adlarıyla.
+
+### Bilinçli olarak bırakılanlar
+- 34 sayfadaki satır içi metin tabloları `messages.ts`'e taşınmadı. Görünür bir fark yaratmıyor; ayrı bir iş olarak ele alınmalı.
+- Bazı İngilizce metinler hâlâ backend'den geliyor ve Türkçeye çevrilmedi:
+  - izin adları, rol açıklamaları, seed kategorileri;
+  - denetim kaydı ayrıntı cümleleri (Türkçe arayüzde yalnızca içindeki kodlar gösteriliyor);
+  - ikon seçicideki ikon adları.
+- Koyu tema yok. Token yapısı hazır, ama kullanıcı açık temayı öncelikli seçtiği için eklenmedi.
+
 ## Kaynaklar
 
 <details>

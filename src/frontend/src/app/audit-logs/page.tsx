@@ -12,8 +12,75 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { SlideOver } from "@/components/ui/SlideOver";
 
+// Audit codes come from the backend in English PascalCase; the Turkish UI names them in plain words.
+const actionLabelsTr: Record<string, string> = {
+    CategoryCreated: "Kategori oluşturuldu",
+    CategoryDeleted: "Kategori silindi",
+    CategoryUpdated: "Kategori güncellendi",
+    ImportSessionCommitted: "CSV içe aktarımı kaydedildi",
+    ImportSessionCreated: "CSV dosyası kontrol edildi",
+    PrintIntentCancelled: "Baskı talebi iptal edildi",
+    PrintIntentCreated: "Baskı talebi oluşturuldu",
+    PrintIntentFailed: "Baskı başarısız",
+    PrintIntentHandoffConfirmed: "Baskıya gönderim onaylandı",
+    PrintIntentHandoffFailed: "Baskıya gönderim başarısız",
+    PrintIntentPdfDispatched: "Baskı PDF'i açıldı",
+    PrintIntentUserPrinted: "Baskı tamamlandı",
+    ProductCreated: "Ürün oluşturuldu",
+    ProductTemplateLinked: "Şablon ürüne bağlandı",
+    ProductTemplateUnlinked: "Şablon bağlantısı kaldırıldı",
+    ProductUpdated: "Ürün güncellendi",
+    TemplateApprovalRequested: "Şablon onaya gönderildi",
+    TemplateArchived: "Şablon arşivlendi",
+    TemplateCategoryCreated: "Şablon kategorisi oluşturuldu",
+    TemplateCategoryDeleted: "Şablon kategorisi silindi",
+    TemplateCategoryUpdated: "Şablon kategorisi güncellendi",
+    TemplateCloned: "Şablon kopyalandı",
+    TemplateDeleted: "Şablon silindi",
+    TemplateDraftSaved: "Taslak kaydedildi",
+    TemplateFavorited: "Şablon favorilere eklendi",
+    TemplatePublished: "Şablon yayınlandı",
+    TemplateRestorationRequested: "Geri yükleme istendi",
+    TemplateRestored: "Şablon geri yüklendi",
+    TemplateRevisionCreated: "Yeni taslak oluşturuldu",
+    TemplateUnfavorited: "Şablon favorilerden çıkarıldı",
+    TemplateUpdated: "Şablon güncellendi",
+    TemplateVersionArchived: "Sürüm arşivlendi",
+    TemplateVersionDeleted: "Sürüm silindi",
+    UserCreated: "Kullanıcı oluşturuldu",
+    UserPasswordResetIssued: "Kurulum bağlantısı oluşturuldu",
+    UserTemporaryPasswordIssued: "Geçici parola atandı",
+    UserUpdated: "Kullanıcı güncellendi",
+    VendorCreated: "Tedarikçi oluşturuldu",
+    VendorDeleted: "Tedarikçi silindi",
+    VendorUpdated: "Tedarikçi güncellendi",
+};
+
+const entityLabelsTr: Record<string, string> = {
+    ImportSession: "CSV içe aktarımı",
+    LabelTemplate: "Şablon",
+    LabelTemplateVersion: "Şablon sürümü",
+    PrintIntent: "Baskı talebi",
+    Product: "Ürün",
+    ProductCategory: "Kategori",
+    ProductTemplate: "Ürün şablonu",
+    Role: "Rol",
+    TemplateCategory: "Şablon kategorisi",
+    TemplateRestorationRequest: "Geri yükleme talebi",
+    User: "Kullanıcı",
+    Vendor: "Tedarikçi",
+};
+
+/** "PrintIntentUserPrinted" → "Print intent user printed" for codes without a translation. */
+function humanize(code: string) {
+    const words = code.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export default function AuditLogsPage() {
-    const { formatDateTime, locale, translateLabel } = useI18n();
+    const { formatDateTime, locale } = useI18n();
+    const actionLabel = (code: string) => (locale === "tr" ? actionLabelsTr[code] : undefined) ?? humanize(code);
+    const entityLabel = (code: string) => (locale === "tr" ? entityLabelsTr[code] : undefined) ?? humanize(code);
     const [logs, setLogs] = useState<AuditLogDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<AuditLogDto | null>(null);
@@ -128,7 +195,7 @@ export default function AuditLogsPage() {
                                 <select className="plms-select" aria-label={text.entity} value={filters.entityType} onChange={(e) => setFilter("entityType", e.target.value)}>
                                     <option value="">{text.allTypes}</option>
                                     {entityTypes.map((entityType) => (
-                                        <option key={entityType} value={entityType}>{entityType}</option>
+                                        <option key={entityType} value={entityType}>{entityLabel(entityType)}</option>
                                     ))}
                                 </select>
                                 <div className="flex items-center gap-2">
@@ -153,8 +220,8 @@ export default function AuditLogsPage() {
                             {logs.map((log) => (
                                 <tr key={log.id} className="transition-colors hover:bg-raised">
                                     <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(log.timestamp)}</td>
-                                    <td className="px-4 py-2.5 text-base text-ink">{translateLabel(log.action)}</td>
-                                    <td className="px-4 py-2.5 text-base text-ink-2">{log.entityType}</td>
+                                    <td className="px-4 py-2.5 text-base text-ink">{actionLabel(log.action)}</td>
+                                    <td className="px-4 py-2.5 text-base text-ink-2">{entityLabel(log.entityType)}</td>
                                     <td className="max-w-48 truncate px-4 py-2.5 text-base text-ink-2" title={log.userId || undefined}>{log.userId || text.system}</td>
                                     <td className="px-4 py-2.5">
                                         {log.correlationId ? (
@@ -190,7 +257,7 @@ export default function AuditLogsPage() {
 
                 <SlideOver
                     open={Boolean(selected)}
-                    title={selected ? translateLabel(selected.action) : text.detail}
+                    title={selected ? actionLabel(selected.action) : text.detail}
                     subtitle={selected ? formatDateTime(selected.timestamp) : undefined}
                     onClose={() => setSelected(null)}
                 >
@@ -199,7 +266,7 @@ export default function AuditLogsPage() {
                             <dl className="grid gap-4 md:grid-cols-2">
                                 <div className="flex flex-col gap-1">
                                     <dt className="text-sm text-ink-3">{text.entityType}</dt>
-                                    <dd className="text-ink">{selected.entityType}</dd>
+                                    <dd className="text-ink">{entityLabel(selected.entityType)}</dd>
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <dt className="text-sm text-ink-3">{text.actor}</dt>
