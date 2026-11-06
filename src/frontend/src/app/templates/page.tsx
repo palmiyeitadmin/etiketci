@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { CaretRight, CaretDown, Star } from "@phosphor-icons/react";
+import { CaretDown, CaretRight, Star, User } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
+import { TemplateRowMenu, type RowMenuItem } from "@/components/Templates/TemplateRowMenu";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
@@ -17,28 +18,28 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { StatusBadge, type StatusTone } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
 
 type TemplateListStatusFilter = "all" | TemplateStatus | "DraftOnly";
 type VersionActionTarget = { template: LabelTemplate; version: TemplateVersion };
+type Notice = { text: string; tone: "good" | "bad" };
 
-function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
-    switch (tone) {
-        case "info":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-accent/25 bg-accent/10 px-2.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20";
-        case "warning":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-warn/25 bg-warn/10 px-2.5 text-xs font-medium text-warn transition-colors hover:bg-warn/20";
-        case "danger":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-bad/20 bg-bad/10 px-2.5 text-xs font-medium text-bad transition-colors hover:bg-bad/20";
-        case "primary":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-accent/30 bg-accent px-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover";
-        case "success":
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-good/25 bg-good/10 px-2.5 text-xs font-medium text-good transition-colors hover:bg-good/20";
+function statusTone(status: string): StatusTone {
+    switch (status) {
+        case "Published":
+            return "success";
+        case "Approved":
+        case "InReview":
+            return "info";
+        case "Deprecated":
+        case "Archived":
+        case "Rejected":
+            return "danger";
         default:
-            return "inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-xl border border-line bg-raised px-2.5 text-xs font-medium text-ink-2 transition-colors hover:bg-raised";
+            return "warning";
     }
 }
 
@@ -63,28 +64,37 @@ export default function TemplatesPage() {
 
     const text = locale === "tr"
         ? {
+            title: "Şablonlar",
+            description: "Etiket şablonları ve sürümleri",
+            newTemplate: "Yeni şablon",
+            searchPlaceholder: "Şablon ara",
             category: "Kategori",
-            actions: "Aksiyonlar",
-            manageCategories: "Şablon Kategorileri",
+            manageCategories: "Kategoriler",
             open: "Aç",
+            openDetail: "Detayı aç",
+            openEditor: "Editörü aç",
+            opening: "Açılıyor",
+            previewPdf: "PDF önizleme",
             preview: "Önizle",
             print: "Yazdır",
             clone: "Klonla",
             archive: "Arşivle",
             delete: "Sil",
-            activeVersionRequired: "Aktif sürüm gerekli",
+            more: "Diğer işlemler",
+            showVersions: "Sürümleri göster",
+            hideVersions: "Sürümleri gizle",
+            activeVersionRequired: "Yazdırmak için yayında bir sürüm gerekli",
             archiveTitle: "Şablonu arşivle",
-            archiveDescription: (name: string) => `${name} ana listeden çıkacak, geçmiş sürümleri korunacak ve arşiv ekranından geri alınabilecek.`,
-            archiveConfirm: "Şablonu Arşivle",
+            archiveDescription: (name: string) => `${name} ana listeden çıkar. Geçmiş sürümleri korunur ve arşivden geri alınabilir.`,
+            archiveConfirm: "Arşivle",
             deleteTitle: "Şablonu sil",
-            deleteDescription: (name: string) => `${name} kalıcı olarak silinecek. Bu işlem yalnızca güvenli taslak kayıtlarında desteklenir.`,
-            deleteConfirm: "Kalıcı Olarak Sil",
+            deleteDescription: (name: string) => `${name} kalıcı olarak silinecek. Bu yalnızca taslak dışında sürümü olmayan şablonlarda yapılabilir.`,
+            deleteConfirm: "Kalıcı olarak sil",
             uncategorized: "Kategori yok",
-            ownership: "Yönetim",
-            activeLifecycle: "Sürüm / Yaşam",
+            columns: { template: "Şablon", code: "Kod", category: "Kategori", version: "Sürüm", status: "Durum", updated: "Güncellendi" },
             createdBy: "Oluşturan",
-            lastEditedBy: "Son Düzenleyen",
-            version: "Versiyon",
+            lastEditedBy: "Son düzenleyen",
+            version: "Sürüm",
             status: "Durum",
             date: "Tarih",
             notes: "Notlar",
@@ -95,38 +105,54 @@ export default function TemplatesPage() {
             allCategories: "Tüm kategoriler",
             favorite: "Favoriye ekle",
             unfavorite: "Favoriden çıkar",
-            favoriteAdded: "Şablon favorilere eklendi.",
-            favoriteRemoved: "Şablon favorilerden çıkarıldı.",
+            favoriteAdded: "Favorilere eklendi",
+            favoriteRemoved: "Favorilerden çıkarıldı",
             draftOnly: "Sadece taslak",
+            activeVersion: "Yayındaki sürüm",
+            latestVersion: "Son sürüm",
+            linkedProducts: "Bağlı ürün",
+            publishedCount: "Yayın sayısı",
+            drafts: "Taslak",
+            inReview: "İncelemede",
+            noDescription: "Açıklama yok",
             versionArchiveTitle: "Sürümü arşivle",
-            versionArchiveDescription: (name: string, version: number) => `${name} içindeki v${version} sürümü arşivlenecek ve normal liste akışından çıkacak.`,
-            versionArchiveConfirm: "Sürümü Arşivle",
+            versionArchiveDescription: (name: string, version: number) => `${name} şablonunun v${version} sürümü arşivlenecek ve listeden çıkacak.`,
+            versionArchiveConfirm: "Sürümü arşivle",
             versionDeleteTitle: "Sürümü sil",
-            versionDeleteDescription: (name: string, version: number) => `${name} içindeki v${version} taslağı kalıcı olarak silinecek.`,
-            versionDeleteConfirm: "Sürümü Sil",
+            versionDeleteDescription: (name: string, version: number) => `${name} şablonunun v${version} taslağı kalıcı olarak silinecek.`,
+            versionDeleteConfirm: "Sürümü sil",
         }
         : {
+            title: "Templates",
+            description: "Label templates and their versions",
+            newTemplate: "New template",
+            searchPlaceholder: "Search templates",
             category: "Category",
-            actions: "Actions",
-            manageCategories: "Template Categories",
+            manageCategories: "Categories",
             open: "Open",
+            openDetail: "Open detail",
+            openEditor: "Open editor",
+            opening: "Opening",
+            previewPdf: "PDF preview",
             preview: "Preview",
             print: "Print",
             clone: "Clone",
             archive: "Archive",
             delete: "Delete",
-            activeVersionRequired: "Active version required",
+            more: "More actions",
+            showVersions: "Show versions",
+            hideVersions: "Hide versions",
+            activeVersionRequired: "A published version is required to print",
             archiveTitle: "Archive template",
-            archiveDescription: (name: string) => `${name} will leave the active list, keep its history and remain restorable from the archive view.`,
-            archiveConfirm: "Archive Template",
+            archiveDescription: (name: string) => `${name} leaves the main list. Its versions are kept and it can be restored from the archive.`,
+            archiveConfirm: "Archive",
             deleteTitle: "Delete template",
-            deleteDescription: (name: string) => `${name} will be permanently deleted. This is only supported for safe draft-only records.`,
-            deleteConfirm: "Delete Permanently",
-            uncategorized: "Uncategorized",
-            ownership: "Ownership",
-            activeLifecycle: "Version / Lifecycle",
-            createdBy: "Created By",
-            lastEditedBy: "Last Edited By",
+            deleteDescription: (name: string) => `${name} will be permanently deleted. This only works for templates that have nothing but drafts.`,
+            deleteConfirm: "Delete permanently",
+            uncategorized: "No category",
+            columns: { template: "Template", code: "Code", category: "Category", version: "Version", status: "Status", updated: "Updated" },
+            createdBy: "Created by",
+            lastEditedBy: "Last edited by",
             version: "Version",
             status: "Status",
             date: "Date",
@@ -137,16 +163,23 @@ export default function TemplatesPage() {
             allStatuses: "All statuses",
             allCategories: "All categories",
             favorite: "Add to favorites",
-            unfavorite: "Remove favorite",
-            favoriteAdded: "Template added to favorites.",
-            favoriteRemoved: "Template removed from favorites.",
+            unfavorite: "Remove from favorites",
+            favoriteAdded: "Added to favorites",
+            favoriteRemoved: "Removed from favorites",
             draftOnly: "Draft only",
+            activeVersion: "Published version",
+            latestVersion: "Latest version",
+            linkedProducts: "Linked products",
+            publishedCount: "Times published",
+            drafts: "Drafts",
+            inReview: "In review",
+            noDescription: "No description",
             versionArchiveTitle: "Archive version",
-            versionArchiveDescription: (name: string, version: number) => `Version v${version} of ${name} will be archived and removed from the active list flow.`,
-            versionArchiveConfirm: "Archive Version",
+            versionArchiveDescription: (name: string, version: number) => `Version v${version} of ${name} will be archived and leave the list.`,
+            versionArchiveConfirm: "Archive version",
             versionDeleteTitle: "Delete version",
-            versionDeleteDescription: (name: string, version: number) => `Draft version v${version} of ${name} will be permanently deleted.`,
-            versionDeleteConfirm: "Delete Version",
+            versionDeleteDescription: (name: string, version: number) => `Draft v${version} of ${name} will be permanently deleted.`,
+            versionDeleteConfirm: "Delete version",
         };
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -154,7 +187,7 @@ export default function TemplatesPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(null);
     const [openingTemplateId, setOpeningTemplateId] = useState<string | null>(null);
-    const [message, setMessage] = useState<string | null>(null);
+    const [notice, setNotice] = useState<Notice | null>(null);
     const [archiveTarget, setArchiveTarget] = useState<LabelTemplate | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<LabelTemplate | null>(null);
     const [archiveVersionTarget, setArchiveVersionTarget] = useState<VersionActionTarget | null>(null);
@@ -167,8 +200,12 @@ export default function TemplatesPage() {
     const [favoritesOnly, setFavoritesOnly] = useState(false);
     const [mineOnly, setMineOnly] = useState(false);
 
-    const filterChipClass =
-        "inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-xs font-medium transition-colors";
+    const setMessage = (value: string | null, tone: Notice["tone"] = "bad") => setNotice(value ? { text: value, tone } : null);
+
+    const toggleChipClass = (pressed: boolean) =>
+        `inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors ${
+            pressed ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-surface text-ink-2 hover:bg-raised hover:text-ink"
+        }`;
 
     async function load() {
         setLoading(true);
@@ -257,6 +294,7 @@ export default function TemplatesPage() {
         [categoryFilter, favoritesOnly, mineOnly, searchTerm, statusFilter, templates, viewerIdentityCandidates]
     );
 
+    const filtersActive = statusFilter !== "all" || categoryFilter !== "all" || favoritesOnly || mineOnly;
     const previewVersion: TemplateVersion | undefined = selectedTemplate?.currentActiveVersion || selectedTemplate?.latestVersion || selectedTemplate?.versions?.[0];
 
     async function handleOpenEditor(templateId: string) {
@@ -381,7 +419,7 @@ export default function TemplatesPage() {
             return;
         }
 
-        setMessage(nextFavoriteState ? text.favoriteAdded : text.favoriteRemoved);
+        setMessage(nextFavoriteState ? text.favoriteAdded : text.favoriteRemoved, "good");
     }
 
     function resetFilters() {
@@ -391,13 +429,38 @@ export default function TemplatesPage() {
         setMineOnly(false);
     }
 
+    function templateMenuItems(template: LabelTemplate, cloneVersion?: TemplateVersion): RowMenuItem[] {
+        const items: RowMenuItem[] = [{ label: text.openDetail, href: `/templates/${template.id}` }];
+        if (canCreate) items.push({ label: text.clone, onSelect: () => handleClone(template, cloneVersion), disabled: !cloneVersion });
+        if (canArchive) items.push({ label: text.archive, onSelect: () => setArchiveTarget(template), separated: true });
+        if (canDelete) items.push({ label: text.delete, onSelect: () => setDeleteTarget(template), tone: "danger", separated: !canArchive });
+        return items;
+    }
+
+    function versionMenuItems(template: LabelTemplate, version: TemplateVersion): RowMenuItem[] {
+        const items: RowMenuItem[] = [{ label: text.print, onSelect: () => handlePrintVersion(template, version) }];
+        if (canCreate) items.push({ label: text.clone, onSelect: () => handleClone(template, version) });
+        const archivable = canArchive && canArchiveVersion(template, version);
+        if (archivable) items.push({ label: text.archive, onSelect: () => setArchiveVersionTarget({ template, version }), separated: true });
+        if (canDelete && canDeleteVersion(template, version)) {
+            items.push({ label: text.delete, onSelect: () => setDeleteVersionTarget({ template, version }), tone: "danger", separated: !archivable });
+        }
+        return items;
+    }
+
+    function ownershipTitle(template: LabelTemplate) {
+        return [
+            `${text.createdBy}: ${template.createdBy || "-"} · ${formatDate(template.createdAt)}`,
+            `${text.lastEditedBy}: ${template.lastUpdatedBy || "-"} · ${formatDate(template.updatedAt)}`,
+        ].join("\n");
+    }
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto w-full max-w-[1720px] px-2 sm:px-4 lg:px-6 xl:px-8 space-y-6">
+            <div className="flex flex-col gap-6">
                 <PageHeader
-                    eyebrow={t("templates.eyebrow")}
-                    title={t("templates.title")}
-                    description={t("templates.description")}
+                    title={text.title}
+                    description={text.description}
                     actions={
                         <>
                             {canCreate ? (
@@ -407,31 +470,29 @@ export default function TemplatesPage() {
                             ) : null}
                             {canCreate ? (
                                 <Link href="/templates/new" className="plms-button-primary">
-                                    {t("templates.newTemplate")}
+                                    {text.newTemplate}
                                 </Link>
                             ) : null}
                         </>
                     }
                 />
 
-                {message ? (
-                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
-                        {message}
-                    </div>
-                ) : null}
-
                 <FilterBar
                     left={
-                        <input
-                            className="plms-input max-w-xl"
-                            placeholder={t("templates.searchPlaceholder")}
-                            value={searchTerm}
-                            onChange={(event) => setSearchTerm(event.target.value)}
-                        />
-                    }
-                    right={
                         <>
-                            <select className="plms-select min-w-[170px]" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TemplateListStatusFilter)}>
+                            <input
+                                className="plms-input w-full sm:w-72"
+                                placeholder={text.searchPlaceholder}
+                                aria-label={text.searchPlaceholder}
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                            />
+                            <select
+                                className="plms-select"
+                                aria-label={text.status}
+                                value={statusFilter}
+                                onChange={(event) => setStatusFilter(event.target.value as TemplateListStatusFilter)}
+                            >
                                 <option value="all">{text.allStatuses}</option>
                                 <option value="Draft">{t("status.generic.Draft")}</option>
                                 <option value="InReview">{t("status.generic.InReview")}</option>
@@ -440,36 +501,55 @@ export default function TemplatesPage() {
                                 <option value="Deprecated">{t("status.generic.Deprecated")}</option>
                                 <option value="DraftOnly">{text.draftOnly}</option>
                             </select>
-                            <select className="plms-select min-w-[190px]" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                            <select
+                                className="plms-select"
+                                aria-label={text.category}
+                                value={categoryFilter}
+                                onChange={(event) => setCategoryFilter(event.target.value)}
+                            >
                                 <option value="all">{text.allCategories}</option>
                                 {categoryOptions.map((category) => (
                                     <option key={category.id} value={category.id}>{category.label}</option>
                                 ))}
                             </select>
+                        </>
+                    }
+                    right={
+                        <>
                             <button
                                 type="button"
-                                className={`${filterChipClass} ${favoritesOnly ? "border-warn/40 bg-warn/15 text-warn" : "border-line bg-raised text-ink-2"}`}
+                                aria-pressed={favoritesOnly}
+                                className={toggleChipClass(favoritesOnly)}
                                 onClick={() => setFavoritesOnly((current) => !current)}
                             >
+                                <Star size={16} weight={favoritesOnly ? "fill" : "regular"} />
                                 {text.filtersFavorites}
                             </button>
                             <button
                                 type="button"
-                                className={`${filterChipClass} ${mineOnly ? "border-accent/40 bg-accent/15 text-ink" : "border-line bg-raised text-ink-2"}`}
+                                aria-pressed={mineOnly}
+                                className={toggleChipClass(mineOnly)}
                                 onClick={() => setMineOnly((current) => !current)}
                             >
+                                <User size={16} weight={mineOnly ? "fill" : "regular"} />
                                 {text.filtersMine}
                             </button>
-                            <button type="button" className="plms-button-compact" onClick={resetFilters}>
+                            <button type="button" className="plms-button-ghost" onClick={resetFilters} disabled={!filtersActive}>
                                 {text.filtersReset}
                             </button>
                         </>
                     }
                 />
 
+                {notice ? (
+                    <div role="status" className={`rounded-lg px-3 py-2 text-sm ${notice.tone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>
+                        {notice.text}
+                    </div>
+                ) : null}
+
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" />
                     </div>
                 ) : filteredTemplates.length === 0 ? (
                     <EmptyState
@@ -477,7 +557,7 @@ export default function TemplatesPage() {
                         description={t("templates.emptyDescription")}
                     />
                 ) : (
-                    <DataTable columns={["", t("templates.table.code"), t("templates.table.template"), text.activeLifecycle, text.ownership, text.actions]}>
+                    <DataTable columns={["", text.columns.template, text.columns.code, text.columns.category, text.columns.version, text.columns.status, text.columns.updated, " "]}>
                         {filteredTemplates.map((template) => {
                             const effectiveStatus =
                                 template.currentActiveVersion?.status ||
@@ -488,194 +568,116 @@ export default function TemplatesPage() {
                             const isExpanded = expandedRowId === template.id;
                             const printableVersion = resolveTemplatePrintVersion(template);
                             const cloneVersion = resolveTemplateCloneSourceVersion(template);
-                            
+                            const shownVersion = template.currentActiveVersion || template.latestVersion;
+                            const hasVersions = (template.versions?.length ?? 0) > 0;
+
                             return (
                                 <React.Fragment key={template.id}>
-                                <tr className="cursor-pointer transition-colors hover:bg-white/5" onClick={() => setSelectedTemplate(template)}>
-                                    <td className="pl-6 pr-2 py-4 w-10 text-center" onClick={(e) => { e.stopPropagation(); setExpandedRowId(isExpanded ? null : template.id); }}>
-                                        <button type="button" className="flex h-6 w-6 items-center justify-center rounded-full bg-raised hover:bg-raised transition-colors text-ink-2">
-                                            {isExpanded ? <CaretDown weight="bold" /> : <CaretRight weight="bold" />}
-                                        </button>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">
-                                            {template.code}
-                                        </span>
-                                        <div className="mt-2 text-sm font-medium text-ink">{template.templateCategoryCode || "-"}</div>
-                                            <div className="mt-1 text-xs text-ink-3">
-                                            {template.templateCategoryName || text.uncategorized}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 min-w-[240px] xl:min-w-[280px]">
-                                        <div className="text-sm font-medium text-ink">{template.name}</div>
-                                        <div className="mt-1 text-xs text-ink-3">
-                                            {template.description || t("templates.detail.noDescription")}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <div className="text-sm font-medium text-ink-2">
-                                            {template.currentActiveVersion
-                                                ? `v${template.currentActiveVersion.versionNumber}`
-                                                : template.latestVersion
-                                                    ? `v${template.latestVersion.versionNumber}`
-                                                    : "-"}
-                                        </div>
-                                        <div className="mt-2">
-                                        <StatusBadge
-                                            label={status}
-                                            tone={
-                                                status === "Published"
-                                                    ? "success"
-                                                    : status === "Approved" || status === "InReview"
-                                                        ? "info"
-                                                        : status === "Deprecated" || status === "Archived"
-                                                            ? "danger"
-                                                            : "warning"
-                                            }
-                                        />
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 min-w-[170px]">
-                                        <div className="text-xs font-medium text-ink-3">
-                                            {text.createdBy}
-                                        </div>
-                                        <div className="mt-1 text-sm font-medium text-ink">{template.createdBy || "-"}</div>
-                                        <div className="mt-1 text-xs text-ink-3">
-                                            {formatDate(template.createdAt)}
-                                        </div>
-                                        <div className="mt-3 text-xs font-medium text-ink-3">
-                                            {text.lastEditedBy}
-                                        </div>
-                                        <div className="mt-1 text-sm font-medium text-ink">{template.lastUpdatedBy || "-"}</div>
-                                        <div className="mt-1 text-xs text-ink-3">
-                                            {formatDate(template.updatedAt)}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 w-[1%]">
-                                        <div className="flex items-center gap-1.5 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
-                                            <button
-                                                type="button"
-                                                className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
-                                                onClick={() => void handleToggleFavorite(template)}
-                                                title={template.isFavorite ? text.unfavorite : text.favorite}
-                                                aria-label={template.isFavorite ? text.unfavorite : text.favorite}
+                                    <tr className={`cursor-pointer transition-colors hover:bg-raised ${isExpanded ? "bg-raised" : ""}`} onClick={() => setSelectedTemplate(template)}>
+                                        <td className="w-10 py-2.5 pl-3 pr-0">
+                                            {hasVersions ? (
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-sunken hover:text-ink"
+                                                    aria-expanded={isExpanded}
+                                                    aria-label={isExpanded ? text.hideVersions : text.showVersions}
+                                                    title={isExpanded ? text.hideVersions : text.showVersions}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        setExpandedRowId(isExpanded ? null : template.id);
+                                                    }}
+                                                >
+                                                    {isExpanded ? <CaretDown size={16} /> : <CaretRight size={16} />}
+                                                </button>
+                                            ) : null}
+                                        </td>
+                                        <td className="min-w-64 px-4 py-2.5">
+                                            <Link
+                                                href={`/templates/${template.id}`}
+                                                className="text-base font-medium text-ink hover:text-accent"
+                                                onClick={(event) => event.stopPropagation()}
                                             >
-                                                <Star size={14} weight={template.isFavorite ? "fill" : "regular"} />
-                                            </button>
-                                            <Link href={`/templates/${template.id}`} className={getActionButtonClass()}>
-                                                {text.open}
+                                                {template.name}
                                             </Link>
-                                            <button
-                                                type="button"
-                                                className={getActionButtonClass("info")}
-                                                onClick={() => handlePrintVersion(template, printableVersion)}
-                                                disabled={!printableVersion}
-                                                title={!printableVersion ? text.activeVersionRequired : undefined}
-                                            >
-                                                {text.print}
-                                            </button>
-                                            {canCreate ? (
+                                            <div className="max-w-md truncate text-sm text-ink-3">
+                                                {template.description || text.noDescription}
+                                            </div>
+                                        </td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{template.code}</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-base text-ink-2" title={template.templateCategoryCode || undefined}>
+                                            {template.templateCategoryName || <span className="text-ink-3">{text.uncategorized}</span>}
+                                        </td>
+                                        <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">
+                                            {shownVersion ? `v${shownVersion.versionNumber}` : "-"}
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <StatusBadge label={status} tone={statusTone(status)} />
+                                        </td>
+                                        <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2" title={ownershipTitle(template)}>
+                                            {formatDate(template.updatedAt)}
+                                        </td>
+                                        <td className="w-px whitespace-nowrap py-2.5 pl-2 pr-3">
+                                            <div className="flex items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
                                                 <button
                                                     type="button"
-                                                    className={getActionButtonClass()}
-                                                    onClick={() => handleClone(template, cloneVersion)}
-                                                    disabled={!cloneVersion}
+                                                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-sunken ${template.isFavorite ? "text-accent" : "text-ink-3 hover:text-ink"}`}
+                                                    onClick={() => void handleToggleFavorite(template)}
+                                                    aria-pressed={Boolean(template.isFavorite)}
+                                                    title={template.isFavorite ? text.unfavorite : text.favorite}
+                                                    aria-label={template.isFavorite ? text.unfavorite : text.favorite}
                                                 >
-                                                    {text.clone}
+                                                    <Star size={16} weight={template.isFavorite ? "fill" : "regular"} />
                                                 </button>
-                                            ) : null}
-                                            {canArchive ? (
-                                                <button type="button" className={getActionButtonClass("warning")} onClick={() => setArchiveTarget(template)}>
-                                                    {text.archive}
-                                                </button>
-                                            ) : null}
-                                            {canDelete ? (
                                                 <button
                                                     type="button"
-                                                    className={getActionButtonClass("danger")}
-                                                    onClick={() => setDeleteTarget(template)}
+                                                    className="plms-button-compact"
+                                                    onClick={() => handlePrintVersion(template, printableVersion)}
+                                                    disabled={!printableVersion}
+                                                    title={!printableVersion ? text.activeVersionRequired : undefined}
                                                 >
-                                                    {text.delete}
+                                                    {text.print}
                                                 </button>
-                                            ) : null}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {isExpanded && template.versions && template.versions.length > 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="bg-black/20 p-4 border-b border-line pt-2 pb-6">
-                                            <div className="rounded-xl border border-line overflow-hidden bg-raised ml-[3.25rem]">
-                                                <table className="w-full text-left text-sm text-ink-3">
-                                                    <thead className="bg-raised text-xs font-medium border-b border-line">
-                                                        <tr>
-                                                            <th className="px-5 py-3">{text.version}</th>
-                                                            <th className="px-5 py-3">{text.status}</th>
-                                                            <th className="px-5 py-3">{text.createdBy}</th>
-                                                            <th className="px-5 py-3">{text.date}</th>
-                                                            <th className="px-5 py-3">{text.notes}</th>
-                                                            <th className="px-5 py-3">{text.actions}</th>
+                                                <TemplateRowMenu label={text.more} items={templateMenuItems(template, cloneVersion)} />
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {isExpanded && hasVersions ? (
+                                        <tr>
+                                            <td colSpan={8} className="bg-canvas px-0 py-0">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="text-left text-ink-3">
+                                                            <th className="h-9 pl-14 pr-4 font-medium">{text.version}</th>
+                                                            <th className="h-9 px-4 font-medium">{text.status}</th>
+                                                            <th className="h-9 px-4 font-medium">{text.createdBy}</th>
+                                                            <th className="h-9 px-4 font-medium">{text.date}</th>
+                                                            <th className="h-9 px-4 font-medium">{text.notes}</th>
+                                                            <th className="h-9 px-3"><span className="sr-only">{text.more}</span></th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-[color:var(--plms-border)]">
-                                                        {[...template.versions].sort((a,b) => b.versionNumber - a.versionNumber).map(v => (
-                                                            <tr key={v.id} className="hover:bg-white/5 transition-colors">
-                                                                <td className="px-5 py-3 font-medium text-ink">v{v.versionNumber}</td>
-                                                                <td className="px-5 py-3">
-                                                                    <StatusBadge label={v.status} tone={v.status === "Published" ? "success" : v.status === "InReview" ? "info" : "warning"} />
-                                                                </td>
-                                                                <td className="px-5 py-3 font-medium text-ink-2">{v.createdBy || "-"}</td>
-                                                                <td className="px-5 py-3">{formatDate(v.createdAt)}</td>
-                                                                <td className="px-5 py-3 text-xs opacity-75">{v.changeNotes || "-"}</td>
-                                                                <td className="px-5 py-3">
-                                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className={getActionButtonClass()}>
+                                                    <tbody className="divide-y divide-line border-t border-line">
+                                                        {[...(template.versions || [])].sort((a, b) => b.versionNumber - a.versionNumber).map((v) => (
+                                                            <tr key={v.id} className="transition-colors hover:bg-raised">
+                                                                <td className="tabular h-10 whitespace-nowrap py-1.5 pl-14 pr-4 font-mono text-sm text-ink">v{v.versionNumber}</td>
+                                                                <td className="px-4 py-1.5"><StatusBadge label={v.status} tone={statusTone(v.status)} /></td>
+                                                                <td className="whitespace-nowrap px-4 py-1.5 text-ink-2">{v.createdBy || "-"}</td>
+                                                                <td className="tabular whitespace-nowrap px-4 py-1.5 font-mono text-sm text-ink-2">{formatDate(v.createdAt)}</td>
+                                                                <td className="max-w-sm truncate px-4 py-1.5 text-ink-3" title={v.changeNotes || undefined}>{v.changeNotes || "-"}</td>
+                                                                <td className="w-px whitespace-nowrap py-1.5 pl-2 pr-3">
+                                                                    <div className="flex items-center justify-end gap-1">
+                                                                        <Link href={`/templates/${template.id}/preview?versionId=${v.id}`} className="plms-button-compact">
                                                                             {text.preview}
                                                                         </Link>
-                                                                        <button type="button" className={getActionButtonClass("info")} onClick={() => handlePrintVersion(template, v)}>
-                                                                            {text.print}
-                                                                        </button>
-                                                                        {canCreate ? (
-                                                                            <button type="button" className={getActionButtonClass()} onClick={() => handleClone(template, v)}>
-                                                                                {text.clone}
-                                                                            </button>
-                                                                        ) : null}
-                                                                        <button
-                                                                            type="button"
-                                                                            className={`${getActionButtonClass()} px-2 ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
-                                                                            onClick={() => void handleToggleFavorite(template)}
-                                                                            title={template.isFavorite ? text.unfavorite : text.favorite}
-                                                                            aria-label={template.isFavorite ? text.unfavorite : text.favorite}
-                                                                        >
-                                                                            <Star size={14} weight={template.isFavorite ? "fill" : "regular"} />
-                                                                        </button>
-                                                                        {canArchive && canArchiveVersion(template, v) ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                className={getActionButtonClass("warning")}
-                                                                                onClick={() => setArchiveVersionTarget({ template, version: v })}
-                                                                            >
-                                                                                {text.archive}
-                                                                            </button>
-                                                                        ) : null}
-                                                                        {canDelete && canDeleteVersion(template, v) ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                className={getActionButtonClass("danger")}
-                                                                                onClick={() => setDeleteVersionTarget({ template, version: v })}
-                                                                            >
-                                                                                {text.delete}
-                                                                            </button>
-                                                                        ) : null}
+                                                                        <TemplateRowMenu label={text.more} items={versionMenuItems(template, v)} />
                                                                     </div>
                                                                 </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </table>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
+                                            </td>
+                                        </tr>
+                                    ) : null}
                                 </React.Fragment>
                             );
                         })}
@@ -685,45 +687,58 @@ export default function TemplatesPage() {
 
             <SlideOver
                 open={selectedTemplate !== null}
-                title={selectedTemplate?.name || t("templates.title")}
-                subtitle={selectedTemplate ? `${selectedTemplate.code} · ${selectedTemplate.lastUpdatedBy || t("common.unknown")}` : undefined}
+                title={selectedTemplate?.name || text.title}
+                subtitle={selectedTemplate?.code}
                 onClose={() => setSelectedTemplate(null)}
             >
                 {selectedTemplate ? (
-                    <div className="space-y-6">
+                    <div className="flex flex-col gap-6">
                         <TemplatePreviewCard template={selectedTemplate} version={previewVersion} />
 
-                        <section className="grid gap-4 md:grid-cols-2">
-                            <DetailMetric label={text.category} value={selectedTemplate.templateCategoryCode ? `${selectedTemplate.templateCategoryCode} · ${selectedTemplate.templateCategoryName}` : "-"} />
-                            <DetailMetric label={t("templates.detail.activeVersion")} value={selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "-"} />
-                            <DetailMetric label={t("templates.detail.latestVersion")} value={selectedTemplate.latestVersion ? `v${selectedTemplate.latestVersion.versionNumber}` : "-"} />
-                            <DetailMetric label={t("templates.detail.linkedProducts")} value={String(selectedTemplate.linkedProductCount ?? 0)} />
-                            <DetailMetric label={t("templates.detail.publishedCount")} value={String(selectedTemplate.publishedCount ?? 0)} />
-                            <DetailMetric label={t("templates.detail.drafts")} value={String(selectedTemplate.draftCount ?? 0)} />
-                            <DetailMetric label={t("templates.detail.inReview")} value={String(selectedTemplate.inReviewCount ?? 0)} />
-                        </section>
+                        <div className="flex flex-wrap gap-2">
+                            <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-primary">{text.openDetail}</Link>
+                            {canEdit ? (
+                                <button type="button" className="plms-button-secondary" onClick={() => void handleOpenEditor(selectedTemplate.id)} disabled={openingTemplateId === selectedTemplate.id}>
+                                    {openingTemplateId === selectedTemplate.id ? text.opening : text.openEditor}
+                                </button>
+                            ) : null}
+                            {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-secondary">{text.previewPdf}</Link> : null}
+                        </div>
 
-                        <section className="rounded-xl border border-line bg-raised p-5">
-                            <div className="text-xs font-medium text-ink-3">{t("templates.detail.lifecycleSnapshot")}</div>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                <StatusBadge label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "InReview" : "DraftOnly"} tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"} />
-                                {selectedTemplate.latestVersion ? <StatusBadge label={`Latest ${selectedTemplate.latestVersion.status}`} tone="neutral" /> : null}
-                            </div>
-                            <div className="mt-4 text-sm text-ink-3">{selectedTemplate.description || t("templates.detail.noLifecycleDescription")}</div>
-                        </section>
+                        <p className="text-sm text-ink-2">{selectedTemplate.description || text.noDescription}</p>
 
-                        <section className="rounded-xl border border-line bg-raised p-5">
-                            <div className="text-xs font-medium text-ink-3">{t("templates.detail.quickActions")}</div>
-                            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                                <Link href={`/templates/${selectedTemplate.id}`} className="plms-button-compact">{t("templates.detail.openDetail")}</Link>
-                                {canEdit ? (
-                                    <button type="button" className="plms-button-compact" onClick={() => void handleOpenEditor(selectedTemplate.id)} disabled={openingTemplateId === selectedTemplate.id}>
-                                        {openingTemplateId === selectedTemplate.id ? t("templates.detail.opening") : t("templates.detail.openEditor")}
-                                    </button>
-                                ) : null}
-                                {previewVersion ? <Link href={`/templates/${selectedTemplate.id}/preview?versionId=${previewVersion.id}`} className="plms-button-compact">{t("templates.detail.previewPdf")}</Link> : null}
-                            </div>
-                        </section>
+                        <dl className="divide-y divide-line border-y border-line text-sm">
+                            <DetailRow label={text.status}>
+                                <StatusBadge
+                                    label={selectedTemplate.currentActiveVersion ? "Published" : selectedTemplate.inReviewCount ? "InReview" : "DraftOnly"}
+                                    tone={selectedTemplate.currentActiveVersion ? "success" : selectedTemplate.inReviewCount ? "info" : "warning"}
+                                />
+                            </DetailRow>
+                            <DetailRow label={text.category}>
+                                {selectedTemplate.templateCategoryCode ? `${selectedTemplate.templateCategoryCode} · ${selectedTemplate.templateCategoryName}` : "-"}
+                            </DetailRow>
+                            <DetailRow label={text.activeVersion} mono>
+                                {selectedTemplate.currentActiveVersion ? `v${selectedTemplate.currentActiveVersion.versionNumber}` : "-"}
+                            </DetailRow>
+                            <DetailRow label={text.latestVersion}>
+                                {selectedTemplate.latestVersion ? (
+                                    <span className="inline-flex items-center gap-3">
+                                        <span className="tabular font-mono">v{selectedTemplate.latestVersion.versionNumber}</span>
+                                        <StatusBadge label={selectedTemplate.latestVersion.status} tone={statusTone(selectedTemplate.latestVersion.status)} />
+                                    </span>
+                                ) : "-"}
+                            </DetailRow>
+                            <DetailRow label={text.linkedProducts} mono>{String(selectedTemplate.linkedProductCount ?? 0)}</DetailRow>
+                            <DetailRow label={text.publishedCount} mono>{String(selectedTemplate.publishedCount ?? 0)}</DetailRow>
+                            <DetailRow label={text.drafts} mono>{String(selectedTemplate.draftCount ?? 0)}</DetailRow>
+                            <DetailRow label={text.inReview} mono>{String(selectedTemplate.inReviewCount ?? 0)}</DetailRow>
+                            <DetailRow label={text.createdBy}>
+                                {selectedTemplate.createdBy || "-"} <span className="tabular font-mono text-ink-3">· {formatDate(selectedTemplate.createdAt)}</span>
+                            </DetailRow>
+                            <DetailRow label={text.lastEditedBy}>
+                                {selectedTemplate.lastUpdatedBy || t("common.unknown")} <span className="tabular font-mono text-ink-3">· {formatDate(selectedTemplate.updatedAt)}</span>
+                            </DetailRow>
+                        </dl>
                     </div>
                 ) : null}
             </SlideOver>
@@ -781,11 +796,11 @@ export default function TemplatesPage() {
     );
 }
 
-function DetailMetric({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, children, mono = false }: { label: string; children: React.ReactNode; mono?: boolean }) {
     return (
-        <div className="rounded-lg border border-line bg-raised p-4">
-            <div className="text-xs font-medium text-ink-3">{label}</div>
-            <div className="mt-2 text-xl font-medium text-ink">{value}</div>
+        <div className="flex items-center justify-between gap-4 py-2.5">
+            <dt className="text-ink-2">{label}</dt>
+            <dd className={`text-right text-ink ${mono ? "tabular font-mono" : ""}`}>{children}</dd>
         </div>
     );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
@@ -28,26 +29,30 @@ export default function ApprovalReviewDetailPage() {
     const versionId = String(params.versionId);
     const text = locale === "tr"
         ? {
-            eyebrow: "Onay incelemesi",
-            title: "Şablon Onay Detayı",
-            description: "İncelemedeki şablon sürümü için odaklı inceleme giriş noktası.",
-            open: "Şablon İncelemesini Aç",
+            parent: "Onaylar",
+            title: "Şablon onayı",
+            open: "Şablonda incele",
             notFound: "Onay kaydı bulunamadı",
-            notFoundDescription: "Hedef sürüm artık onay kuyruğunda değil.",
-            requestedByOn: "Talep eden {user} - {date}",
-            changeNotes: "Değişiklik Notları",
-            noNotes: "İnceleme notu girilmedi.",
+            notFoundDescription: "Bu sürüm artık onay beklemiyor.",
+            code: "Kod",
+            version: "Sürüm",
+            requestedBy: "Talep eden",
+            requestedAt: "Tarih",
+            changeNotes: "Değişiklik notu",
+            noNotes: "Not girilmemiş",
         }
         : {
-            eyebrow: "Approval review",
-            title: "Template Approval Detail",
-            description: "Focused review entrypoint for an in-review template version.",
-            open: "Open Template Review",
-            notFound: "Approval record not found",
-            notFoundDescription: "The target version is no longer in the approval queue.",
-            requestedByOn: "Requested by {user} on {date}",
-            changeNotes: "Change Notes",
-            noNotes: "No review notes provided.",
+            parent: "Approvals",
+            title: "Template approval",
+            open: "Review in template",
+            notFound: "Approval not found",
+            notFoundDescription: "This version is no longer waiting for approval.",
+            code: "Code",
+            version: "Version",
+            requestedBy: "Requested by",
+            requestedAt: "Date",
+            changeNotes: "Change note",
+            noNotes: "No note given",
         };
     const [item, setItem] = useState<ApprovalSummary | null>(null);
     const [loading, setLoading] = useState(true);
@@ -66,33 +71,45 @@ export default function ApprovalReviewDetailPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-            <div className="mx-auto max-w-4xl space-y-6">
+            <div className="space-y-6">
+                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                    <Link href="/approvals" className="transition-colors hover:text-ink">{text.parent}</Link>
+                    <CaretRight size={12} aria-hidden />
+                    <span className="whitespace-nowrap font-mono text-ink-2">{item ? `${item.templateCode} v${item.versionNumber}` : text.title}</span>
+                </nav>
+
                 <PageHeader
-                    eyebrow={text.eyebrow}
-                    title={text.title}
-                    description={text.description}
+                    title={item ? item.templateName : text.title}
                     actions={item ? <Link href={`/templates/${item.templateId}`} className="plms-button-primary">{text.open}</Link> : null}
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : !item ? (
                     <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
-                    <div className="space-y-6 rounded-xl border border-line bg-surface p-8">
-                        <div className="flex flex-wrap items-center gap-3">
-                            <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{item.templateCode}</span>
-                            <StatusBadge label={`v${item.versionNumber}`} tone="warning" />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-medium text-ink">{item.templateName}</h2>
-                            <p className="mt-2 text-sm font-medium text-ink-3">
-                                {text.requestedByOn.replace("{user}", item.requestedBy).replace("{date}", formatDateTime(item.requestedAt))}
-                            </p>
-                        </div>
-                        <div className="rounded-lg border border-line bg-raised p-5">
-                            <div className="text-xs font-medium text-ink-3">{text.changeNotes}</div>
-                            <p className="mt-3 text-sm font-medium text-ink-2">{item.reviewCommentSummary || item.changeNotes || text.noNotes}</p>
+                    <div className="plms-card max-w-3xl divide-y divide-line">
+                        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4 md:grid-cols-4">
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.code}</dt>
+                                <dd className="whitespace-nowrap font-mono text-sm text-ink">{item.templateCode}</dd>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.version}</dt>
+                                <dd className="flex items-center gap-2"><StatusBadge label={`v${item.versionNumber}`} tone="warning" /></dd>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.requestedBy}</dt>
+                                <dd className="truncate text-base text-ink">{item.requestedBy}</dd>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.requestedAt}</dt>
+                                <dd className="tabular whitespace-nowrap font-mono text-sm text-ink">{formatDateTime(item.requestedAt)}</dd>
+                            </div>
+                        </dl>
+                        <div className="flex flex-col gap-1.5 px-5 py-4">
+                            <div className="text-sm text-ink-3">{text.changeNotes}</div>
+                            <p className="text-base text-ink-2">{item.reviewCommentSummary || item.changeNotes || text.noNotes}</p>
                         </div>
                     </div>
                 )}

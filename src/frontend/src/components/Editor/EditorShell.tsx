@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AssetLibraryDrawer } from "@/components/Editor/AssetLibraryDrawer";
 import { EditorInspector } from "@/components/Editor/EditorInspector";
 import { EditorLayersPanel } from "@/components/Editor/EditorLayersPanel";
-import { EditorToolRail } from "@/components/Editor/EditorToolRail";
+import { EditorToolRail, getElementTypeMeta } from "@/components/Editor/EditorToolRail";
 import { EditorTopBar } from "@/components/Editor/EditorTopBar";
 import { EditorSaveResult } from "@/components/Editor/editor-save";
 import { fitViewportToContainer, renameModel, resizeModelCanvas } from "@/components/Editor/editor-actions";
@@ -25,6 +25,9 @@ interface EditorShellProps {
   initialModel: CanonicalLabelModel;
   onSave: (model: CanonicalLabelModel) => Promise<EditorSaveResult>;
   previewHref?: string;
+  backHref?: string;
+  versionLabel?: string;
+  status?: string;
   onRenameTemplate?: (name: string, model: CanonicalLabelModel) => Promise<void>;
 }
 
@@ -36,7 +39,7 @@ function isInteractiveTarget(target: EventTarget | null) {
   return ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(element.tagName) || element.isContentEditable;
 }
 
-export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplate }: EditorShellProps) {
+export function EditorShell({ initialModel, onSave, previewHref, backHref, versionLabel, status, onRenameTemplate }: EditorShellProps) {
   const { locale } = useI18n();
   const initialize = useEditorStore((state) => state.initialize);
   const model = useEditorStore((state) => state.model);
@@ -249,18 +252,44 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
 
   const selectedLabel = useMemo(() => model.elements.find((element) => element.id === selection.selectedElementId) ?? null, [model.elements, selection.selectedElementId]);
   const layoutClassName = panelsCollapsed
-    ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)]"
-    : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[4rem_minmax(0,1fr)] xl:grid-cols-[4rem_minmax(0,1fr)_22rem] 2xl:grid-cols-[4rem_minmax(0,1fr)_20rem_22rem]";
+    ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[3rem_minmax(0,1fr)]"
+    : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[3rem_minmax(0,1fr)] xl:grid-cols-[3rem_minmax(0,1fr)_20rem] 2xl:grid-cols-[3rem_minmax(0,1fr)_18rem_20rem]";
+
+  const text = locale === "tr"
+    ? {
+      layers: "Katmanlar",
+      properties: "Özellikler",
+      panTool: "Tuvali sürükleyerek kaydırın",
+      selectTool: "Seçmek için bir öğeye tıklayın, oklarla 0,1 mm, Shift ile 1 mm kaydırın",
+      placeTool: (label: string) => `${label} eklemek için etikete tıklayın`,
+    }
+    : {
+      layers: "Layers",
+      properties: "Properties",
+      panTool: "Drag to pan the canvas",
+      selectTool: "Click an element to select it, arrows nudge 0.1 mm, Shift 1 mm",
+      placeTool: (label: string) => `Click the label to add ${label.toLowerCase()}`,
+    };
+
+  const modeHint = ui.isSpacePanning || ui.activeTool === "pan"
+    ? text.panTool
+    : ui.activeTool === "select"
+      ? text.selectTool
+      : text.placeTool(getElementTypeMeta(ui.activeTool, locale).label);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-canvas text-ink">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none bg-surface text-ink">
       <AssetLibraryDrawer open={libraryOpen} onClose={() => setLibraryOpen(false)} onInsertImage={insertImageFromLibrary} />
       <EditorTopBar
         name={model.name}
         dimensions={model.dimensions}
         zoom={viewport.zoom}
         previewHref={previewHref}
-        isDirty={isDirty || savePending}
+        backHref={backHref}
+        versionLabel={versionLabel}
+        status={status}
+        isDirty={isDirty}
+        savePending={savePending}
         onSave={() => void handleSave()}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
@@ -276,76 +305,61 @@ export function EditorShell({ initialModel, onSave, previewHref, onRenameTemplat
         onRotateRight={() => rotateSelected("right")}
         onRenameTemplate={handleRenameTemplate}
         onResizeCanvas={handleResizeCanvas}
+        hasSelection={Boolean(selectedLabel)}
+        panelsCollapsed={panelsCollapsed}
+        onTogglePanels={() => setPanelsCollapsed((current) => !current)}
       />
 
       <div className={layoutClassName}>
         <EditorToolRail activeTool={ui.activeTool} onSelectTool={setTool} onOpenLibrary={() => setLibraryOpen(true)} />
 
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 xl:px-6">
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium text-ink-3">
-                {ui.isSpacePanning || ui.activeTool === "pan"
-                  ? (locale === "tr" ? "Kaydırma modu" : "Pan mode")
-                  : ui.activeTool === "select"
-                    ? (locale === "tr" ? "Seçim modu" : "Select mode")
-                    : (locale === "tr" ? `Tuvale ${ui.activeTool} yerleştirmek için tıklayın` : `Click canvas to place ${ui.activeTool}`)}
-              </div>
-              {selectedLabel ? (
-                <div className="mt-2 max-w-full truncate rounded-lg border border-line bg-surface px-4 py-2 text-xs font-medium text-ink-3">
-                  {selectedLabel.name || selectedLabel.type} | {selectedLabel.xMm}mm / {selectedLabel.yMm}mm
-                </div>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${!panelsCollapsed && rightPanelTab === "layers" ? "border-accent/30 bg-accent/10 text-ink" : "border-line bg-surface text-ink-3 hover:bg-raised hover:text-ink"}`}
-                onClick={() => {
-                  setPanelsCollapsed(false);
-                  setRightPanelTab("layers");
-                }}
-              >
-                {locale === "tr" ? "Katmanlar" : "Layers"}
-              </button>
-              <button
-                type="button"
-                className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${!panelsCollapsed && rightPanelTab === "properties" ? "border-accent/30 bg-accent/10 text-ink" : "border-line bg-surface text-ink-3 hover:bg-raised hover:text-ink"}`}
-                onClick={() => {
-                  setPanelsCollapsed(false);
-                  setRightPanelTab("properties");
-                }}
-              >
-                {locale === "tr" ? "Özellikler" : "Properties"}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink-3 transition-colors hover:bg-raised hover:text-ink"
-                onClick={() => setPanelsCollapsed((current) => !current)}
-              >
-                {panelsCollapsed ? (locale === "tr" ? "Panelleri Göster" : "Show Panels") : (locale === "tr" ? "Panelleri Gizle" : "Hide Panels")}
-              </button>
-            </div>
-          </div>
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-raised">
           <div className="min-h-0 flex-1 overflow-hidden">
             <CanvasStage />
+          </div>
+          <div className="flex h-8 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-xs text-ink-3">
+            <span className="min-w-0 truncate">{modeHint}</span>
+            {selectedLabel ? (
+              <span className="flex min-w-0 shrink-0 items-center gap-3 whitespace-nowrap">
+                <span className="max-w-48 truncate text-ink-2">{selectedLabel.name || getElementTypeMeta(selectedLabel.type, locale).label}</span>
+                <span className="font-mono tabular">X {selectedLabel.xMm} · Y {selectedLabel.yMm} · {selectedLabel.widthMm} × {selectedLabel.heightMm} mm</span>
+              </span>
+            ) : null}
           </div>
         </section>
 
         {!panelsCollapsed ? (
           <>
-            <div className="hidden h-full min-h-0 overflow-hidden overscroll-none xl:block 2xl:hidden">
-              {rightPanelTab === "layers" ? (
-                <EditorLayersPanel className="h-full w-[22rem]" />
-              ) : (
-                <EditorInspector className="h-full w-[22rem]" />
-              )}
+            <div className="hidden h-full min-h-0 flex-col overflow-hidden overscroll-none border-l border-line bg-surface xl:flex 2xl:hidden">
+              <div className="flex h-12 shrink-0 items-center border-b border-line px-3" role="tablist" aria-label={`${text.layers} / ${text.properties}`}>
+                <div className="grid w-full grid-cols-2 gap-0.5 rounded-lg bg-raised p-0.5">
+                  {(["layers", "properties"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={rightPanelTab === tab}
+                      className={`h-7 rounded-md text-sm transition-colors ${rightPanelTab === tab ? "bg-surface font-medium text-ink shadow-xs" : "text-ink-2 hover:text-ink"}`}
+                      onClick={() => setRightPanelTab(tab)}
+                    >
+                      {tab === "layers" ? text.layers : text.properties}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="min-h-0 flex-1">
+                {rightPanelTab === "layers" ? (
+                  <EditorLayersPanel className="h-full" showHeader={false} />
+                ) : (
+                  <EditorInspector className="h-full" showHeader={false} />
+                )}
+              </div>
             </div>
-            <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
-              <EditorLayersPanel className="h-full w-[20rem]" />
+            <div className="hidden h-full min-h-0 overflow-hidden overscroll-none border-l border-line 2xl:block">
+              <EditorLayersPanel className="h-full" />
             </div>
-            <div className="hidden h-full min-h-0 overflow-hidden overscroll-none 2xl:block">
-              <EditorInspector className="h-full w-[22rem]" />
+            <div className="hidden h-full min-h-0 overflow-hidden overscroll-none border-l border-line 2xl:block">
+              <EditorInspector className="h-full" />
             </div>
           </>
         ) : null}

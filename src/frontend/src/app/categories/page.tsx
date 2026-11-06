@@ -27,66 +27,66 @@ export default function CategoriesPage() {
     const canEdit = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.categoriesManage]);
     const canDelete = roles.includes("Admin");
 
-    const [categories, setCategories] = useState<ProductCategory[]>([]);
+    const [items, setItems] = useState<ProductCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [draft, setDraft] = useState<CategoryDraft>(initialDraft);
     const [slideoverOpen, setSlideoverOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<ProductCategory | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+    const [pageError, setPageError] = useState<string | null>(null);
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Kategori yönetimi",
             title: "Kategoriler",
-            description: "Ürün ana verisi ve içe aktarma doğrulaması için kullanılan kontrollü kategori kaydı.",
-            newCategory: "Yeni Kategori",
-            searchPlaceholder: "Kategori kodu veya adında ara",
+            description: "Ürün kategorileri. CSV içe aktarımda kategori kodu buradan eşlenir.",
+            newItem: "Yeni kategori",
             emptyTitle: "Kategori bulunamadı",
-            emptyDescription: "Ürün yönetimi ve içe aktarma doğrulaması için kategoriler oluşturun.",
-            columns: ["Kod", "Ad", "Durum", "Aksiyonlar"],
+            emptyDescription: "Aramayı değiştirin veya yeni bir kategori ekleyin.",
+            editItem: "Kategoriyi düzenle",
+            createItem: "Kategori ekle",
+            slideSubtitle: "Kod sonradan değiştirilemez.",
+            deleteTitle: "Kategori silinsin mi",
+            deleteDescription: (name: string) => `${name} silinecek. Bu kategoriye bağlı ürün varsa silme engellenir.`,
+            searchPlaceholder: "Ara",
+            columns: ["Kod", "Ad", "Durum", ""],
             edit: "Düzenle",
             delete: "Sil",
-            editCategory: "Kategoriyi Düzenle",
-            createCategory: "Kategori Oluştur",
-            slideSubtitle: "Kategori kayıtları ürünler, içe aktarmalar ve raporlama tarafında kullanılır.",
             code: "Kod",
             name: "Ad",
             active: "Aktif",
-            saving: "Kaydediliyor...",
-            updateCategory: "Kategoriyi Güncelle",
-            deleteTitle: "Kategoriyi sil",
-            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu işlem, ürünler hâlâ bu kategoriye bağlıysa engellenir.`,
-            deleteConfirm: "Kategoriyi Sil",
+            saving: "Kaydediliyor",
+            save: "Kaydet",
+            count: (n: number) => `${n} kayıt`,
         }
         : {
-            eyebrow: "Category governance",
             title: "Categories",
-            description: "Controlled product category registry used by product master data and import validation.",
-            newCategory: "New Category",
-            searchPlaceholder: "Search category code or name",
+            description: "Product categories. CSV imports match category codes against this list.",
+            newItem: "New category",
             emptyTitle: "No categories found",
-            emptyDescription: "Create categories to support product governance and import validation.",
-            columns: ["Code", "Name", "Status", "Actions"],
+            emptyDescription: "Change the search or add a new category.",
+            editItem: "Edit category",
+            createItem: "Add category",
+            slideSubtitle: "The code cannot be changed later.",
+            deleteTitle: "Delete this category",
+            deleteDescription: (name: string) => `${name} will be deleted. This is blocked while products still use the category.`,
+            searchPlaceholder: "Search",
+            columns: ["Code", "Name", "Status", ""],
             edit: "Edit",
             delete: "Delete",
-            editCategory: "Edit Category",
-            createCategory: "Create Category",
-            slideSubtitle: "Category records are used by products, imports and reporting.",
             code: "Code",
             name: "Name",
             active: "Active",
-            saving: "Saving...",
-            updateCategory: "Update Category",
-            deleteTitle: "Delete category",
-            deleteDescription: `Delete ${deleteTarget?.name ?? ""}. This is blocked if products still reference the category.`,
-            deleteConfirm: "Delete Category",
+            saving: "Saving",
+            save: "Save",
+            count: (n: number) => `${n} ${n === 1 ? "record" : "records"}`,
         };
 
     async function load() {
         const res = await apiFetch<ProductCategory[]>("/api/categories");
         if (res.success) {
-            setCategories(res.data);
+            setItems(res.data);
         }
         setLoading(false);
     }
@@ -96,23 +96,26 @@ export default function CategoriesPage() {
     }, []);
 
     const filtered = useMemo(
-        () => categories.filter((category) => [category.code, category.name].join(" ").toLowerCase().includes(query.toLowerCase())),
-        [categories, query]
+        () => items.filter((item) => [item.code, item.name].join(" ").toLowerCase().includes(query.toLowerCase())),
+        [items, query]
     );
 
     const openCreate = () => {
         setDraft(initialDraft);
+        setFormError(null);
         setSlideoverOpen(true);
     };
 
-    const openEdit = (category: ProductCategory) => {
-        setDraft(category);
+    const openEdit = (item: ProductCategory) => {
+        setDraft(item);
+        setFormError(null);
         setSlideoverOpen(true);
     };
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
         setSubmitting(true);
+        setFormError(null);
 
         const endpoint = draft.id ? `/api/categories/${draft.id}` : "/api/categories";
         const method = draft.id ? "PUT" : "POST";
@@ -132,52 +135,57 @@ export default function CategoriesPage() {
             setDraft(initialDraft);
             load();
         } else {
-            alert(res.error.message);
+            setFormError(res.error.message);
         }
     };
 
-    const deleteCategory = async () => {
+    const deleteItem = async () => {
         if (!deleteTarget) return;
 
         setSubmitting(true);
+        setPageError(null);
         const res = await apiFetch(`/api/categories/${deleteTarget.id}`, { method: "DELETE" });
         setSubmitting(false);
+        setDeleteTarget(null);
 
         if (res.success) {
-            setDeleteTarget(null);
             load();
         } else {
-            alert(res.error.message);
+            setPageError(res.error.message);
         }
     };
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
-                    eyebrow={text.eyebrow}
                     title={text.title}
                     description={text.description}
-                    actions={canEdit ? <button className="plms-button-primary" onClick={openCreate}>{text.newCategory}</button> : null}
+                    actions={canEdit ? <button className="plms-button-primary" onClick={openCreate}>{text.newItem}</button> : null}
                 />
 
-                <FilterBar left={<input className="plms-input max-w-xl" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
+                <FilterBar
+                    left={<input className="plms-input max-w-sm" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />}
+                    right={loading ? null : <span className="tabular text-sm text-ink-3">{text.count(filtered.length)}</span>}
+                />
+
+                {pageError ? <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{pageError}</div> : null}
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <DataTable columns={text.columns}>
-                        {filtered.map((category) => (
-                            <tr key={category.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{category.code}</span></td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink">{category.name}</td>
-                                <td className="px-6 py-4"><StatusBadge label={category.isActive ? "Active" : "Inactive"} tone={category.isActive ? "success" : "danger"} /></td>
-                                <td className="px-6 py-4">
-                                    <div className="flex gap-3">
-                                        {canEdit ? <button className="text-xs font-medium text-accent" onClick={() => openEdit(category)}>{text.edit}</button> : null}
-                                        {canDelete ? <button className="text-xs font-medium text-bad" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
+                        {filtered.map((item) => (
+                            <tr key={item.id} className="transition-colors hover:bg-raised">
+                                <td className="w-40 whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{item.code}</td>
+                                <td className="px-4 py-2.5 text-base text-ink">{item.name}</td>
+                                <td className="px-4 py-2.5"><StatusBadge label={item.isActive ? "Active" : "Inactive"} tone={item.isActive ? "success" : "neutral"} /></td>
+                                <td className="px-4 py-2.5">
+                                    <div className="flex justify-end gap-1">
+                                        {canEdit ? <button className="plms-button-compact" onClick={() => openEdit(item)}>{text.edit}</button> : null}
+                                        {canDelete ? <button className="plms-button-compact hover:bg-bad-soft hover:text-bad" onClick={() => setDeleteTarget(item)}>{text.delete}</button> : null}
                                     </div>
                                 </td>
                             </tr>
@@ -187,34 +195,35 @@ export default function CategoriesPage() {
 
                 <SlideOver
                     open={slideoverOpen}
-                    title={draft.id ? text.editCategory : text.createCategory}
+                    title={draft.id ? text.editItem : text.createItem}
                     subtitle={text.slideSubtitle}
                     onClose={() => setSlideoverOpen(false)}
                 >
                     <form className="space-y-5" onSubmit={submit}>
-                        <div>
-                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.code}</label>
-                            <input className="plms-input" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value })} required />
+                        <div className="flex flex-col gap-1.5">
+                            <label htmlFor="registry-code" className="plms-label">{text.code}</label>
+                            <input id="registry-code" className="plms-input font-mono" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value })} required />
                         </div>
-                        <div>
-                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.name}</label>
-                            <input className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
+                        <div className="flex flex-col gap-1.5">
+                            <label htmlFor="registry-name" className="plms-label">{text.name}</label>
+                            <input id="registry-name" className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
                         </div>
-                        <label className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm font-medium text-ink">
-                            <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
+                        <label className="flex items-center gap-3 text-sm text-ink">
+                            <input type="checkbox" className="h-4 w-4 accent-accent" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
                             {text.active}
                         </label>
-                        <button className="plms-button-primary w-full" type="submit" disabled={submitting}>{submitting ? text.saving : draft.id ? text.updateCategory : text.createCategory}</button>
+                        {formError ? <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{formError}</div> : null}
+                        <button className="plms-button-primary w-full" type="submit" disabled={submitting}>{submitting ? text.saving : draft.id ? text.save : text.createItem}</button>
                     </form>
                 </SlideOver>
 
                 <ConfirmModal
                     open={Boolean(deleteTarget)}
                     title={text.deleteTitle}
-                    description={text.deleteDescription.trim()}
-                    confirmLabel={text.deleteConfirm}
+                    description={text.deleteDescription(deleteTarget?.name ?? "")}
+                    confirmLabel={text.delete}
                     onCancel={() => setDeleteTarget(null)}
-                    onConfirm={deleteCategory}
+                    onConfirm={deleteItem}
                     loading={submitting}
                 />
             </div>

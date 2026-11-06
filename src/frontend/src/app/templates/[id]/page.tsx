@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CaretDown, CaretRight, Star } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
+import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
+import { TemplateRowMenu, type RowMenuItem } from "@/components/Templates/TemplateRowMenu";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
-import { hasAnyPermission, permissions } from "@/lib/permissions";
+import { hasAnyPermission, hasLegacyRoleAccess, permissions } from "@/lib/permissions";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion } from "@/lib/template-versioning";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Portal } from "@/components/ui/Portal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -38,23 +39,6 @@ function getTemplateTone(status: string): "neutral" | "info" | "success" | "warn
   }
 }
 
-function getActionButtonClass(tone: "neutral" | "info" | "warning" | "danger" | "primary" | "success" = "neutral") {
-  switch (tone) {
-    case "info":
-      return "inline-flex items-center justify-center rounded-lg border border-accent/25 bg-accent/10 px-4 py-3 text-xs font-medium text-accent transition-colors hover:bg-accent/20";
-    case "warning":
-      return "inline-flex items-center justify-center rounded-lg border border-warn/25 bg-warn/10 px-4 py-3 text-xs font-medium text-warn transition-colors hover:bg-warn/20";
-    case "danger":
-      return "inline-flex items-center justify-center rounded-lg border border-bad/20 bg-bad/10 px-4 py-3 text-xs font-medium text-bad transition-colors hover:bg-bad/20";
-    case "primary":
-      return "inline-flex items-center justify-center rounded-lg bg-accent px-4 py-3 text-xs font-medium text-white transition-colors hover:bg-accent-hover";
-    case "success":
-      return "inline-flex items-center justify-center rounded-lg border border-good/25 bg-good/10 px-4 py-3 text-xs font-medium text-good transition-colors hover:bg-good/20";
-    default:
-      return "inline-flex items-center justify-center rounded-lg border border-line bg-raised px-4 py-3 text-xs font-medium text-ink-2 transition-colors hover:bg-raised hover:text-ink";
-  }
-}
-
 function canArchiveVersion(template: LabelTemplate, version: TemplateVersion) {
   return !template.isArchived && template.currentActiveVersionId !== version.id && (version.status === "Rejected" || version.status === "Deprecated");
 }
@@ -65,14 +49,17 @@ function canDeleteVersion(template: LabelTemplate, version: TemplateVersion) {
 
 export default function TemplateDetailPage() {
   const { data: session } = useSession();
-  const { formatDateTime, t, locale } = useI18n();
+  const { formatDateTime, locale } = useI18n();
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
   const roles = ((session?.user as any)?.roles || []) as string[];
   const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canCreate = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesCreate]);
-  const favoriteButtonClass = "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-raised text-ink-2 transition-colors hover:bg-raised";
+  const canArchive = hasAnyPermission(grantedPermissions, [permissions.templatesArchive]) || roles.includes("Admin");
+  const canDelete = hasAnyPermission(grantedPermissions, [permissions.templatesDelete]) || roles.includes("Admin");
+  const isAuthor = hasLegacyRoleAccess(roles, grantedPermissions, ["Admin", "Operator"]);
+  const isReviewer = hasLegacyRoleAccess(roles, grantedPermissions, ["Admin", "Reviewer"]);
 
   const [template, setTemplate] = useState<LabelTemplate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,41 +68,155 @@ export default function TemplateDetailPage() {
   const [archiveVersionTarget, setArchiveVersionTarget] = useState<TemplateVersion | null>(null);
   const [deleteVersionTarget, setDeleteVersionTarget] = useState<TemplateVersion | null>(null);
   const [reviewComments, setReviewComments] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; tone: "good" | "bad" } | null>(null);
   const [busy, setBusy] = useState(false);
   const [snapshotExpanded, setSnapshotExpanded] = useState(false);
-  const archivedMessage = locale === "tr"
-    ? "Bu şablon arşivde. Düzenleme ve yeni taslak oluşturma işlemleri geri yüklenene kadar kapatıldı."
-    : "This template is archived. Editing and new draft creation are disabled until it is restored.";
-  const detailText = locale === "tr"
+
+  const text = locale === "tr"
     ? {
+      descriptionFallback: "Açıklama girilmedi",
+      archiveLibrary: "Arşiv",
+      compareVersions: "Sürümleri karşılaştır",
+      openEditor: "Editörü aç",
+      favorite: "Favoriye ekle",
+      unfavorite: "Favoriden çıkar",
+      favoriteAdded: "Favorilere eklendi",
+      favoriteRemoved: "Favorilerden çıkarıldı",
+      archivedMessage: "Bu şablon arşivde. Geri yüklenene kadar düzenleme ve yeni taslak oluşturma kapalı.",
+      activeVersion: "Yayındaki sürüm",
+      drafts: "Taslak",
+      inReview: "İncelemede",
+      archived: "Arşiv veya geçersiz",
+      updatedAt: (date: string) => `Güncellendi ${date}`,
+      category: "Kategori",
+      versions: "Sürümler",
+      versionsDescription: "Her sürüm değiştirilemez bir kayıttır",
+      columns: { version: "Sürüm", status: "Durum", created: "Oluşturuldu", notes: "Notlar" },
+      noVersions: "Sürüm yok",
+      noVersionsDescription: "Bu şablonda henüz sürüm yok.",
+      preview: "Önizle",
+      print: "Yazdır",
+      clone: "Klonla",
+      compare: "Karşılaştır",
+      edit: "Düzenle",
+      submitReview: "İncelemeye gönder",
+      createRevision: "Revizyon oluştur",
+      review: "İncele",
+      publish: "Yayınla",
+      archive: "Arşivle",
+      delete: "Sil",
+      more: "Diğer işlemler",
+      editableDraft: "Düzenlenebilir taslak",
+      noDraftNotes: "Not girilmedi",
+      openDraft: "Taslağı aç",
+      compareToPublished: "Yayındakiyle karşılaştır",
+      noEditableDraft: "Düzenlenebilir taslak yok",
+      createDraft: "Taslak oluştur",
+      productionDescription: "Baskıda bu sürüm kullanılır",
+      noPublished: "Henüz yayında sürüm yok",
+      activeVersionRequired: "Bu işlem için yayında bir sürüm gerekli",
+      record: "Kayıt",
+      created: "Oluşturuldu",
+      updated: "Güncellendi",
+      totalVersions: "Toplam sürüm",
+      reviewTitle: (version: number) => `v${version} incelemesi`,
+      reviewDescription: "Onaylanan sürüm yayınlanmaya hazır olur. Reddedilen sürüm taslağa döner.",
+      reviewComment: "Yorum",
+      reviewPlaceholder: "İnceleme notu",
+      reject: "Reddet",
+      approve: "Onayla",
+      cancel: "Vazgeç",
+      notFound: "Şablon bulunamadı",
+      notFoundDescription: "Bu şablon yüklenemedi.",
+      failedToPrepareDraft: "Düzenlenebilir taslak hazırlanamadı",
+      jsonSnapshot: "Yerleşim verisi",
+      jsonSnapshotDescription: "Kaydedilen yerleşimin JSON kaydı",
+      expandSnapshot: "Yerleşim verisini göster",
+      collapseSnapshot: "Yerleşim verisini gizle",
+      publishedSnapshot: "Yayındaki sürüm",
+      workingSnapshot: "Çalışma taslağı",
+      snapshot: "Son sürüm",
+      noLayout: "Yerleşim verisi yok",
       archiveVersionTitle: "Sürümü arşivle",
-      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} sürümü arşivlenecek ve aktif zaman çizelgesinden kaldırılacak.`,
-      archiveVersionConfirm: "Sürümü Arşivle",
+      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} arşivlenecek ve sürüm listesinden çıkacak.`,
+      archiveVersionConfirm: "Sürümü arşivle",
       deleteVersionTitle: "Sürümü sil",
       deleteVersionDescription: (versionNumber: number) => `v${versionNumber} taslağı kalıcı olarak silinecek.`,
-      deleteVersionConfirm: "Sürümü Sil",
-      archiveVersion: "Arşivle",
-      deleteVersion: "Sil",
-      jsonSnapshot: "Yerleşim JSON Görünümü",
-      jsonSnapshotDescription: "Kaydedilen canonical yerleşim JSON kaydı.",
-      expandSnapshot: "JSON görünümünü aç",
-      collapseSnapshot: "JSON görünümünü kapat",
+      deleteVersionConfirm: "Sürümü sil",
     }
     : {
+      descriptionFallback: "No description",
+      archiveLibrary: "Archive",
+      compareVersions: "Compare versions",
+      openEditor: "Open editor",
+      favorite: "Add to favorites",
+      unfavorite: "Remove from favorites",
+      favoriteAdded: "Added to favorites",
+      favoriteRemoved: "Removed from favorites",
+      archivedMessage: "This template is archived. Editing and new drafts are off until it is restored.",
+      activeVersion: "Published version",
+      drafts: "Drafts",
+      inReview: "In review",
+      archived: "Archived or deprecated",
+      updatedAt: (date: string) => `Updated ${date}`,
+      category: "Category",
+      versions: "Versions",
+      versionsDescription: "Every version is an immutable record",
+      columns: { version: "Version", status: "Status", created: "Created", notes: "Notes" },
+      noVersions: "No versions",
+      noVersionsDescription: "This template has no versions yet.",
+      preview: "Preview",
+      print: "Print",
+      clone: "Clone",
+      compare: "Compare",
+      edit: "Edit",
+      submitReview: "Submit for review",
+      createRevision: "Create revision",
+      review: "Review",
+      publish: "Publish",
+      archive: "Archive",
+      delete: "Delete",
+      more: "More actions",
+      editableDraft: "Editable draft",
+      noDraftNotes: "No notes",
+      openDraft: "Open draft",
+      compareToPublished: "Compare to published",
+      noEditableDraft: "No editable draft",
+      createDraft: "Create draft",
+      productionDescription: "This version is used for printing",
+      noPublished: "No published version yet",
+      activeVersionRequired: "A published version is required for this",
+      record: "Record",
+      created: "Created",
+      updated: "Updated",
+      totalVersions: "Total versions",
+      reviewTitle: (version: number) => `Review v${version}`,
+      reviewDescription: "An approved version is ready to publish. A rejected version goes back to draft.",
+      reviewComment: "Comment",
+      reviewPlaceholder: "Review note",
+      reject: "Reject",
+      approve: "Approve",
+      cancel: "Cancel",
+      notFound: "Template not found",
+      notFoundDescription: "This template could not be loaded.",
+      failedToPrepareDraft: "Could not prepare an editable draft",
+      jsonSnapshot: "Layout data",
+      jsonSnapshotDescription: "The stored layout as JSON",
+      expandSnapshot: "Show layout data",
+      collapseSnapshot: "Hide layout data",
+      publishedSnapshot: "Published version",
+      workingSnapshot: "Working draft",
+      snapshot: "Latest version",
+      noLayout: "No layout data",
       archiveVersionTitle: "Archive version",
-      archiveVersionDescription: (versionNumber: number) => `Version v${versionNumber} will be archived and removed from the active timeline flow.`,
-      archiveVersionConfirm: "Archive Version",
+      archiveVersionDescription: (versionNumber: number) => `v${versionNumber} will be archived and leave the version list.`,
+      archiveVersionConfirm: "Archive version",
       deleteVersionTitle: "Delete version",
-      deleteVersionDescription: (versionNumber: number) => `Draft version v${versionNumber} will be permanently deleted.`,
-      deleteVersionConfirm: "Delete Version",
-      archiveVersion: "Archive",
-      deleteVersion: "Delete",
-      jsonSnapshot: "Layout JSON View",
-      jsonSnapshotDescription: "Stored canonical layout JSON record.",
-      expandSnapshot: "Expand JSON view",
-      collapseSnapshot: "Collapse JSON view",
+      deleteVersionDescription: (versionNumber: number) => `Draft v${versionNumber} will be permanently deleted.`,
+      deleteVersionConfirm: "Delete version",
     };
+
+  const setMessage = (value: string | null, tone: "good" | "bad" = "bad") => setNotice(value ? { text: value, tone } : null);
 
   async function load() {
     setLoading(true);
@@ -142,10 +243,10 @@ export default function TemplateDetailPage() {
       .sort((left, right) => right.versionNumber - left.versionNumber)[0] || null;
   }, [template]);
   const snapshotVersion = activeVersion || editableDraft || template?.versions?.[0] || null;
-  const snapshotTitle = activeVersion ? t("templates.detailPage.publishedSnapshot") : editableDraft ? t("templates.detailPage.workingSnapshot") : t("templates.detailPage.snapshot");
+  const snapshotTitle = activeVersion ? text.publishedSnapshot : editableDraft ? text.workingSnapshot : text.snapshot;
   const formattedSnapshotJson = useMemo(() => {
     if (!snapshotVersion?.layoutJson) {
-      return t("templates.detailPage.noLayout");
+      return text.noLayout;
     }
 
     try {
@@ -153,7 +254,7 @@ export default function TemplateDetailPage() {
     } catch {
       return snapshotVersion.layoutJson;
     }
-  }, [snapshotVersion?.layoutJson, t]);
+  }, [snapshotVersion?.layoutJson, text.noLayout]);
 
   const metrics = useMemo(() => {
     const versions = template?.versions || [];
@@ -173,7 +274,7 @@ export default function TemplateDetailPage() {
       const draft = await ensureEditableVersion(template, sourceVersion);
       router.push(`/templates/${template.id}/edit?versionId=${draft.id}`);
     } catch (error) {
-      setMessage((error as Error).message || t("templates.detailPage.failedToPrepareDraft"));
+      setMessage((error as Error).message || text.failedToPrepareDraft);
     } finally {
       setBusy(false);
     }
@@ -207,7 +308,7 @@ export default function TemplateDetailPage() {
 
   function handlePrint(version: TemplateVersion | null | undefined) {
     if (!template || !version) {
-      setMessage(t("templates.detailPage.activeVersionRequired"));
+      setMessage(text.activeVersionRequired);
       return;
     }
 
@@ -231,7 +332,7 @@ export default function TemplateDetailPage() {
       return;
     }
 
-    setMessage(nextFavoriteState ? t("templates.favoriteAdded") : t("templates.favoriteRemoved"));
+    setMessage(nextFavoriteState ? text.favoriteAdded : text.favoriteRemoved, "good");
   }
 
   async function handleArchiveVersion() {
@@ -271,253 +372,250 @@ export default function TemplateDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>;
+    return <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>;
   }
 
   if (!template) {
-    return <EmptyState title={t("templates.detailPage.notFound")} description={message || t("templates.detailPage.notFoundDescription")} />;
+    return <EmptyState title={text.notFound} description={notice?.text || text.notFoundDescription} />;
+  }
+
+  const locked = busy || Boolean(template.isArchived);
+
+  /** The one workflow step that moves a version forward, shown as a button in its row. */
+  function primaryVersionAction(version: TemplateVersion): { label: string; onClick: () => void; disabled: boolean } | null {
+    if (!template) return null;
+    if ((version.status === "Draft" || version.status === "Rejected") && isAuthor) {
+      return { label: text.submitReview, onClick: () => void handleWorkflowAction(version.id, "request-approval"), disabled: locked };
+    }
+    if (version.status === "InReview" && isReviewer) {
+      return { label: text.review, onClick: () => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber }), disabled: Boolean(template.isArchived) };
+    }
+    if (version.status === "Approved" && isReviewer) {
+      return { label: text.publish, onClick: () => void handleWorkflowAction(version.id, "publish"), disabled: locked };
+    }
+    return null;
+  }
+
+  function versionMenuItems(version: TemplateVersion): RowMenuItem[] {
+    if (!template) return [];
+    const items: RowMenuItem[] = [
+      { label: text.preview, href: `/templates/${template.id}/preview?versionId=${version.id}` },
+      { label: text.print, onSelect: () => handlePrint(version) },
+    ];
+    if (isAuthor && (version.status === "Draft" || version.status === "Rejected")) {
+      items.push({ label: text.edit, onSelect: () => void handleEdit(version), disabled: locked });
+    }
+    if (isAuthor && ["Rejected", "Approved", "Published", "Deprecated", "Archived"].includes(version.status)) {
+      items.push({ label: text.createRevision, onSelect: () => void handleEdit(version), disabled: locked });
+    }
+    if (snapshotVersion && snapshotVersion.id !== version.id) {
+      items.push({ label: text.compare, href: `/templates/${template.id}/compare?leftVersionId=${version.id}&rightVersionId=${snapshotVersion.id}` });
+    }
+    if (canCreate) items.push({ label: text.clone, onSelect: () => setCloneTarget(version) });
+    const archivable = canArchive && canArchiveVersion(template, version);
+    if (archivable) items.push({ label: text.archive, onSelect: () => setArchiveVersionTarget(version), disabled: busy, separated: true });
+    if (canDelete && canDeleteVersion(template, version)) {
+      items.push({ label: text.delete, onSelect: () => setDeleteVersionTarget(version), disabled: busy, tone: "danger", separated: !archivable });
+    }
+    return items;
   }
 
   return (
     <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-      <div className="mx-auto max-w-7xl space-y-6">
-        <PageHeader
-          eyebrow={t("templates.detailPage.eyebrow")}
-          title={template.name}
-          description={template.description || t("templates.detailPage.descriptionFallback")}
-          actions={
-            <>
-              <button
-                type="button"
-                className={`${favoriteButtonClass} ${template.isFavorite ? "border-warn/40 bg-warn/15 text-warn" : ""}`}
-                onClick={handleToggleFavorite}
-                title={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
-                aria-label={template.isFavorite ? t("templates.unfavorite") : t("templates.favorite")}
-              >
-                <Star size={18} weight={template.isFavorite ? "fill" : "regular"} />
-              </button>
-              <Link href="/templates/archived" className="plms-button-secondary">{t("templates.detailPage.archiveLibrary")}</Link>
-              <Link href={`/templates/${template.id}/compare`} className="plms-button-secondary">{t("templates.detailPage.compareVersions")}</Link>
-              <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                <button className="plms-button-primary" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.openEditor")}</button>
-              </RoleGuard>
-            </>
-          }
-        />
-
-        {message ? (
-          <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
-        ) : null}
-        {template.isArchived ? (
-          <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{archivedMessage}</div>
-        ) : null}
-
-        <div className="grid gap-5 md:grid-cols-4">
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.activeVersion")}</div>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="text-3xl font-medium text-ink">{template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}</div>
-              {template.currentActiveVersion ? <StatusBadge label={template.currentActiveVersion.status} tone={getTemplateTone(template.currentActiveVersion.status)} /> : null}
-            </div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.drafts")}</div>
-            <div className="mt-3 text-3xl font-medium text-ink">{metrics.drafts}</div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.inReview")}</div>
-            <div className="mt-3 text-3xl font-medium text-ink">{metrics.inReview}</div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.archived")}</div>
-            <div className="mt-3 text-3xl font-medium text-ink">{metrics.archived}</div>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <PageHeader
+            title={template.name}
+            description={template.description || text.descriptionFallback}
+            actions={
+              <>
+                <button
+                  type="button"
+                  className={`plms-button-secondary w-9 px-0 ${template.isFavorite ? "text-accent" : "text-ink-2"}`}
+                  onClick={handleToggleFavorite}
+                  aria-pressed={Boolean(template.isFavorite)}
+                  title={template.isFavorite ? text.unfavorite : text.favorite}
+                  aria-label={template.isFavorite ? text.unfavorite : text.favorite}
+                >
+                  <Star size={16} weight={template.isFavorite ? "fill" : "regular"} />
+                </button>
+                <Link href="/templates/archived" className="plms-button-ghost">{text.archiveLibrary}</Link>
+                <Link href={`/templates/${template.id}/compare`} className="plms-button-secondary">{text.compareVersions}</Link>
+                <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                  <button className="plms-button-primary" onClick={() => handleEdit()} disabled={locked}>{text.openEditor}</button>
+                </RoleGuard>
+              </>
+            }
+          />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-3">
+            <span className="whitespace-nowrap font-mono text-ink-2">{template.code}</span>
+            <StatusBadge label={template.isActive ? "Active" : "Inactive"} tone={template.isActive ? "success" : "danger"} />
+            {template.templateCategoryName ? <span>{template.templateCategoryName}</span> : null}
+            <span className="tabular">{text.updatedAt(formatDateTime(template.updatedAt))}</span>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="space-y-6">
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{template.code}</span>
-                <StatusBadge label={template.isActive ? "Active" : "Inactive"} tone={template.isActive ? "success" : "danger"} />
-                <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.updatedAt", undefined, { date: formatDateTime(template.updatedAt) })}</div>
-              </div>
-            </div>
+        {notice ? (
+          <div role="status" className={`rounded-lg px-3 py-2 text-sm ${notice.tone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>{notice.text}</div>
+        ) : null}
+        {template.isArchived ? (
+          <div className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{text.archivedMessage}</div>
+        ) : null}
 
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="flex items-center justify-between">
-                  <div>
-                  <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.versionTimeline")}</div>
-                  <div className="mt-1 text-sm font-medium text-ink-2">{t("templates.detailPage.timelineDescription")}</div>
-                </div>
-                <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                  <button className="plms-button-secondary" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createOrOpenDraft")}</button>
-                </RoleGuard>
-              </div>
+        <dl className="grid grid-cols-2 divide-line rounded-xl border border-line bg-surface sm:grid-cols-4 sm:divide-x">
+          <Stat label={text.activeVersion}>
+            <span className="flex items-center gap-3">
+              <span>{template.currentActiveVersion ? `v${template.currentActiveVersion.versionNumber}` : "-"}</span>
+              {template.currentActiveVersion ? <StatusBadge label={template.currentActiveVersion.status} tone={getTemplateTone(template.currentActiveVersion.status)} /> : null}
+            </span>
+          </Stat>
+          <Stat label={text.drafts}>{metrics.drafts}</Stat>
+          <Stat label={text.inReview}>{metrics.inReview}</Stat>
+          <Stat label={text.archived}>{metrics.archived}</Stat>
+        </dl>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex min-w-0 flex-col gap-6">
+            <section className="overflow-hidden rounded-xl border border-line bg-surface">
+              <header className="flex flex-col gap-0.5 border-b border-line px-5 py-4">
+                <h2 className="text-md font-medium text-ink">{text.versions}</h2>
+                <p className="text-sm text-ink-3">{text.versionsDescription}</p>
+              </header>
 
               {(template.versions || []).length === 0 ? (
-                <div className="mt-6"><EmptyState title={t("templates.detailPage.noVersions")} description={t("templates.detailPage.noVersionsDescription")} /></div>
+                <div className="p-5"><EmptyState title={text.noVersions} description={text.noVersionsDescription} /></div>
               ) : (
-                <div className="mt-6">
-                  <DataTable columns={[t("templates.detailPage.version"), t("templates.detailPage.status"), t("templates.detailPage.created"), t("templates.detailPage.notes"), t("templates.detailPage.actions")]}>
-                    {(template.versions || []).map((version) => (
-                      <tr key={version.id} className="transition-colors hover:bg-white/5">
-                        <td className="px-6 py-4 text-sm font-medium text-ink">v{version.versionNumber}</td>
-                        <td className="px-6 py-4"><StatusBadge label={version.status} tone={getTemplateTone(version.status)} /></td>
-                        <td className="px-6 py-4 text-sm font-medium text-ink-3">
-                          {formatDateTime(version.createdAt)}<div className="mt-1 text-xs">{version.createdBy}</div>
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{version.changeNotes || t("templates.detailPage.noNotesRecorded")}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className={getActionButtonClass()}>{t("templates.detailPage.preview")}</Link>
-                            <button className={getActionButtonClass("info")} onClick={() => handlePrint(version)}>{t("templates.detailPage.print")}</button>
-                            {canCreate ? (
-                              <button className={getActionButtonClass()} onClick={() => setCloneTarget(version)}>
-                                {t("templates.detailPage.clone")}
-                              </button>
-                            ) : null}
-                            {snapshotVersion && snapshotVersion.id !== version.id ? (
-                              <Link href={`/templates/${template.id}/compare?leftVersionId=${version.id}&rightVersionId=${snapshotVersion.id}`} className={getActionButtonClass()}>{t("templates.detailPage.compare")}</Link>
-                            ) : null}
-                            {(version.status === "Draft" || version.status === "Rejected") ? (
-                              <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                <>
-                                  <button className={getActionButtonClass("primary")} onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.edit")}</button>
-                                  <button className={getActionButtonClass("primary")} onClick={() => handleWorkflowAction(version.id, "request-approval")} disabled={busy || template.isArchived}>{t("templates.detailPage.submitReview")}</button>
-                                </>
-                              </RoleGuard>
-                            ) : null}
-                            {(version.status === "Rejected" || version.status === "Approved" || version.status === "Published" || version.status === "Deprecated" || version.status === "Archived") ? (
-                              <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                <button className={getActionButtonClass("primary")} onClick={() => handleEdit(version)} disabled={busy || template.isArchived}>{t("templates.detailPage.createRevision")}</button>
-                              </RoleGuard>
-                            ) : null}
-                            {version.status === "InReview" ? (
-                              <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className={getActionButtonClass("warning")} onClick={() => setReviewModal({ versionId: version.id, versionNumber: version.versionNumber })} disabled={template.isArchived}>{t("templates.detailPage.review")}</button>
-                              </RoleGuard>
-                            ) : null}
-                            {version.status === "Approved" ? (
-                              <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-                                <button className={getActionButtonClass("success")} onClick={() => handleWorkflowAction(version.id, "publish")} disabled={busy || template.isArchived}>{t("templates.detailPage.publish")}</button>
-                              </RoleGuard>
-                            ) : null}
-                            {hasAnyPermission(grantedPermissions, [permissions.templatesArchive]) || roles.includes("Admin") ? (
-                              canArchiveVersion(template, version) ? (
-                                <button className={getActionButtonClass("warning")} onClick={() => setArchiveVersionTarget(version)} disabled={busy}>
-                                  {detailText.archiveVersion}
-                                </button>
-                              ) : null
-                            ) : null}
-                            {hasAnyPermission(grantedPermissions, [permissions.templatesDelete]) || roles.includes("Admin") ? (
-                              canDeleteVersion(template, version) ? (
-                                <button className={getActionButtonClass("danger")} onClick={() => setDeleteVersionTarget(version)} disabled={busy}>
-                                  {detailText.deleteVersion}
-                                </button>
-                              ) : null
-                            ) : null}
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-ink-3">
+                        <th className="h-10 whitespace-nowrap pl-5 pr-4 font-medium">{text.columns.version}</th>
+                        <th className="h-10 whitespace-nowrap px-4 font-medium">{text.columns.status}</th>
+                        <th className="h-10 whitespace-nowrap px-4 font-medium">{text.columns.created}</th>
+                        <th className="h-10 whitespace-nowrap px-4 font-medium">{text.columns.notes}</th>
+                        <th className="h-10 pl-2 pr-4"><span className="sr-only">{text.more}</span></th>
                       </tr>
-                    ))}
-                  </DataTable>
+                    </thead>
+                    <tbody className="divide-y divide-line border-t border-line">
+                      {(template.versions || []).map((version) => {
+                        const action = primaryVersionAction(version);
+                        return (
+                          <tr key={version.id} className="transition-colors hover:bg-raised">
+                            <td className="tabular whitespace-nowrap py-2.5 pl-5 pr-4 font-mono text-sm text-ink">v{version.versionNumber}</td>
+                            <td className="whitespace-nowrap px-4 py-2.5"><StatusBadge label={version.status} tone={getTemplateTone(version.status)} /></td>
+                            <td className="whitespace-nowrap px-4 py-2.5">
+                              <div className="tabular font-mono text-sm text-ink-2">{formatDateTime(version.createdAt)}</div>
+                              <div className="text-sm text-ink-3">{version.createdBy}</div>
+                            </td>
+                            <td className="max-w-64 px-4 py-2.5 text-base text-ink-2">
+                              <span className="line-clamp-2" title={version.changeNotes || undefined}>{version.changeNotes || <span className="text-ink-3">-</span>}</span>
+                            </td>
+                            <td className="w-px whitespace-nowrap py-2.5 pl-2 pr-4">
+                              <div className="flex items-center justify-end gap-1">
+                                {action ? (
+                                  <button type="button" className="plms-button-compact" onClick={action.onClick} disabled={action.disabled}>{action.label}</button>
+                                ) : (
+                                  <Link href={`/templates/${template.id}/preview?versionId=${version.id}`} className="plms-button-compact">{text.preview}</Link>
+                                )}
+                                <TemplateRowMenu label={text.more} items={versionMenuItems(version)} />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </div>
+            </section>
 
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div
-                className="flex cursor-pointer items-center justify-between gap-4"
+            <section className="rounded-xl border border-line bg-surface">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 rounded-xl px-5 py-4 text-left transition-colors hover:bg-raised"
                 onClick={() => setSnapshotExpanded((current) => !current)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSnapshotExpanded((current) => !current);
-                  }
-                }}
                 aria-expanded={snapshotExpanded}
-                aria-label={snapshotExpanded ? detailText.collapseSnapshot : detailText.expandSnapshot}
+                aria-label={snapshotExpanded ? text.collapseSnapshot : text.expandSnapshot}
               >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-xs font-medium text-ink-3">{detailText.jsonSnapshot}</div>
-                    {snapshotVersion ? <StatusBadge label={snapshotVersion.status} tone={getTemplateTone(snapshotVersion.status)} /> : null}
-                    {snapshotVersion ? <div className="text-xs font-medium text-ink-3">v{snapshotVersion.versionNumber}</div> : null}
-                  </div>
-                  <div className="mt-2 text-sm font-medium text-ink-2">{detailText.jsonSnapshotDescription}</div>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-md font-medium text-ink">{text.jsonSnapshot}</span>
+                  <span className="text-sm text-ink-3">{text.jsonSnapshotDescription}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium text-ink-3">{snapshotTitle}</span>
-                  {snapshotExpanded ? <CaretDown size={18} weight="bold" className="text-ink-3" /> : <CaretRight size={18} weight="bold" className="text-ink-3" />}
-                </div>
-              </div>
+                <span className="flex items-center gap-3 text-sm text-ink-3">
+                  <span className="hidden sm:inline">{snapshotTitle}</span>
+                  {snapshotVersion ? <span className="tabular font-mono">v{snapshotVersion.versionNumber}</span> : null}
+                  {snapshotExpanded ? <CaretDown size={16} /> : <CaretRight size={16} />}
+                </span>
+              </button>
               {snapshotExpanded ? (
-                <pre className="mt-5 max-h-[420px] overflow-auto whitespace-pre rounded-lg bg-surface p-5 text-xs font-medium leading-6 text-good">{formattedSnapshotJson}</pre>
+                <pre className="max-h-96 overflow-auto whitespace-pre border-t border-line bg-raised px-5 py-4 font-mono text-xs leading-5 text-ink-2">{formattedSnapshotJson}</pre>
               ) : null}
-            </div>
+            </section>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.editableDraft")}</div>
-              {editableDraft ? (
-                <div className="mt-4 space-y-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="text-2xl font-medium text-ink">v{editableDraft.versionNumber}</div>
-                    <StatusBadge label={editableDraft.status} tone={getTemplateTone(editableDraft.status)} />
-                  </div>
-                  <div className="space-y-2 text-sm font-medium text-ink-2">
-                    <div>{t("templates.detailPage.createdBy", undefined, { date: formatDateTime(editableDraft.createdAt), user: editableDraft.createdBy })}</div>
-                    <div>{editableDraft.changeNotes || t("templates.detailPage.noDraftNotes")}</div>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                      <button className="plms-button-primary" onClick={() => handleEdit(editableDraft)} disabled={busy || template.isArchived}>{t("templates.detailPage.openDraft")}</button>
-                    </RoleGuard>
-                    <Link href={`/templates/${template.id}/preview?versionId=${editableDraft.id}`} className="plms-button-secondary">{t("templates.detailPage.previewDraft")}</Link>
-                    {activeVersion ? <Link href={`/templates/${template.id}/compare?leftVersionId=${editableDraft.id}&rightVersionId=${activeVersion.id}`} className="plms-button-secondary">{t("templates.detailPage.compareToPublished")}</Link> : null}
-                  </div>
+          <aside className="flex flex-col gap-6">
+            <section className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-md font-medium text-ink">{text.activeVersion}</h2>
+                  <p className="text-sm text-ink-3">{activeVersion ? text.productionDescription : text.noPublished}</p>
                 </div>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  <div className="text-sm font-medium text-ink-2">{t("templates.detailPage.noEditableDraft")}</div>
-                  <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                    <button className="plms-button-primary w-full" onClick={() => handleEdit()} disabled={busy || template.isArchived}>{t("templates.detailPage.createDraft")}</button>
-                  </RoleGuard>
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.productionEntry")}</div>
-              {activeVersion ? (
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <div className="text-2xl font-medium text-ink">v{activeVersion.versionNumber}</div>
-                    <div className="mt-1 text-sm font-medium text-ink-2">{t("templates.detailPage.productionDescription")}</div>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Link href={`/templates/${template.id}/preview?versionId=${activeVersion.id}`} className="plms-button-primary">{t("templates.detailPage.openProductionPreview")}</Link>
-                    <button className="plms-button-secondary" onClick={() => handlePrint(activeVersion)}>{t("templates.detailPage.printActiveVersion")}</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 text-sm font-medium text-ink-2">{t("templates.detailPage.noPublished")}</div>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.templateRecord")}</div>
-              <div className="mt-4 space-y-3 text-sm font-medium text-ink-2">
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.created")}</span><span className="text-ink">{formatDateTime(template.createdAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.updated")}</span><span className="text-ink">{formatDateTime(template.updatedAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{t("templates.detailPage.totalVersions")}</span><span className="text-ink">{metrics.total}</span></div>
+                {activeVersion ? <span className="tabular font-mono text-sm text-ink-2">v{activeVersion.versionNumber}</span> : null}
               </div>
-            </div>
-          </div>
+              {snapshotVersion ? <TemplatePreviewCard template={template} version={activeVersion || snapshotVersion} /> : null}
+              {activeVersion ? (
+                <div className="flex flex-wrap gap-2">
+                  <button className="plms-button-secondary" onClick={() => handlePrint(activeVersion)}>{text.print}</button>
+                  <Link href={`/templates/${template.id}/preview?versionId=${activeVersion.id}`} className="plms-button-ghost">{text.preview}</Link>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-md font-medium text-ink">{text.editableDraft}</h2>
+                {editableDraft ? (
+                  <span className="flex items-center gap-3">
+                    <StatusBadge label={editableDraft.status} tone={getTemplateTone(editableDraft.status)} />
+                    <span className="tabular font-mono text-sm text-ink-2">v{editableDraft.versionNumber}</span>
+                  </span>
+                ) : null}
+              </div>
+              {editableDraft ? (
+                <>
+                  <div className="flex flex-col gap-1 text-sm">
+                    <span className="text-ink-2">{editableDraft.changeNotes || text.noDraftNotes}</span>
+                    <span className="text-ink-3">
+                      {editableDraft.createdBy} · <span className="tabular font-mono">{formatDateTime(editableDraft.createdAt)}</span>
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                      <button className="plms-button-secondary" onClick={() => handleEdit(editableDraft)} disabled={locked}>{text.openDraft}</button>
+                    </RoleGuard>
+                    <Link href={`/templates/${template.id}/preview?versionId=${editableDraft.id}`} className="plms-button-ghost">{text.preview}</Link>
+                    {activeVersion ? <Link href={`/templates/${template.id}/compare?leftVersionId=${editableDraft.id}&rightVersionId=${activeVersion.id}`} className="plms-button-ghost">{text.compareToPublished}</Link> : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-ink-3">{text.noEditableDraft}</p>
+                  <RoleGuard allowedRoles={["Admin", "Operator"]}>
+                    <button className="plms-button-secondary self-start" onClick={() => handleEdit()} disabled={locked}>{text.createDraft}</button>
+                  </RoleGuard>
+                </>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-line bg-surface px-5 py-4">
+              <h2 className="text-md font-medium text-ink">{text.record}</h2>
+              <dl className="mt-2 divide-y divide-line text-sm">
+                <RecordRow label={text.created}>{formatDateTime(template.createdAt)}</RecordRow>
+                <RecordRow label={text.updated}>{formatDateTime(template.updatedAt)}</RecordRow>
+                <RecordRow label={text.totalVersions}>{metrics.total}</RecordRow>
+              </dl>
+            </section>
+          </aside>
         </div>
 
         <TemplateCloneModal
@@ -530,31 +628,37 @@ export default function TemplateDetailPage() {
 
         {reviewModal ? (
           <Portal>
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
-            <div className="w-full max-w-xl rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{t("templates.detailPage.reviewerDecision")}</div>
-              <h2 className="mt-2 text-2xl font-medium text-ink">{t("templates.detailPage.reviewVersion", undefined, { version: reviewModal.versionNumber })}</h2>
-              <textarea
-                className="plms-input mt-5 min-h-36"
-                placeholder={t("templates.detailPage.reviewPlaceholder")}
-                value={reviewComments}
-                onChange={(event) => setReviewComments(event.target.value)}
-              />
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <button className="plms-button-secondary" onClick={() => setReviewModal(null)}>{t("common.cancel")}</button>
-                <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: false, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.reject")}</button>
-                <button className="rounded-lg bg-good px-4 py-3 text-xs font-medium text-white" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: true, comments: reviewComments })} disabled={busy}>{t("templates.detailPage.approve")}</button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
+              <div role="dialog" aria-modal="true" aria-labelledby="review-modal-title" className="flex w-full max-w-lg flex-col gap-4 rounded-xl border border-line bg-surface p-5 shadow-pop">
+                <div className="flex flex-col gap-1.5">
+                  <h2 id="review-modal-title" className="text-md font-medium text-ink">{text.reviewTitle(reviewModal.versionNumber)}</h2>
+                  <p className="text-sm text-ink-2">{text.reviewDescription}</p>
+                </div>
+                <label className="flex flex-col gap-1.5">
+                  <span className="plms-label">{text.reviewComment}</span>
+                  <textarea
+                    className="plms-input min-h-32"
+                    placeholder={text.reviewPlaceholder}
+                    value={reviewComments}
+                    onChange={(event) => setReviewComments(event.target.value)}
+                    autoFocus
+                  />
+                </label>
+                <div className="flex justify-end gap-2">
+                  <button type="button" className="plms-button-ghost" onClick={() => setReviewModal(null)}>{text.cancel}</button>
+                  <button type="button" className="plms-button-danger" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: false, comments: reviewComments })} disabled={busy}>{text.reject}</button>
+                  <button type="button" className="plms-button-primary" onClick={() => handleWorkflowAction(reviewModal.versionId, "review", { approve: true, comments: reviewComments })} disabled={busy}>{text.approve}</button>
+                </div>
               </div>
             </div>
-          </div>
           </Portal>
         ) : null}
 
         <ConfirmModal
           open={archiveVersionTarget !== null}
-          title={detailText.archiveVersionTitle}
-          description={detailText.archiveVersionDescription(archiveVersionTarget?.versionNumber || 0)}
-          confirmLabel={detailText.archiveVersionConfirm}
+          title={text.archiveVersionTitle}
+          description={text.archiveVersionDescription(archiveVersionTarget?.versionNumber || 0)}
+          confirmLabel={text.archiveVersionConfirm}
           tone="primary"
           onCancel={() => setArchiveVersionTarget(null)}
           onConfirm={() => void handleArchiveVersion()}
@@ -563,14 +667,32 @@ export default function TemplateDetailPage() {
 
         <ConfirmModal
           open={deleteVersionTarget !== null}
-          title={detailText.deleteVersionTitle}
-          description={detailText.deleteVersionDescription(deleteVersionTarget?.versionNumber || 0)}
-          confirmLabel={detailText.deleteVersionConfirm}
+          title={text.deleteVersionTitle}
+          description={text.deleteVersionDescription(deleteVersionTarget?.versionNumber || 0)}
+          confirmLabel={text.deleteVersionConfirm}
           onCancel={() => setDeleteVersionTarget(null)}
           onConfirm={() => void handleDeleteVersion()}
           loading={busy}
         />
       </div>
     </RoleGuard>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1 px-5 py-4">
+      <dt className="text-sm text-ink-2">{label}</dt>
+      <dd className="tabular text-lg font-medium text-ink">{children}</dd>
+    </div>
+  );
+}
+
+function RecordRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-2">
+      <dt className="text-ink-2">{label}</dt>
+      <dd className="tabular font-mono text-ink">{children}</dd>
+    </div>
   );
 }

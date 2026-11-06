@@ -19,6 +19,7 @@ export default function CreatePrintIntentPage() {
     const [templateVersions, setTemplateVersions] = useState<TemplateVersion[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [form, setForm] = useState({
         productId: "",
         templateId: "",
@@ -28,44 +29,52 @@ export default function CreatePrintIntentPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Baskı hazırlığı",
             title: "Baskı talebi oluştur",
-            description: "Operatör aktarımından önce ürün, yayınlanmış şablon sürümü ve miktar seçin.",
+            description: "Ürün, yayındaki şablon sürümü ve adet seçin. Talep, operatör onayından sonra basılır.",
             product: "Ürün",
             selectProduct: "Ürün seçin",
             template: "Şablon",
             selectTemplate: "Şablon seçin",
-            publishedVersion: "Yayınlanmış Sürüm",
+            publishedVersion: "Yayındaki sürüm",
             selectVersion: "Sürüm seçin",
             version: "Sürüm",
-            quantity: "Miktar",
-            readinessSnapshot: "Hazırlık Özeti",
-            selectedTemplate: "Seçilen şablon",
-            noTemplateSelected: "Şablon seçilmedi",
-            versionState: "Sürüm durumu",
+            quantity: "Adet",
+            loading: "Yükleniyor",
+            summary: "Özet",
+            selectedTemplate: "Şablon",
+            selectedProduct: "Ürün",
+            noSelection: "Seçilmedi",
+            versionState: "Sürüm",
+            publishedLabel: "Yayında, sürüm {n}",
             awaitingSelection: "Seçim bekleniyor",
-            creating: "Oluşturuluyor...",
+            creating: "Oluşturuluyor",
             createPrintIntent: "Baskı talebi oluştur",
+            cancel: "Vazgeç",
+            createFailed: "Baskı talebi oluşturulamadı.",
         }
         : {
-            eyebrow: "Print preparation",
-            title: "Create Print Intent",
-            description: "Select a product, published template version and quantity before operator handoff.",
+            title: "Create print request",
+            description: "Select a product, a published template version and a quantity. The request is printed after operator approval.",
             product: "Product",
             selectProduct: "Select product",
             template: "Template",
             selectTemplate: "Select template",
-            publishedVersion: "Published Version",
+            publishedVersion: "Published version",
             selectVersion: "Select version",
             version: "Version",
             quantity: "Quantity",
-            readinessSnapshot: "Readiness Snapshot",
-            selectedTemplate: "Selected template",
-            noTemplateSelected: "No template selected",
-            versionState: "Version state",
-            awaitingSelection: "Awaiting selection",
-            creating: "Creating...",
-            createPrintIntent: "Create Print Intent",
+            loading: "Loading",
+            summary: "Summary",
+            selectedTemplate: "Template",
+            selectedProduct: "Product",
+            noSelection: "Not selected",
+            versionState: "Version",
+            publishedLabel: "Published, version {n}",
+            awaitingSelection: "Waiting for selection",
+            creating: "Creating",
+            createPrintIntent: "Create print request",
+            cancel: "Cancel",
+            createFailed: "Print request could not be created.",
         };
 
     useEffect(() => {
@@ -106,11 +115,13 @@ export default function CreatePrintIntentPage() {
     }, [form.templateId]);
 
     const selectedTemplate = useMemo(() => templates.find((template) => template.id === form.templateId), [templates, form.templateId]);
+    const selectedProduct = useMemo(() => products.find((product) => product.id === form.productId), [products, form.productId]);
     const selectedVersion = useMemo(() => templateVersions.find((version) => version.id === form.versionId), [templateVersions, form.versionId]);
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
         setSubmitting(true);
+        setError(null);
 
         const res = await apiFetch<{ id: string }>("/api/PrintIntents", {
             method: "POST",
@@ -129,26 +140,25 @@ export default function CreatePrintIntentPage() {
             return;
         }
 
-        alert(res.error.message);
+        setError(res.error.message || text.createFailed);
     };
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-            <div className="mx-auto max-w-5xl space-y-6">
-                <PageHeader
-                    eyebrow={text.eyebrow}
-                    title={text.title}
-                    description={text.description}
-                />
+            <div className="flex flex-col gap-6 pb-10">
+                <PageHeader title={text.title} description={text.description} />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center gap-3 py-20 text-sm text-ink-2">
+                        <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-line-strong border-t-accent" />
+                        {text.loading}
+                    </div>
                 ) : (
-                    <form className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]" onSubmit={submit}>
-                        <div className="space-y-6 rounded-xl border border-line bg-surface p-6">
-                            <div>
-                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.product}</label>
-                                <select className="plms-select w-full" value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} required>
+                    <form className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" onSubmit={submit}>
+                        <div className="grid grid-cols-1 gap-5 rounded-xl border border-line bg-surface p-6 md:grid-cols-2">
+                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                                <label htmlFor="intent-product" className="plms-label">{text.product}</label>
+                                <select id="intent-product" className="plms-select w-full" value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} required>
                                     <option value="">{text.selectProduct}</option>
                                     {products.map((product) => (
                                         <option key={product.id} value={product.id}>{product.sku} - {product.name}</option>
@@ -156,9 +166,9 @@ export default function CreatePrintIntentPage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.template}</label>
-                                <select className="plms-select w-full" value={form.templateId} onChange={(e) => setForm({ ...form, templateId: e.target.value })} required>
+                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                                <label htmlFor="intent-template" className="plms-label">{text.template}</label>
+                                <select id="intent-template" className="plms-select w-full" value={form.templateId} onChange={(e) => setForm({ ...form, templateId: e.target.value })} required>
                                     <option value="">{text.selectTemplate}</option>
                                     {templates.map((template) => (
                                         <option key={template.id} value={template.id}>{template.code} - {template.name}</option>
@@ -166,9 +176,9 @@ export default function CreatePrintIntentPage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.publishedVersion}</label>
-                                <select className="plms-select w-full" value={form.versionId} onChange={(e) => setForm({ ...form, versionId: e.target.value })} required>
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="intent-version" className="plms-label">{text.publishedVersion}</label>
+                                <select id="intent-version" className="plms-select w-full" value={form.versionId} onChange={(e) => setForm({ ...form, versionId: e.target.value })} required>
                                     <option value="">{text.selectVersion}</option>
                                     {templateVersions.map((version) => (
                                         <option key={version.id} value={version.id}>{text.version} {version.versionNumber}</option>
@@ -176,34 +186,56 @@ export default function CreatePrintIntentPage() {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-xs font-medium text-ink-3">{text.quantity}</label>
-                                <input className="plms-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} required />
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="intent-quantity" className="plms-label">{text.quantity}</label>
+                                <input id="intent-quantity" className="plms-input tabular" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} required />
                             </div>
                         </div>
 
-                        <div className="space-y-6 rounded-xl border border-line bg-surface p-6">
-                            <div>
-                                <div className="text-xs font-medium text-ink-3">{text.readinessSnapshot}</div>
-                                <div className="mt-4 space-y-3">
-                                    <div className="rounded-lg border border-line bg-raised p-4">
-                                        <div className="text-xs font-medium text-ink-3">{text.selectedTemplate}</div>
-                                        <div className="mt-2 text-sm font-medium text-ink">
-                                            {selectedTemplate ? `${selectedTemplate.code} - ${selectedTemplate.name}` : text.noTemplateSelected}
-                                        </div>
-                                    </div>
-                                    <div className="rounded-lg border border-line bg-raised p-4">
-                                        <div className="text-xs font-medium text-ink-3">{text.versionState}</div>
-                                        <div className="mt-2">
-                                            {selectedVersion ? <StatusBadge label={`Published v${selectedVersion.versionNumber}`} tone="success" /> : <StatusBadge label={text.awaitingSelection} tone="warning" />}
-                                        </div>
-                                    </div>
+                        <aside className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5">
+                            <h2 className="text-base font-medium text-ink">{text.summary}</h2>
+                            <dl className="flex flex-col gap-3 text-sm">
+                                <div className="flex flex-col gap-0.5">
+                                    <dt className="text-ink-3">{text.selectedProduct}</dt>
+                                    <dd className="text-ink">
+                                        {selectedProduct ? (
+                                            <>
+                                                {selectedProduct.name}
+                                                <span className="ml-2 whitespace-nowrap font-mono text-xs text-ink-3">{selectedProduct.sku}</span>
+                                            </>
+                                        ) : <span className="text-ink-3">{text.noSelection}</span>}
+                                    </dd>
                                 </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <dt className="text-ink-3">{text.selectedTemplate}</dt>
+                                    <dd className="text-ink">
+                                        {selectedTemplate ? (
+                                            <>
+                                                {selectedTemplate.name}
+                                                <span className="ml-2 whitespace-nowrap font-mono text-xs text-ink-3">{selectedTemplate.code}</span>
+                                            </>
+                                        ) : <span className="text-ink-3">{text.noSelection}</span>}
+                                    </dd>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <dt className="text-ink-3">{text.versionState}</dt>
+                                    <dd>
+                                        {selectedVersion
+                                            ? <StatusBadge label={text.publishedLabel.replace("{n}", String(selectedVersion.versionNumber))} tone="success" />
+                                            : <StatusBadge label={text.awaitingSelection} tone="neutral" />}
+                                    </dd>
+                                </div>
+                            </dl>
+                            {error ? <p role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</p> : null}
+                            <div className="flex flex-col gap-2">
+                                <button className="plms-button-primary w-full" type="submit" disabled={submitting || !form.productId || !form.templateId || !form.versionId}>
+                                    {submitting ? text.creating : text.createPrintIntent}
+                                </button>
+                                <button type="button" className="plms-button-ghost w-full" onClick={() => router.push("/print-intents")}>
+                                    {text.cancel}
+                                </button>
                             </div>
-                            <button className="plms-button-primary w-full" type="submit" disabled={submitting || !form.productId || !form.templateId || !form.versionId}>
-                                {submitting ? text.creating : text.createPrintIntent}
-                            </button>
-                        </div>
+                        </aside>
                     </form>
                 )}
             </div>

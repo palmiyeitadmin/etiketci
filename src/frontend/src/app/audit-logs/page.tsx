@@ -9,11 +9,11 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { SlideOver } from "@/components/ui/SlideOver";
 
 export default function AuditLogsPage() {
-    const { formatDateTime, locale } = useI18n();
+    const { formatDateTime, locale, translateLabel } = useI18n();
     const [logs, setLogs] = useState<AuditLogDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<AuditLogDto | null>(null);
@@ -26,58 +26,56 @@ export default function AuditLogsPage() {
     const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalCount: 0, totalPages: 1 });
     const text = locale === "tr"
         ? {
-            eyebrow: "Denetim ve izlenebilirlik",
-            title: "Denetim Kayıtları",
-            description: "Sistemde yapılan işlemlerin değiştirilemez kaydı.",
-            actionContains: "Aksiyon içerir...",
-            allTypes: "Tüm varlık tipleri",
-            apply: "Filtreleri Uygula",
-            emptyTitle: "Denetim kaydı bulunamadı",
+            title: "Denetim kaydı",
+            description: "Sistemde yapılan her işlemin değiştirilemez kaydı.",
+            actionContains: "İşlem ara",
+            allTypes: "Tüm kayıt türleri",
+            from: "Başlangıç tarihi",
+            to: "Bitiş tarihi",
+            apply: "Uygula",
+            emptyTitle: "Kayıt bulunamadı",
             emptyDescription: "Filtreleri değiştirin veya tarih aralığını genişletin.",
-            timestamp: "Zaman Damgası",
-            action: "Aksiyon",
-            entity: "Varlık",
-            actor: "İşlemi Yapan",
-            correlation: "Korelasyon",
-            inspect: "İncele",
+            timestamp: "Zaman",
+            action: "İşlem",
+            entity: "Kayıt türü",
+            actor: "Kullanıcı",
+            correlation: "İzleme kimliği",
             open: "Aç",
             system: "Sistem",
-            total: "{count} toplam kayıt",
+            total: "{count} kayıt",
             previous: "Önceki",
             next: "Sonraki",
-            page: "Sayfa {page} / {total}",
-            detail: "Denetim detayı",
-            trace: "Değiştirilemez operasyon izi",
-            entityType: "Varlık Tipi",
-            entityId: "Varlık Kimliği",
-            details: "Detaylar",
-            metadata: "Metadata",
+            page: "{page} / {total}",
+            detail: "Kayıt ayrıntısı",
+            entityType: "Kayıt türü",
+            entityId: "Kayıt kimliği",
+            details: "Ayrıntılar",
+            metadata: "Ek veri",
         }
         : {
-            eyebrow: "Audit and traceability",
-            title: "Audit Logs",
-            description: "Append-only system activity with correlation IDs, entity traces and operational event history.",
-            actionContains: "Action contains...",
-            allTypes: "All entity types",
-            apply: "Apply Filters",
-            emptyTitle: "No audit records found",
-            emptyDescription: "Adjust the filters or broaden the selected date range.",
-            timestamp: "Timestamp",
+            title: "Audit log",
+            description: "A permanent record of every action taken in the system.",
+            actionContains: "Search actions",
+            allTypes: "All record types",
+            from: "From date",
+            to: "To date",
+            apply: "Apply",
+            emptyTitle: "No records found",
+            emptyDescription: "Change the filters or widen the date range.",
+            timestamp: "Time",
             action: "Action",
-            entity: "Entity",
-            actor: "Actor",
-            correlation: "Correlation",
-            inspect: "Inspect",
+            entity: "Record type",
+            actor: "User",
+            correlation: "Trace ID",
             open: "Open",
             system: "System",
-            total: "{count} total records",
+            total: "{count} records",
             previous: "Previous",
             next: "Next",
-            page: "Page {page} / {total}",
-            detail: "Audit detail",
-            trace: "Immutable operational trace",
-            entityType: "Entity Type",
-            entityId: "Entity Id",
+            page: "{page} / {total}",
+            detail: "Record detail",
+            entityType: "Record type",
+            entityId: "Record ID",
             details: "Details",
             metadata: "Metadata",
         };
@@ -115,48 +113,58 @@ export default function AuditLogsPage() {
 
     const entityTypes = useMemo(() => Array.from(new Set(logs.map((log) => log.entityType))).sort(), [logs]);
 
+    const setFilter = (key: keyof typeof filters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader
-                    eyebrow={text.eyebrow}
-                    title={text.title}
-                    description={text.description}
-                />
+            <div className="space-y-6">
+                <PageHeader title={text.title} description={text.description} />
 
-                <FilterBar
-                    left={
-                        <>
-                            <input className="plms-input max-w-sm" placeholder={text.actionContains} value={filters.action} onChange={(e) => setFilters((current) => ({ ...current, action: e.target.value }))} />
-                            <select className="plms-select" value={filters.entityType} onChange={(e) => setFilters((current) => ({ ...current, entityType: e.target.value }))}>
-                                <option value="">{text.allTypes}</option>
-                                {entityTypes.map((entityType) => (
-                                    <option key={entityType} value={entityType}>{entityType}</option>
-                                ))}
-                            </select>
-                            <input className="plms-input" type="date" value={filters.from} onChange={(e) => setFilters((current) => ({ ...current, from: e.target.value }))} />
-                            <input className="plms-input" type="date" value={filters.to} onChange={(e) => setFilters((current) => ({ ...current, to: e.target.value }))} />
-                        </>
-                    }
-                    right={<button className="plms-button-primary" onClick={() => load(1)}>{text.apply}</button>}
-                />
+                <form onSubmit={(event) => { event.preventDefault(); load(1); }}>
+                    <FilterBar
+                        left={
+                            <>
+                                <input className="plms-input w-56" placeholder={text.actionContains} value={filters.action} onChange={(e) => setFilter("action", e.target.value)} />
+                                <select className="plms-select" aria-label={text.entity} value={filters.entityType} onChange={(e) => setFilter("entityType", e.target.value)}>
+                                    <option value="">{text.allTypes}</option>
+                                    {entityTypes.map((entityType) => (
+                                        <option key={entityType} value={entityType}>{entityType}</option>
+                                    ))}
+                                </select>
+                                <div className="flex items-center gap-2">
+                                    <input className="plms-input w-40 font-mono" type="date" aria-label={text.from} value={filters.from} onChange={(e) => setFilter("from", e.target.value)} />
+                                    <span aria-hidden className="text-ink-3">–</span>
+                                    <input className="plms-input w-40 font-mono" type="date" aria-label={text.to} value={filters.to} onChange={(e) => setFilter("to", e.target.value)} />
+                                </div>
+                                <button type="submit" className="plms-button-secondary">{text.apply}</button>
+                            </>
+                        }
+                        right={!loading ? <span className="tabular text-sm text-ink-3">{text.total.replace("{count}", meta.totalCount.toLocaleString(locale === "tr" ? "tr-TR" : "en-US"))}</span> : null}
+                    />
+                </form>
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : logs.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <>
-                        <DataTable columns={[text.timestamp, text.action, text.entity, text.actor, text.correlation, text.inspect]}>
+                        <DataTable columns={[text.timestamp, text.action, text.entity, text.actor, text.correlation, ""]}>
                             {logs.map((log) => (
-                                <tr key={log.id} className="transition-colors hover:bg-white/5">
-                                    <td className="px-6 py-4 text-sm font-medium text-ink-2">{formatDateTime(log.timestamp)}</td>
-                                    <td className="px-6 py-4"><StatusBadge label={log.action} tone="info" /></td>
-                                    <td className="px-6 py-4 text-sm font-medium text-ink">{log.entityType}</td>
-                                    <td className="px-6 py-4 text-sm font-medium text-ink-2">{log.userId || text.system}</td>
-                                    <td className="px-6 py-4 text-xs font-mono text-ink-3">{log.correlationId || "-"}</td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-xs font-medium text-accent" onClick={() => setSelected(log)}>
+                                <tr key={log.id} className="transition-colors hover:bg-raised">
+                                    <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(log.timestamp)}</td>
+                                    <td className="px-4 py-2.5 text-base text-ink">{translateLabel(log.action)}</td>
+                                    <td className="px-4 py-2.5 text-base text-ink-2">{log.entityType}</td>
+                                    <td className="max-w-48 truncate px-4 py-2.5 text-base text-ink-2" title={log.userId || undefined}>{log.userId || text.system}</td>
+                                    <td className="px-4 py-2.5">
+                                        {log.correlationId ? (
+                                            <span className="block w-28 truncate whitespace-nowrap font-mono text-xs text-ink-3" title={log.correlationId}>{log.correlationId}</span>
+                                        ) : (
+                                            <span className="text-ink-3">–</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-right">
+                                        <button className="plms-button-compact" onClick={() => setSelected(log)}>
                                             {text.open}
                                         </button>
                                     </td>
@@ -164,65 +172,58 @@ export default function AuditLogsPage() {
                             ))}
                         </DataTable>
 
-                        <div className="flex items-center justify-between rounded-xl border border-line bg-surface px-5 py-4">
-                            <div className="text-xs font-medium text-ink-3">
-                                {text.total.replace("{count}", String(meta.totalCount))}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button className="plms-button-secondary" onClick={() => load(Math.max(1, meta.page - 1))} disabled={meta.page === 1}>
-                                    {text.previous}
-                                </button>
-                                <div className="text-xs font-medium text-ink">
-                                    {text.page.replace("{page}", String(meta.page)).replace("{total}", String(meta.totalPages))}
-                                </div>
-                                <button className="plms-button-secondary" onClick={() => load(Math.min(meta.totalPages, meta.page + 1))} disabled={meta.page >= meta.totalPages}>
-                                    {text.next}
-                                </button>
-                            </div>
+                        <div className="flex items-center justify-end gap-2">
+                            <button className="plms-button-secondary" onClick={() => load(Math.max(1, meta.page - 1))} disabled={meta.page === 1}>
+                                <CaretLeft size={16} aria-hidden />
+                                {text.previous}
+                            </button>
+                            <span className="tabular px-2 font-mono text-sm text-ink-2">
+                                {text.page.replace("{page}", String(meta.page)).replace("{total}", String(meta.totalPages))}
+                            </span>
+                            <button className="plms-button-secondary" onClick={() => load(Math.min(meta.totalPages, meta.page + 1))} disabled={meta.page >= meta.totalPages}>
+                                {text.next}
+                                <CaretRight size={16} aria-hidden />
+                            </button>
                         </div>
                     </>
                 )}
 
                 <SlideOver
                     open={Boolean(selected)}
-                    title={selected?.action ?? text.detail}
-                    subtitle={text.trace}
+                    title={selected ? translateLabel(selected.action) : text.detail}
+                    subtitle={selected ? formatDateTime(selected.timestamp) : undefined}
                     onClose={() => setSelected(null)}
                 >
                     {selected ? (
                         <div className="space-y-5 text-sm">
-                            <div>
-                                <div className="text-xs font-medium text-ink-3">{text.timestamp}</div>
-                                <div className="mt-2 font-medium text-ink">{formatDateTime(selected.timestamp)}</div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.entityType}</div>
-                                    <div className="mt-2 font-medium text-ink">{selected.entityType}</div>
+                            <dl className="grid gap-4 md:grid-cols-2">
+                                <div className="flex flex-col gap-1">
+                                    <dt className="text-sm text-ink-3">{text.entityType}</dt>
+                                    <dd className="text-ink">{selected.entityType}</dd>
                                 </div>
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.entityId}</div>
-                                    <div className="mt-2 break-all font-mono text-ink">{selected.entityId}</div>
+                                <div className="flex flex-col gap-1">
+                                    <dt className="text-sm text-ink-3">{text.actor}</dt>
+                                    <dd className="break-all text-ink">{selected.userId || text.system}</dd>
                                 </div>
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.actor}</div>
-                                    <div className="mt-2 font-medium text-ink">{selected.userId || text.system}</div>
+                                <div className="flex flex-col gap-1">
+                                    <dt className="text-sm text-ink-3">{text.entityId}</dt>
+                                    <dd className="break-all font-mono text-xs text-ink">{selected.entityId}</dd>
                                 </div>
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.correlation}</div>
-                                    <div className="mt-2 break-all font-mono text-ink">{selected.correlationId || "-"}</div>
+                                <div className="flex flex-col gap-1">
+                                    <dt className="text-sm text-ink-3">{text.correlation}</dt>
+                                    <dd className="break-all font-mono text-xs text-ink">{selected.correlationId || "–"}</dd>
                                 </div>
-                            </div>
-                            <div>
-                                <div className="text-xs font-medium text-ink-3">{text.details}</div>
-                                <div className="mt-2 rounded-lg border border-line bg-raised p-4 font-medium text-ink-2">
+                            </dl>
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-sm text-ink-3">{text.details}</div>
+                                <div className="rounded-lg border border-line bg-raised px-3 py-2.5 text-ink-2">
                                     {selected.details}
                                 </div>
                             </div>
                             {selected.metadata ? (
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.metadata}</div>
-                                    <pre className="mt-2 overflow-x-auto rounded-lg border border-line bg-raised p-4 text-xs text-ink-2">
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="text-sm text-ink-3">{text.metadata}</div>
+                                    <pre className="overflow-x-auto rounded-lg border border-line bg-raised px-3 py-2.5 font-mono text-xs text-ink-2">
                                         {selected.metadata}
                                     </pre>
                                 </div>

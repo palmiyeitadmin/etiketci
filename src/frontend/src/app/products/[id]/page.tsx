@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CaretRight, DotsThree, LinkSimple } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -14,6 +15,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { Portal } from "@/components/ui/Portal";
 
 export default function ProductDetailPage() {
   const { formatDateTime, locale } = useI18n();
@@ -21,84 +23,80 @@ export default function ProductDetailPage() {
   const id = String(params.id);
   const text = locale === "tr"
     ? {
-      eyebrow: "Ürün bağlamı",
-      description: "Ürün ana verisi ve bağlı etiket şablonları.",
-      back: "Ürünlere Dön",
-      linkTemplate: "Şablon Bağla",
+      parent: "Ürünler",
+      back: "Ürünlere dön",
+      linkTemplate: "Şablon bağla",
       notFound: "Ürün bulunamadı",
-      notFoundDescription: "İstenen ürün kaydı yüklenemedi.",
+      notFoundDescription: "Bu ürün kaydı yüklenemedi.",
+      sku: "SKU",
       status: "Durum",
       category: "Kategori",
       vendor: "Tedarikçi",
       uncategorized: "Kategorisiz",
       direct: "Doğrudan",
-      linkedTemplates: "Bağlı Şablonlar",
-      linkedDescription: "Bu üründen prova ve baskı talebi oluşturmak için kullanılabilecek şablonlar.",
+      linkedTemplates: "Bağlı şablonlar",
+      linkedDescription: "Bu üründen önizleme ve baskı talebi oluştururken kullanılabilecek şablonlar",
       noLinked: "Bağlı şablon yok",
-      noLinkedDescription: "Ürün bağlamlı önizleme veya baskı talebi için en az bir şablon bağlayın.",
+      noLinkedDescription: "Önizleme veya baskı talebi için en az bir şablon bağlayın.",
       code: "Kod",
       template: "Şablon",
       priority: "Öncelik",
-      actions: "İşlemler",
       default: "Varsayılan",
       secondary: "İkincil",
-      preview: "Önizleme",
-      setDefault: "Varsayılan Yap",
-      openTemplate: "Şablonu Aç",
-      unlink: "Bağlantıyı Kaldır",
-      recordTimeline: "Kayıt Zaman Çizelgesi",
+      preview: "Önizle",
+      more: "Diğer işlemler",
+      setDefault: "Varsayılan yap",
+      openTemplate: "Şablonu aç",
+      unlink: "Bağlantıyı kaldır",
       created: "Oluşturuldu",
       updated: "Güncellendi",
-      linkedCount: "Bağlı Şablonlar",
-      guidance: "Operasyon Rehberi",
-      guidance1: "Yalnızca bağlı şablonlar ürün bağlamlı önizleme ve baskı talebi oluşturmada kullanılabilir.",
-      guidance2: "Varsayılan şablon operatörler için önerilen giriş noktası olur.",
-      guidance3: "Yayındaki şablon sürümleri değiştirilemez; düzenleme yeni bir taslak revizyon oluşturur.",
-      modalTitle: "Şablon Bağla",
+      guidance: "Nasıl çalışır",
+      guidance1: "Önizleme ve baskı talebinde yalnızca bağlı şablonlar kullanılabilir.",
+      guidance2: "Varsayılan şablon operatörlere ilk seçenek olarak önerilir.",
+      guidance3: "Yayındaki sürümler değişmez; düzenleme yeni bir taslak oluşturur.",
+      modalTitle: "Şablon bağla",
       modalLabel: "Şablon",
       selectTemplate: "Şablon seçin",
-      markDefault: "Bu ürün için varsayılan şablon olarak işaretle",
-      linking: "Bağlanıyor...",
+      markDefault: "Bu ürün için varsayılan şablon yap",
+      linking: "Bağlanıyor",
     }
     : {
-      eyebrow: "Product context",
-      description: "Product master data and linked label templates.",
-      back: "Back to Products",
-      linkTemplate: "Link Template",
+      parent: "Products",
+      back: "Back to products",
+      linkTemplate: "Link template",
       notFound: "Product not found",
-      notFoundDescription: "The requested product record could not be loaded.",
+      notFoundDescription: "This product record could not be loaded.",
+      sku: "SKU",
       status: "Status",
       category: "Category",
       vendor: "Vendor",
       uncategorized: "Uncategorized",
       direct: "Direct",
-      linkedTemplates: "Linked Templates",
-      linkedDescription: "Templates available for proof generation and print intent creation from this product.",
+      linkedTemplates: "Linked templates",
+      linkedDescription: "Templates you can use for previews and print requests of this product",
       noLinked: "No templates linked",
-      noLinkedDescription: "Link at least one template to generate product-context previews or print intents.",
+      noLinkedDescription: "Link at least one template to preview or print this product.",
       code: "Code",
       template: "Template",
       priority: "Priority",
-      actions: "Actions",
       default: "Default",
       secondary: "Secondary",
       preview: "Preview",
-      setDefault: "Set Default",
-      openTemplate: "Open Template",
+      more: "More actions",
+      setDefault: "Make default",
+      openTemplate: "Open template",
       unlink: "Unlink",
-      recordTimeline: "Record Timeline",
       created: "Created",
       updated: "Updated",
-      linkedCount: "Linked Templates",
-      guidance: "Operational Guidance",
-      guidance1: "Only linked templates can be used with product-context preview and print intent creation.",
-      guidance2: "The default template is the recommended entry point for operators.",
-      guidance3: "Published template versions remain immutable; edits create a new draft revision.",
-      modalTitle: "Link Template",
+      guidance: "How it works",
+      guidance1: "Only linked templates can be used for previews and print requests.",
+      guidance2: "The default template is suggested to operators first.",
+      guidance3: "Published versions never change; editing creates a new draft.",
+      modalTitle: "Link template",
       modalLabel: "Template",
-      selectTemplate: "Select template",
-      markDefault: "Mark as default template for this product",
-      linking: "Linking...",
+      selectTemplate: "Select a template",
+      markDefault: "Make this the default template for the product",
+      linking: "Linking",
     };
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -188,130 +186,127 @@ export default function ProductDetailPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>;
+    return <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>;
   }
 
   if (!product) {
     return <EmptyState title={text.notFound} description={message || text.notFoundDescription} />;
   }
 
+  const facts: { label: string; value: React.ReactNode }[] = [
+    { label: text.sku, value: <span className="whitespace-nowrap font-mono text-sm text-ink">{product.sku}</span> },
+    { label: text.status, value: <StatusBadge label={product.isActive ? "Active" : "Inactive"} tone={product.isActive ? "success" : "danger"} /> },
+    { label: text.category, value: product.categoryName || text.uncategorized },
+    { label: text.vendor, value: product.vendorName || text.direct },
+    { label: text.created, value: <span className="tabular font-mono text-sm">{formatDateTime(product.createdAt)}</span> },
+    { label: text.updated, value: <span className="tabular font-mono text-sm">{formatDateTime(product.updatedAt)}</span> },
+  ];
+
   return (
     <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="space-y-6">
+        <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+          <Link href="/products" className="transition-colors hover:text-ink">{text.parent}</Link>
+          <CaretRight size={12} aria-hidden />
+          <span className="whitespace-nowrap font-mono text-ink-2">{product.sku}</span>
+        </nav>
+
         <PageHeader
-          eyebrow={text.eyebrow}
           title={product.name}
-          description={product.description || text.description}
+          description={product.description && product.description !== product.name ? product.description : undefined}
           actions={
-            <>
-              <Link href="/products" className="plms-button-secondary">{text.back}</Link>
-              <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                <button className="plms-button-primary" onClick={() => setShowLinkModal(true)}>{text.linkTemplate}</button>
-              </RoleGuard>
-            </>
+            <RoleGuard allowedRoles={["Admin", "Operator"]}>
+              <button className="plms-button-primary" onClick={() => setShowLinkModal(true)}>
+                <LinkSimple size={16} aria-hidden />
+                {text.linkTemplate}
+              </button>
+            </RoleGuard>
           }
         />
 
         {message ? (
-          <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
+          <div className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">{message}</div>
         ) : null}
 
-        <div className="grid gap-5 md:grid-cols-4">
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">SKU</div>
-            <div className="mt-3 font-mono text-2xl font-medium text-ink">{product.sku}</div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{text.status}</div>
-            <div className="mt-3"><StatusBadge label={product.isActive ? "Active" : "Inactive"} tone={product.isActive ? "success" : "danger"} /></div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{text.category}</div>
-            <div className="mt-3 text-lg font-medium text-ink">{product.categoryName || text.uncategorized}</div>
-          </div>
-          <div className="rounded-xl border border-line bg-surface p-5">
-            <div className="text-xs font-medium text-ink-3">{text.vendor}</div>
-            <div className="mt-3 text-lg font-medium text-ink">{product.vendorName || text.direct}</div>
-          </div>
-        </div>
+        <dl className="plms-card grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4 md:grid-cols-3 xl:grid-cols-6">
+          {facts.map((fact) => (
+            <div key={fact.label} className="flex min-w-0 flex-col gap-1">
+              <dt className="text-sm text-ink-3">{fact.label}</dt>
+              <dd className="truncate text-base text-ink">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border border-line bg-surface p-6">
-            <div className="flex items-center justify-between">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-4">
               <div>
-                <div className="text-xs font-medium text-ink-3">{text.linkedTemplates}</div>
-                <div className="mt-1 text-sm font-medium text-ink-2">{text.linkedDescription}</div>
+                <h2 className="text-md font-medium text-ink">{text.linkedTemplates}</h2>
+                <p className="text-sm text-ink-3">{text.linkedDescription}</p>
               </div>
+              <span className="tabular font-mono text-sm text-ink-3">{links.length}</span>
             </div>
 
             {links.length === 0 ? (
-              <div className="mt-6"><EmptyState title={text.noLinked} description={text.noLinkedDescription} /></div>
+              <EmptyState title={text.noLinked} description={text.noLinkedDescription} />
             ) : (
-              <div className="mt-6">
-                <DataTable columns={[text.code, text.template, text.priority, text.actions]}>
-                  {links.map((link) => {
-                    const template = templates.find((item) => item.id === link.templateId);
-                    const versionId = template?.currentActiveVersionId;
-                    return (
-                      <tr key={link.id} className="transition-colors hover:bg-white/5">
-                        <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{link.templateCode}</span></td>
-                        <td className="px-6 py-4 text-sm font-medium text-ink">{link.templateName}</td>
-                        <td className="px-6 py-4">{link.isDefault ? <StatusBadge label={text.default} tone="success" /> : <StatusBadge label={text.secondary} tone="neutral" />}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            {versionId ? <Link href={`/templates/${link.templateId}/preview?versionId=${versionId}&productId=${id}`} className="plms-button-secondary">{text.preview}</Link> : null}
+              <DataTable columns={[text.code, text.template, text.priority, ""]}>
+                {links.map((link) => {
+                  const template = templates.find((item) => item.id === link.templateId);
+                  const versionId = template?.currentActiveVersionId;
+                  return (
+                    <tr key={link.id} className="transition-colors hover:bg-raised">
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{link.templateCode}</td>
+                      <td className="px-4 py-2.5 text-base">
+                        <Link href={`/templates/${link.templateId}`} className="text-ink transition-colors hover:text-accent">{link.templateName}</Link>
+                      </td>
+                      <td className="px-4 py-2.5">{link.isDefault ? <StatusBadge label={text.default} tone="success" /> : <StatusBadge label={text.secondary} tone="neutral" />}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
+                          {versionId ? <Link href={`/templates/${link.templateId}/preview?versionId=${versionId}&productId=${id}`} className="plms-button-compact">{text.preview}</Link> : null}
+                          <RowMenu label={text.more}>
                             {!link.isDefault ? (
                               <RoleGuard allowedRoles={["Admin", "Operator"]}>
-                                <button className="plms-button-secondary" onClick={() => handleSetDefault(link.id)}>{text.setDefault}</button>
+                                <MenuButton onClick={() => handleSetDefault(link.id)}>{text.setDefault}</MenuButton>
                               </RoleGuard>
                             ) : null}
-                            <Link href={`/templates/${link.templateId}`} className="plms-button-secondary">{text.openTemplate}</Link>
+                            <Link href={`/templates/${link.templateId}`} className={menuItemClass}>{text.openTemplate}</Link>
                             <RoleGuard allowedRoles={["Admin"]}>
-                              <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => handleUnlink(link.id)}>{text.unlink}</button>
+                              <MenuButton danger onClick={() => handleUnlink(link.id)}>{text.unlink}</MenuButton>
                             </RoleGuard>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </DataTable>
-              </div>
+                          </RowMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </DataTable>
             )}
-          </div>
+          </section>
 
-          <div className="space-y-6">
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{text.recordTimeline}</div>
-              <div className="mt-4 space-y-3 text-sm font-medium text-ink-2">
-                <div className="flex items-center justify-between"><span>{text.created}</span><span className="text-ink">{formatDateTime(product.createdAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{text.updated}</span><span className="text-ink">{formatDateTime(product.updatedAt)}</span></div>
-                <div className="flex items-center justify-between"><span>{text.linkedCount}</span><span className="text-ink">{links.length}</span></div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-line bg-surface p-6">
-              <div className="text-xs font-medium text-ink-3">{text.guidance}</div>
-              <ul className="mt-4 space-y-3 text-sm font-medium text-ink-2">
-                <li>{text.guidance1}</li>
-                <li>{text.guidance2}</li>
-                <li>{text.guidance3}</li>
-              </ul>
-            </div>
-          </div>
+          <aside className="plms-card p-5">
+            <h2 className="text-base font-medium text-ink">{text.guidance}</h2>
+            <ul className="mt-3 space-y-2 text-sm text-ink-2">
+              <li>{text.guidance1}</li>
+              <li>{text.guidance2}</li>
+              <li>{text.guidance3}</li>
+            </ul>
+          </aside>
         </div>
 
         <SlideOver open={showLinkModal} title={text.modalTitle} subtitle={`${product.sku} · ${product.name}`} onClose={() => setShowLinkModal(false)}>
           <div className="space-y-5">
-            <div>
-              <label className="mb-2 block text-xs font-medium text-ink-3">{text.modalLabel}</label>
-              <select className="plms-input" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="link-template" className="plms-label">{text.modalLabel}</label>
+              <select id="link-template" className="plms-select w-full" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
                 <option value="">{text.selectTemplate}</option>
                 {availableTemplates.map((template) => (
                   <option key={template.id} value={template.id}>{template.code} · {template.name}</option>
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-3 rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-2">
-              <input type="checkbox" checked={isDefault} onChange={(event) => setIsDefault(event.target.checked)} />
+            <label className="flex items-center gap-3 text-sm text-ink-2">
+              <input type="checkbox" className="h-4 w-4 accent-accent" checked={isDefault} onChange={(event) => setIsDefault(event.target.checked)} />
               {text.markDefault}
             </label>
             <button className="plms-button-primary w-full" onClick={handleLink} disabled={!selectedTemplateId || submitting}>{submitting ? text.linking : text.linkTemplate}</button>
@@ -319,5 +314,74 @@ export default function ProductDetailPage() {
         </SlideOver>
       </div>
     </RoleGuard>
+  );
+}
+
+const menuItemClass = "flex h-8 w-full items-center whitespace-nowrap rounded-md px-2.5 text-left text-sm text-ink transition-colors hover:bg-raised";
+
+function MenuButton({ children, onClick, danger = false, disabled = false }: { children: React.ReactNode; onClick: () => void; danger?: boolean; disabled?: boolean }) {
+  return (
+    <button type="button" role="menuitem" onClick={onClick} disabled={disabled} className={`${menuItemClass} disabled:cursor-not-allowed disabled:opacity-50 ${danger ? "text-bad hover:bg-bad-soft" : ""}`}>
+      {children}
+    </button>
+  );
+}
+
+/** Overflow menu for secondary row actions. Rendered in a portal so table overflow never clips it; closes on outside click, Escape or after a choice. */
+function RowMenu({ label, children }: { label: string; children: React.ReactNode }) {
+  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const open = position !== null;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setPosition(null);
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+      close();
+    };
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && close();
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  function toggle() {
+    if (open) {
+      setPosition(null);
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+  }
+
+  return (
+    <>
+      <button ref={buttonRef} type="button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open} onClick={toggle} className="plms-button-compact w-8 px-0">
+        <DotsThree size={16} aria-hidden />
+      </button>
+      {position ? (
+        <Portal>
+          <div
+            ref={menuRef}
+            role="menu"
+            onClick={() => setPosition(null)}
+            style={{ top: position.top, right: position.right }}
+            className="fixed z-50 flex min-w-44 flex-col rounded-lg border border-line bg-surface p-1 shadow-pop"
+          >
+            {children}
+          </div>
+        </Portal>
+      ) : null}
+    </>
   );
 }

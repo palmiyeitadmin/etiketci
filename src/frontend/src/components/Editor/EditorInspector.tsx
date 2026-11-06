@@ -1,6 +1,8 @@
 "use client";
 
-import { ChangeEvent, useMemo } from "react";
+import { ChangeEvent, useId, useMemo } from "react";
+import { CursorClick, Info, WarningCircle } from "@phosphor-icons/react";
+import { getElementTypeMeta } from "@/components/Editor/EditorToolRail";
 import { EditorVariablePicker } from "@/components/Editor/EditorVariablePicker";
 import { useSelectedElement } from "@/components/Editor/editor-selectors";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
@@ -23,85 +25,118 @@ function useEditorText() {
     return locale === "tr"
         ? {
             properties: "Özellikler",
-            selectElement: "Geometri, stil ve kaynak verisini düzenlemek için bir eleman seçin.",
-            identity: "Kimlik",
+            selectElement: "Düzenlemek için tuvalde ya da katmanlarda bir öğe seçin",
             name: "Ad",
-            xMm: "X (mm)",
-            yMm: "Y (mm)",
-            widthMm: "Genişlik (mm)",
-            heightMm: "Yükseklik (mm)",
-            rotation: "Dönme",
+            geometry: "Konum ve boyut",
+            xMm: "X",
+            yMm: "Y",
+            widthMm: "Genişlik",
+            heightMm: "Yükseklik",
+            rotation: "Döndürme",
             content: "İçerik",
-            textStyle: "Metin Stili",
-            fontFamily: "Yazı Tipi",
-            fontSizePt: "Boyut (pt)",
+            textStyle: "Metin",
+            fontFamily: "Yazı tipi",
+            fontSizePt: "Boyut",
             fontWeight: "Kalınlık",
             textAlign: "Hizalama",
             color: "Renk",
-            barcodeSettings: "Barkod Ayarları",
-            barcodeType: "Barkod Tipi",
-            barcodeNotice: "CODE_128 dışındaki çıktı, PDF önizlemede farklı görünebilir.",
-            barcodeMvp: "Bu barkod türü PDF çıktısında desteklenir.",
-            qrSettings: "QR Ayarları",
-            qrWarning: "Yüksek içerik yoğunluğu tarama toleransını düşürür.",
-            qrOk: "QR içeriği tipik önizleme toleransı içerisinde.",
-            imageSource: "Görsel Kaynağı",
-            fitMode: "Sığdırma Modu",
-            clearImage: "Görseli Temizle",
-            imageDataPlaceholder: "Görsel data URI burada saklanır.",
-            imageFormatError: "Yalnızca PNG, JPEG ve SVG görseller desteklenir.",
-            imageSizeError: "Görseller 500KB veya daha küçük olmalıdır. Daha büyük dosyalar için paylaşımlı Kütüphane'yi kullanın.",
-            strokeAndFill: "Kenar ve Dolgu",
-            fillEnabled: "Dolgu aktif",
+            barcodeSettings: "Barkod",
+            barcodeType: "Barkod türü",
+            barcodeNotice: "CODE_128 dışındaki türler PDF'te farklı görünebilir",
+            barcodeMvp: "Bu barkod türü PDF çıktısında desteklenir",
+            qrSettings: "QR kod",
+            qrWarning: "İçerik uzun, QR kodun okunması zorlaşabilir",
+            qrOk: "İçerik uzunluğu QR kod için uygun",
+            imageSource: "Görsel",
+            uploadImage: "Dosya yükle",
+            fitMode: "Sığdırma",
+            clearImage: "Görseli temizle",
+            imageAddress: "Görsel adresi",
+            imageDataPlaceholder: "Görsel adresi veya data URI",
+            imageFormatError: "Yalnızca PNG, JPEG ve SVG görseller desteklenir",
+            imageSizeError: "Görseller en fazla 500 KB olabilir. Daha büyük dosyalar için kütüphaneyi kullanın.",
+            linkedIcon: "Bağlı ikon",
+            linkedAsset: "Bağlı kütüphane görseli",
+            strokeAndFill: "Kenar ve dolgu",
+            fillEnabled: "Dolgu",
             fillColor: "Dolgu rengi",
-            strokeEnabled: "Kenar aktif",
+            strokeEnabled: "Kenar çizgisi",
             strokeColor: "Kenar rengi",
-            strokeWidthMm: "Kenar Kalınlığı (mm)",
-            lineDirection: "Çizgi Yönü",
-            colorInvalid: "Renk geçerli bir #RRGGBB değeri olmalıdır.",
+            strokeWidthMm: "Kenar kalınlığı",
+            lineDirection: "Çizgi yönü",
+            colorInvalid: "Renk #RRGGBB biçiminde olmalı",
+            options: {
+                normal: "Normal",
+                bold: "Kalın",
+                left: "Sola",
+                center: "Ortaya",
+                right: "Sağa",
+                contain: "Sığdır",
+                cover: "Doldur",
+                stretch: "Uzat",
+                horizontal: "Yatay",
+                vertical: "Dikey",
+            } as Record<string, string>,
         }
         : {
             properties: "Properties",
-            selectElement: "Select an element to edit geometry, styling and source data.",
-            identity: "Identity",
+            selectElement: "Select an element on the canvas or in the layers to edit it",
             name: "Name",
-            xMm: "X (mm)",
-            yMm: "Y (mm)",
-            widthMm: "Width (mm)",
-            heightMm: "Height (mm)",
+            geometry: "Position and size",
+            xMm: "X",
+            yMm: "Y",
+            widthMm: "Width",
+            heightMm: "Height",
             rotation: "Rotation",
             content: "Content",
-            textStyle: "Text Style",
-            fontFamily: "Font Family",
-            fontSizePt: "Font Size (pt)",
+            textStyle: "Text",
+            fontFamily: "Font",
+            fontSizePt: "Size",
             fontWeight: "Weight",
-            textAlign: "Text Align",
+            textAlign: "Alignment",
             color: "Color",
-            barcodeSettings: "Barcode Settings",
-            barcodeType: "Barcode Type",
-            barcodeNotice: "Non-CODE_128 output may render differently in PDF preview.",
-            barcodeMvp: "Barcode is configured for supported MVP rendering.",
-            qrSettings: "QR Settings",
-            qrWarning: "High content density may reduce scan tolerance.",
-            qrOk: "QR payload is within typical preview tolerance.",
-            imageSource: "Image Source",
-            fitMode: "Fit Mode",
-            clearImage: "Clear Image",
-            imageDataPlaceholder: "Image data URI will be stored here.",
-            imageFormatError: "Only PNG, JPEG and SVG images are supported.",
-            imageSizeError: "Embedded template images must be 500KB or smaller. Use the shared Library for larger assets.",
-            strokeAndFill: "Stroke and Fill",
-            fillEnabled: "Fill enabled",
+            barcodeSettings: "Barcode",
+            barcodeType: "Barcode type",
+            barcodeNotice: "Types other than CODE_128 may look different in the PDF",
+            barcodeMvp: "This barcode type is supported in PDF output",
+            qrSettings: "QR code",
+            qrWarning: "Long content can make the QR code harder to scan",
+            qrOk: "Content length is fine for a QR code",
+            imageSource: "Image",
+            uploadImage: "Upload file",
+            fitMode: "Fit",
+            clearImage: "Clear image",
+            imageAddress: "Image address",
+            imageDataPlaceholder: "Image address or data URI",
+            imageFormatError: "Only PNG, JPEG and SVG images are supported",
+            imageSizeError: "Embedded images must be 500 KB or smaller. Use the library for larger files.",
+            linkedIcon: "Linked icon",
+            linkedAsset: "Linked library image",
+            strokeAndFill: "Stroke and fill",
+            fillEnabled: "Fill",
             fillColor: "Fill color",
-            strokeEnabled: "Stroke enabled",
+            strokeEnabled: "Stroke",
             strokeColor: "Stroke color",
-            strokeWidthMm: "Stroke Width (mm)",
-            lineDirection: "Line Direction",
-            colorInvalid: "Color must be a valid #RRGGBB value.",
+            strokeWidthMm: "Stroke width",
+            lineDirection: "Line direction",
+            colorInvalid: "Color must be a #RRGGBB value",
+            options: {
+                normal: "Normal",
+                bold: "Bold",
+                left: "Left",
+                center: "Center",
+                right: "Right",
+                contain: "Contain",
+                cover: "Cover",
+                stretch: "Stretch",
+                horizontal: "Horizontal",
+                vertical: "Vertical",
+            } as Record<string, string>,
         };
 }
 
-export function EditorInspector({ className = "" }: { className?: string }) {
+export function EditorInspector({ className = "", showHeader = true }: { className?: string; showHeader?: boolean }) {
+    const { locale } = useI18n();
     const text = useEditorText();
     const selectedElement = useSelectedElement();
     const updateElement = useEditorStore((state) => state.updateElement);
@@ -151,61 +186,74 @@ export function EditorInspector({ className = "" }: { className?: string }) {
             : { stroke: null, strokeWidthMm: 0 });
     }
 
+    const asideClass = `custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain bg-surface ${className}`;
+    const header = showHeader ? (
+        <div className="flex h-12 items-center border-b border-line px-4">
+            <h2 className="text-base font-medium text-ink">{text.properties}</h2>
+        </div>
+    ) : null;
+
     if (!selectedElement) {
         return (
-            <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-line bg-surface p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
-                <div className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm font-medium text-ink-3">
+            <aside className={asideClass} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
+                {header}
+                <div className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-ink-3">
+                    <CursorClick size={18} />
                     {text.selectElement}
                 </div>
             </aside>
         );
     }
 
+    const typeMeta = getElementTypeMeta(selectedElement.type, locale);
+    const TypeIcon = typeMeta.icon;
+    const options = (values: string[]) => values.map((value) => ({ value, label: text.options[value] ?? value }));
+
     return (
-        <aside className={`custom-scrollbar h-full min-h-0 w-full min-w-0 shrink-0 overflow-y-auto overscroll-contain border-l border-line bg-surface p-5 pr-2 pb-8 ${className}`} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between">
-                <div>
-                    <div className="text-xs font-medium text-ink-3">{text.properties}</div>
-                    <div className="mt-1 text-lg font-medium text-ink">{selectedElement.name || selectedElement.type}</div>
+        <aside className={asideClass} style={{ scrollbarGutter: "stable" }} onWheelCapture={(event) => event.stopPropagation()}>
+            {header}
+            <div className="space-y-3 border-b border-line p-4">
+                <div className="flex items-center gap-2 text-xs text-ink-3">
+                    <TypeIcon size={16} />
+                    {typeMeta.label}
                 </div>
+                <PropertyField label={text.name} value={selectedElement.name || ""} onChange={(value) => updateElement(selectedElement.id, { name: value }, { recordHistory: false })} />
+                {inspectorMessage ? <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{inspectorMessage}</div> : null}
             </div>
 
-            {inspectorMessage ? <div className="mt-4 rounded-lg border border-warn/20 bg-warn/10 p-3 text-sm font-medium text-warn">{inspectorMessage}</div> : null}
-
-            <div className="mt-6 space-y-6">
-                <PropertySection label={text.identity}>
-                    <PropertyField label={text.name} value={selectedElement.name || ""} onChange={(value) => updateElement(selectedElement.id, { name: value }, { recordHistory: false })} />
+            <div className="divide-y divide-line">
+                <PropertySection label={text.geometry}>
                     <div className="grid grid-cols-2 gap-3">
-                        <PropertyField label={text.xMm} type="number" step="0.1" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
-                        <PropertyField label={text.yMm} type="number" step="0.1" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
-                        <PropertyField label={text.widthMm} type="number" step="0.1" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: Math.max(1, value) })} />
-                        <PropertyField label={text.heightMm} type="number" step="0.1" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: Math.max(1, value) })} />
+                        <PropertyField label={text.xMm} unit="mm" type="number" step="0.1" value={selectedElement.xMm} onChange={(value) => updateElement(selectedElement.id, { xMm: value })} />
+                        <PropertyField label={text.yMm} unit="mm" type="number" step="0.1" value={selectedElement.yMm} onChange={(value) => updateElement(selectedElement.id, { yMm: value })} />
+                        <PropertyField label={text.widthMm} unit="mm" type="number" step="0.1" value={selectedElement.widthMm} onChange={(value) => updateElement(selectedElement.id, { widthMm: Math.max(1, value) })} />
+                        <PropertyField label={text.heightMm} unit="mm" type="number" step="0.1" value={selectedElement.heightMm} onChange={(value) => updateElement(selectedElement.id, { heightMm: Math.max(1, value) })} />
                     </div>
                     <RotationField label={text.rotation} value={selectedElement.rotation || 0} onChange={(value) => updateElement(selectedElement.id, { rotation: value })} />
                 </PropertySection>
 
                 {(selectedElement.type === "text" || selectedElement.type === "barcode" || selectedElement.type === "qr") ? (
                     <PropertySection label={text.content}>
-                        <textarea className="plms-input min-h-28" value={selectedElement.content} onChange={(event) => updateElement(selectedElement.id, { content: event.target.value })} />
+                        <textarea aria-label={text.content} className="plms-input min-h-24 font-mono text-xs" value={selectedElement.content} onChange={(event) => updateElement(selectedElement.id, { content: event.target.value })} />
                         <EditorVariablePicker supportedTypes={supportsVariables} onInsert={appendVariable} />
                     </PropertySection>
                 ) : null}
 
                 {selectedElement.type === "text" ? (
                     <PropertySection label={text.textStyle}>
-                        <SelectField label={text.fontFamily} value={selectedElement.font || "Arial"} options={FONT_OPTIONS} onChange={(value) => updateElement(selectedElement.id, { font: value })} />
+                        <SelectField label={text.fontFamily} value={selectedElement.font || "Arial"} options={FONT_OPTIONS.map((value) => ({ value, label: value }))} onChange={(value) => updateElement(selectedElement.id, { font: value })} />
                         <div className="grid grid-cols-2 gap-3">
-                            <PropertyField label={text.fontSizePt} type="number" value={selectedElement.fontSizePt || 12} onChange={(value) => updateElement(selectedElement.id, { fontSizePt: value })} />
-                            <SelectField label={text.fontWeight} value={selectedElement.fontWeight || "normal"} options={["normal", "bold"]} onChange={(value) => updateElement(selectedElement.id, { fontWeight: value as "normal" | "bold" })} />
+                            <PropertyField label={text.fontSizePt} unit="pt" type="number" value={selectedElement.fontSizePt || 12} onChange={(value) => updateElement(selectedElement.id, { fontSizePt: value })} />
+                            <SelectField label={text.fontWeight} value={selectedElement.fontWeight || "normal"} options={options(["normal", "bold"])} onChange={(value) => updateElement(selectedElement.id, { fontWeight: value as "normal" | "bold" })} />
                         </div>
-                        <SelectField label={text.textAlign} value={selectedElement.textAlign || "left"} options={["left", "center", "right"]} onChange={(value) => updateElement(selectedElement.id, { textAlign: value as "left" | "center" | "right" })} />
+                        <SelectField label={text.textAlign} value={selectedElement.textAlign || "left"} options={options(["left", "center", "right"])} onChange={(value) => updateElement(selectedElement.id, { textAlign: value as "left" | "center" | "right" })} />
                         <ColorField label={text.color} value={selectedElement.fill ?? DEFAULT_TEXT_COLOR} fallback={DEFAULT_TEXT_COLOR} onChange={(value) => updateElement(selectedElement.id, { fill: value })} invalidMessage={text.colorInvalid} onInvalid={(message) => setInspectorMessage(message)} />
                     </PropertySection>
                 ) : null}
 
                 {selectedElement.type === "barcode" ? (
                     <PropertySection label={text.barcodeSettings}>
-                        <SelectField label={text.barcodeType} value={selectedElement.barcodeType || "CODE_128"} options={BARCODE_OPTIONS} onChange={(value) => updateElement(selectedElement.id, { barcodeType: value })} />
+                        <SelectField label={text.barcodeType} value={selectedElement.barcodeType || "CODE_128"} options={BARCODE_OPTIONS.map((value) => ({ value, label: value }))} onChange={(value) => updateElement(selectedElement.id, { barcodeType: value })} />
                         <InlineNotice tone={selectedElement.barcodeType && selectedElement.barcodeType !== "CODE_128" ? "warning" : "info"} text={selectedElement.barcodeType && selectedElement.barcodeType !== "CODE_128" ? text.barcodeNotice : text.barcodeMvp} />
                     </PropertySection>
                 ) : null}
@@ -218,21 +266,41 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
                 {selectedElement.type === "image" ? (
                     <PropertySection label={text.imageSource}>
-                        {selectedElement.assetSource ? <InlineNotice tone="info" text={selectedElement.assetSource === "phosphor" ? `Linked Phosphor icon: ${selectedElement.assetKey || "icon"}` : `Linked shared asset: ${selectedElement.assetId || "upload"}`} /> : null}
-                        <input className="plms-input file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-black file:uppercase file:tracking-[0.18em] file:text-white" type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={handleImageUpload} />
-                        <SelectField label={text.fitMode} value={selectedElement.imageFit || "contain"} options={["contain", "cover", "stretch"]} onChange={(value) => updateElement(selectedElement.id, { imageFit: value as "contain" | "cover" | "stretch" })} />
-                        <textarea className="plms-input min-h-28" value={selectedElement.content} onChange={(event) => updateElement(selectedElement.id, { content: event.target.value })} placeholder={text.imageDataPlaceholder} />
-                        <button className="plms-button-secondary w-full" type="button" onClick={() => updateElement(selectedElement.id, { content: "" })}>{text.clearImage}</button>
+                        {selectedElement.assetSource ? (
+                            <InlineNotice
+                                tone="info"
+                                text={selectedElement.assetSource === "phosphor"
+                                    ? `${text.linkedIcon}: ${selectedElement.assetKey || "icon"}`
+                                    : `${text.linkedAsset}: ${selectedElement.assetId || "upload"}`}
+                            />
+                        ) : null}
+                        <div>
+                            <label className="plms-label mb-1.5 block" htmlFor={`inspector-upload-${selectedElement.id}`}>{text.uploadImage}</label>
+                            <input
+                                id={`inspector-upload-${selectedElement.id}`}
+                                className="block w-full text-sm text-ink-2 file:mr-3 file:h-8 file:cursor-pointer file:rounded-lg file:border file:border-solid file:border-line file:bg-surface file:px-3 file:text-sm file:font-medium file:text-ink file:transition-colors hover:file:bg-raised"
+                                type="file"
+                                accept="image/png,image/jpeg,image/svg+xml"
+                                onChange={handleImageUpload}
+                            />
+                        </div>
+                        <SelectField label={text.fitMode} value={selectedElement.imageFit || "contain"} options={options(["contain", "cover", "stretch"])} onChange={(value) => updateElement(selectedElement.id, { imageFit: value as "contain" | "cover" | "stretch" })} />
+                        <div>
+                            <label className="plms-label mb-1.5 block" htmlFor={`inspector-image-${selectedElement.id}`}>{text.imageAddress}</label>
+                            <textarea id={`inspector-image-${selectedElement.id}`} className="plms-input min-h-20 font-mono text-xs" value={selectedElement.content} onChange={(event) => updateElement(selectedElement.id, { content: event.target.value })} placeholder={text.imageDataPlaceholder} />
+                        </div>
+                        <button className="plms-button-secondary h-8 w-full" type="button" onClick={() => updateElement(selectedElement.id, { content: "" })}>{text.clearImage}</button>
                     </PropertySection>
                 ) : null}
 
                 {(selectedElement.type === "rect" || selectedElement.type === "ellipse" || selectedElement.type === "line") ? (
                     <PropertySection label={text.strokeAndFill}>
                         {selectedElement.type === "rect" || selectedElement.type === "ellipse" ? (
-                            <>
+                            <div className="space-y-2">
                                 <ToggleField label={text.fillEnabled} checked={selectedElement.fill != null} onChange={updateFillEnabled} />
                                 <ColorField
                                     label={text.fillColor}
+                                    hideLabel
                                     value={selectedElement.fill ?? DEFAULT_RECT_FILL}
                                     fallback={DEFAULT_RECT_FILL}
                                     disabled={selectedElement.fill == null}
@@ -240,20 +308,24 @@ export function EditorInspector({ className = "" }: { className?: string }) {
                                     invalidMessage={text.colorInvalid}
                                     onInvalid={(message) => setInspectorMessage(message)}
                                 />
-                            </>
+                            </div>
                         ) : null}
-                        <ToggleField label={text.strokeEnabled} checked={Boolean(selectedElement.stroke) && (selectedElement.strokeWidthMm ?? 0) > 0} onChange={updateStrokeEnabled} />
-                        <ColorField
-                            label={text.strokeColor}
-                            value={selectedElement.stroke ?? DEFAULT_SHAPE_STROKE}
-                            fallback={DEFAULT_SHAPE_STROKE}
-                            disabled={!selectedElement.stroke || (selectedElement.strokeWidthMm ?? 0) <= 0}
-                            onChange={(value) => updateElement(selectedElement.id, { stroke: value })}
-                            invalidMessage={text.colorInvalid}
-                            onInvalid={(message) => setInspectorMessage(message)}
-                        />
+                        <div className="space-y-2">
+                            <ToggleField label={text.strokeEnabled} checked={Boolean(selectedElement.stroke) && (selectedElement.strokeWidthMm ?? 0) > 0} onChange={updateStrokeEnabled} />
+                            <ColorField
+                                label={text.strokeColor}
+                                hideLabel
+                                value={selectedElement.stroke ?? DEFAULT_SHAPE_STROKE}
+                                fallback={DEFAULT_SHAPE_STROKE}
+                                disabled={!selectedElement.stroke || (selectedElement.strokeWidthMm ?? 0) <= 0}
+                                onChange={(value) => updateElement(selectedElement.id, { stroke: value })}
+                                invalidMessage={text.colorInvalid}
+                                onInvalid={(message) => setInspectorMessage(message)}
+                            />
+                        </div>
                         <PropertyField
                             label={text.strokeWidthMm}
+                            unit="mm"
                             type="number"
                             step="0.1"
                             value={selectedElement.strokeWidthMm || 0}
@@ -265,7 +337,7 @@ export function EditorInspector({ className = "" }: { className?: string }) {
                                     : { strokeWidthMm: nextWidth, stroke: selectedElement.stroke ?? DEFAULT_SHAPE_STROKE });
                             }}
                         />
-                        {selectedElement.type === "line" ? <SelectField label={text.lineDirection} value={selectedElement.lineDirection || "horizontal"} options={["horizontal", "vertical"]} onChange={(value) => updateElement(selectedElement.id, { lineDirection: value as "horizontal" | "vertical" })} /> : null}
+                        {selectedElement.type === "line" ? <SelectField label={text.lineDirection} value={selectedElement.lineDirection || "horizontal"} options={options(["horizontal", "vertical"])} onChange={(value) => updateElement(selectedElement.id, { lineDirection: value as "horizontal" | "vertical" })} /> : null}
                     </PropertySection>
                 ) : null}
             </div>
@@ -275,24 +347,42 @@ export function EditorInspector({ className = "" }: { className?: string }) {
 
 function PropertySection({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <section className="space-y-3 rounded-lg border border-line bg-raised p-4">
-            <div className="text-xs font-medium text-ink-3">{label}</div>
+        <section className="space-y-3 p-4">
+            <h3 className="text-sm font-medium text-ink">{label}</h3>
             <div className="space-y-3">{children}</div>
         </section>
     );
 }
 
-function PropertyField({ label, value, onChange, type = "text", disabled = false, step }: { label: string; value: string | number; onChange: (value: any) => void; type?: string; disabled?: boolean; step?: number | string }) {
+function useFieldId(label: string) {
+    const id = useId();
+    return `${id}-${label.replace(/\s+/g, "-").toLowerCase()}`;
+}
+
+function PropertyField({ label, value, onChange, type = "text", disabled = false, step, unit }: { label: string; value: string | number; onChange: (value: any) => void; type?: string; disabled?: boolean; step?: number | string; unit?: string }) {
+    const id = useFieldId(label);
     return (
         <div>
-            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
-            <input className="plms-input" type={type} step={step} value={value} disabled={disabled} onChange={(event) => onChange(type === "number" ? Number(event.target.value) : event.target.value)} />
+            <label className="plms-label mb-1.5 block" htmlFor={id}>{label}</label>
+            <div className="relative">
+                <input
+                    id={id}
+                    className={`plms-input ${type === "number" ? "font-mono tabular" : ""} ${unit ? "pr-10" : ""}`}
+                    type={type}
+                    step={step}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(event) => onChange(type === "number" ? Number(event.target.value) : event.target.value)}
+                />
+                {unit ? <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-ink-3">{unit}</span> : null}
+            </div>
         </div>
     );
 }
 
 function ColorField({
     label,
+    hideLabel = false,
     value,
     fallback,
     disabled,
@@ -301,6 +391,7 @@ function ColorField({
     onInvalid,
 }: {
     label: string;
+    hideLabel?: boolean;
     value: string;
     fallback: string;
     disabled?: boolean;
@@ -309,14 +400,16 @@ function ColorField({
     onInvalid: (message: string | null) => void;
 }) {
     const safeValue = isValidHexColor(value) ? value : fallback;
+    const id = useFieldId(label);
 
     return (
         <div>
-            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
-            <div className="flex items-center gap-3">
+            <label className={hideLabel ? "sr-only" : "plms-label mb-1.5 block"} htmlFor={id}>{label}</label>
+            <div className="flex items-center gap-2">
                 <input
-                    className="h-12 w-16 cursor-pointer rounded-lg border border-line bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-9 w-10 shrink-0 cursor-pointer rounded-lg border border-line bg-surface p-1 disabled:cursor-not-allowed disabled:opacity-50"
                     type="color"
+                    aria-label={label}
                     value={safeValue}
                     disabled={disabled}
                     onChange={(event) => {
@@ -325,6 +418,7 @@ function ColorField({
                     }}
                 />
                 <input
+                    id={id}
                     className="plms-input flex-1 font-mono"
                     value={value}
                     disabled={disabled}
@@ -346,8 +440,8 @@ function ColorField({
 
 function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
     return (
-        <label className="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3">
-            <span className="text-xs font-medium text-ink-3">{label}</span>
+        <label className="flex h-7 cursor-pointer items-center justify-between gap-3">
+            <span className="plms-label">{label}</span>
             <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-accent" />
         </label>
     );
@@ -357,13 +451,15 @@ function RotationField({ label, value, onChange }: { label: string; value: 0 | 9
     const options: Array<0 | 90 | 180 | 270> = [0, 90, 180, 270];
     return (
         <div>
-            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="plms-label mb-1.5">{label}</div>
+            <div className="grid grid-cols-4 gap-0.5 rounded-lg bg-raised p-0.5" role="radiogroup" aria-label={label}>
                 {options.map((option) => (
                     <button
                         key={option}
                         type="button"
-                        className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${value === option ? "border-accent/30 bg-accent/10 text-ink" : "border-line text-ink-3 hover:bg-raised hover:text-ink"}`}
+                        role="radio"
+                        aria-checked={value === option}
+                        className={`h-8 rounded-md font-mono text-xs tabular transition-colors ${value === option ? "bg-surface text-ink shadow-xs" : "text-ink-2 hover:text-ink"}`}
                         onClick={() => onChange(option)}
                     >
                         {option}°
@@ -374,21 +470,32 @@ function RotationField({ label, value, onChange }: { label: string; value: 0 | 9
     );
 }
 
-function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+function SelectField({ label, value, options, onChange }: { label: string; value: string; options: Array<{ value: string; label: string }>; onChange: (value: string) => void }) {
+    const id = useFieldId(label);
     return (
         <div>
-            <label className="mb-2 block text-xs font-medium text-ink-3">{label}</label>
-            <select className="plms-select w-full" value={value} onChange={(event) => onChange(event.target.value)}>
-                {options.map((option) => <option key={option} value={option}>{option}</option>)}
+            <label className="plms-label mb-1.5 block" htmlFor={id}>{label}</label>
+            <select id={id} className="plms-select w-full" value={value} onChange={(event) => onChange(event.target.value)}>
+                {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
         </div>
     );
 }
 
 function InlineNotice({ text, tone }: { text: string; tone: "info" | "warning" }) {
-    const classes = tone === "warning"
-        ? "border-warn/20 bg-warn/10 text-warn"
-        : "border-accent/20 bg-accent/10 text-accent";
+    if (tone === "warning") {
+        return (
+            <div className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+                <WarningCircle size={16} className="mt-0.5 shrink-0" />
+                {text}
+            </div>
+        );
+    }
 
-    return <div className={`rounded-lg border px-3 py-3 text-xs font-medium ${classes}`}>{text}</div>;
+    return (
+        <div className="flex items-start gap-2 text-sm text-ink-3">
+            <Info size={16} className="mt-0.5 shrink-0" />
+            <span className="min-w-0 break-words">{text}</span>
+        </div>
+    );
 }

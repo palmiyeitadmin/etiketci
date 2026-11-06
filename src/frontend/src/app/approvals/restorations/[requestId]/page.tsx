@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
@@ -20,44 +21,55 @@ export default function RestorationApprovalDetailPage() {
     const [comments, setComments] = useState("");
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const text = locale === "tr"
         ? {
-            eyebrow: "Geri yükleme incelemesi",
-            title: "Arşiv Şablon Geri Yükleme",
-            description: "Arşiv sürümü geri yükleme taleplerini inceleyin ve yeni taslak oluşturulup oluşturulmayacağına karar verin.",
-            openTemplate: "Şablonu Aç",
+            parent: "Onaylar",
+            title: "Geri yükleme talebi",
+            description: "Onaylarsanız arşivdeki sürümden yeni bir taslak oluşturulur.",
+            openTemplate: "Şablonu aç",
             notFound: "Talep bulunamadı",
-            notFoundDescription: "Geri yükleme talebi yüklenemedi.",
-            requestedByOn: "Talep eden {user} - {date}",
-            business: "İş Gerekçesi",
-            target: "Hedef Ortam",
+            notFoundDescription: "Bu geri yükleme talebi yüklenemedi.",
+            code: "Kod",
+            version: "Sürüm",
+            status: "Durum",
+            requestedBy: "Talep eden",
+            requestedAt: "Tarih",
+            business: "Gerekçe",
+            target: "Hedef ortam",
             notSpecified: "Belirtilmedi",
-            until: "Geçerlilik Sonu",
-            openEnded: "Son tarih yok",
-            decision: "İnceleyici Kararı",
-            comments: "İnceleyici yorumlarını girin...",
+            until: "Geçerlilik sonu",
+            openEnded: "Süresiz",
+            decision: "Karar",
+            commentsLabel: "Yorum",
+            comments: "İsteğe bağlı",
             reject: "Reddet",
-            approve: "Onayla ve Taslak Oluştur",
-            reviewedBy: "İnceleyen {user}{dateText}",
+            approve: "Onayla ve taslak oluştur",
+            reviewedBy: "İnceleyen: {user}{dateText}",
             unknown: "Bilinmiyor",
         }
         : {
-            eyebrow: "Restoration review",
-            title: "Archived Template Restoration",
-            description: "Review archived version restore requests and decide whether to regenerate a new draft.",
-            openTemplate: "Open Template",
+            parent: "Approvals",
+            title: "Restoration request",
+            description: "Approving creates a new draft from the archived version.",
+            openTemplate: "Open template",
             notFound: "Request not found",
-            notFoundDescription: "The restoration request could not be loaded.",
-            requestedByOn: "Requested by {user} on {date}",
-            business: "Business Justification",
-            target: "Target Environment",
+            notFoundDescription: "This restoration request could not be loaded.",
+            code: "Code",
+            version: "Version",
+            status: "Status",
+            requestedBy: "Requested by",
+            requestedAt: "Date",
+            business: "Reason",
+            target: "Target environment",
             notSpecified: "Not specified",
-            until: "Requested Until",
-            openEnded: "Open-ended",
-            decision: "Reviewer Decision",
-            comments: "Enter reviewer comments...",
+            until: "Valid until",
+            openEnded: "No end date",
+            decision: "Decision",
+            commentsLabel: "Comment",
+            comments: "Optional",
             reject: "Reject",
-            approve: "Approve & Create Draft",
+            approve: "Approve and create draft",
             reviewedBy: "Reviewed by {user}{dateText}",
             unknown: "Unknown",
         };
@@ -77,6 +89,7 @@ export default function RestorationApprovalDetailPage() {
 
     async function review(approve: boolean) {
         setSubmitting(true);
+        setError(null);
         const res = await apiFetch<TemplateRestorationRequest>(`/api/Templates/restoration-approvals/${requestId}/review`, {
             method: "POST",
             body: JSON.stringify({ approve, comments }),
@@ -91,68 +104,71 @@ export default function RestorationApprovalDetailPage() {
             return;
         }
 
-        alert(res.error.message);
+        setError(res.error.message);
     }
+
+    const fact = (label: string, value: React.ReactNode) => (
+        <div className="flex min-w-0 flex-col gap-1">
+            <dt className="text-sm text-ink-3">{label}</dt>
+            <dd className="truncate text-base text-ink">{value}</dd>
+        </div>
+    );
 
     return (
         <RoleGuard allowedRoles={["Admin", "Reviewer"]}>
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="space-y-6">
+                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                    <Link href="/approvals" className="transition-colors hover:text-ink">{text.parent}</Link>
+                    <CaretRight size={12} aria-hidden />
+                    <span className="text-ink-2">{text.title}</span>
+                </nav>
+
                 <PageHeader
-                    eyebrow={text.eyebrow}
-                    title={text.title}
+                    title={request ? request.templateName : text.title}
                     description={text.description}
                     actions={request ? <Link href={`/templates/${request.templateId}`} className="plms-button-secondary">{text.openTemplate}</Link> : null}
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : !request ? (
                     <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
-                    <div className="space-y-6">
-                        <div className="rounded-xl border border-line bg-surface p-6">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{request.templateCode}</span>
-                                <StatusBadge label={`v${request.templateVersionNumber}`} tone="danger" />
-                                <StatusBadge label={request.status} tone={request.status === "Pending" ? "warning" : request.status === "Approved" ? "success" : "danger"} />
-                            </div>
-                            <h2 className="mt-4 text-3xl font-medium text-ink">{request.templateName}</h2>
-                            <div className="mt-2 text-sm font-medium text-ink-3">{text.requestedByOn.replace("{user}", request.requestedBy).replace("{date}", formatDateTime(request.requestedAt))}</div>
-                        </div>
-
-                        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                            <div className="space-y-6 rounded-xl border border-line bg-surface p-6">
-                                <div>
-                                    <div className="text-xs font-medium text-ink-3">{text.business}</div>
-                                    <p className="mt-3 text-sm font-medium text-ink-2">{request.businessJustification}</p>
-                                </div>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <div className="text-xs font-medium text-ink-3">{text.target}</div>
-                                        <div className="mt-2 text-sm font-medium text-ink">{request.targetEnvironment || text.notSpecified}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-medium text-ink-3">{text.until}</div>
-                                        <div className="mt-2 text-sm font-medium text-ink">{request.requestedUntil ? formatDate(request.requestedUntil) : text.openEnded}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 rounded-xl border border-line bg-surface p-6">
-                                <div className="text-xs font-medium text-ink-3">{text.decision}</div>
-                                <textarea className="plms-input min-h-32" value={comments} onChange={(e) => setComments(e.target.value)} placeholder={text.comments} disabled={request.status !== "Pending"} />
-                                {request.status === "Pending" ? (
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={() => review(false)} disabled={submitting}>{text.reject}</button>
-                                        <button className="rounded-lg bg-good px-4 py-3 text-xs font-medium text-white" onClick={() => review(true)} disabled={submitting}>{text.approve}</button>
-                                    </div>
-                                ) : (
-                                    <div className="rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-2">
-                                        {text.reviewedBy.replace("{user}", request.reviewedBy || text.unknown).replace("{dateText}", request.reviewedAt ? ` - ${formatDateTime(request.reviewedAt)}` : "")}.
-                                    </div>
-                                )}
+                    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+                        <div className="plms-card divide-y divide-line">
+                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-4 md:grid-cols-3">
+                                {fact(text.code, <span className="whitespace-nowrap font-mono text-sm">{request.templateCode}</span>)}
+                                {fact(text.version, <span className="tabular font-mono text-sm">v{request.templateVersionNumber}</span>)}
+                                {fact(text.status, <StatusBadge label={request.status} tone={request.status === "Pending" ? "warning" : request.status === "Approved" ? "success" : "danger"} />)}
+                                {fact(text.requestedBy, request.requestedBy)}
+                                {fact(text.requestedAt, <span className="tabular font-mono text-sm">{formatDateTime(request.requestedAt)}</span>)}
+                                {fact(text.target, request.targetEnvironment || text.notSpecified)}
+                                {fact(text.until, request.requestedUntil ? <span className="tabular font-mono text-sm">{formatDate(request.requestedUntil)}</span> : text.openEnded)}
+                            </dl>
+                            <div className="flex flex-col gap-1.5 px-5 py-4">
+                                <div className="text-sm text-ink-3">{text.business}</div>
+                                <p className="text-base text-ink-2">{request.businessJustification}</p>
                             </div>
                         </div>
+
+                        <section className="plms-card space-y-4 p-5">
+                            <h2 className="text-md font-medium text-ink">{text.decision}</h2>
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="review-comments" className="plms-label">{text.commentsLabel}</label>
+                                <textarea id="review-comments" className="plms-input min-h-32" value={comments} onChange={(e) => setComments(e.target.value)} placeholder={text.comments} disabled={request.status !== "Pending"} />
+                            </div>
+                            {error ? <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</div> : null}
+                            {request.status === "Pending" ? (
+                                <div className="flex flex-wrap justify-end gap-2">
+                                    <button className="plms-button-danger" onClick={() => review(false)} disabled={submitting}>{text.reject}</button>
+                                    <button className="plms-button-primary" onClick={() => review(true)} disabled={submitting}>{text.approve}</button>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-ink-3">
+                                    {text.reviewedBy.replace("{user}", request.reviewedBy || text.unknown).replace("{dateText}", request.reviewedAt ? ` · ${formatDateTime(request.reviewedAt)}` : "")}
+                                </p>
+                            )}
+                        </section>
                     </div>
                 )}
             </div>

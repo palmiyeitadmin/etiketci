@@ -8,6 +8,10 @@ import { permissions } from "@/lib/permissions";
 import { RoleSummary, UserSummary } from "@/types/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { DataTable } from "@/components/ui/DataTable";
+import { FilterBar } from "@/components/ui/FilterBar";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SlideOver } from "@/components/ui/SlideOver";
 import { useI18n } from "@/lib/i18n";
 
 const initialForm = {
@@ -30,65 +34,71 @@ export default function AdminUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
   const [setupLink, setSetupLink] = useState<string | null>(null);
 
   const text = locale === "tr"
     ? {
-        eyebrow: "Yönetim",
         title: "Kullanıcılar",
-        description: "Kullanıcılar oluşturun, rol atamalarını yönetin ve onboarding yapısını kontrol edin.",
-        close: "Kapat",
-        newUser: "Yeni Kullanıcı",
+        description: "Kullanıcı ekleyin, rollerini ve hesap durumlarını yönetin.",
+        newUser: "Yeni kullanıcı",
+        newUserSubtitle: "Davet bağlantısı gönderin veya geçici parola belirleyin",
         email: "E-posta",
         fullName: "Ad soyad",
-        inviteMode: "Davet et ve şifre belirlet",
-        directMode: "Yönetici geçici şifre belirlesin",
-        temporaryPassword: "Geçici şifre",
-        mustChangePassword: "İlk girişte şifre değiştirilsin",
+        mode: "Parola",
+        inviteMode: "Kullanıcı kendi parolasını belirlesin",
+        directMode: "Geçici parola belirle",
+        temporaryPassword: "Geçici parola",
+        mustChangePassword: "İlk girişte parola değiştirilsin",
         roles: "Roller",
         permissionsCount: "{count} yetki",
-        creating: "Oluşturuluyor...",
-        createUser: "Kullanıcı Oluştur",
-        userCreated: "Kullanıcı oluşturuldu.",
+        creating: "Oluşturuluyor",
+        createUser: "Kullanıcıyı oluştur",
+        userCreated: "Kullanıcı oluşturuldu",
         setupLink: "Kurulum bağlantısı",
-        searchUsers: "Kullanıcılarda ara",
+        searchUsers: "Ara",
+        status: "Durum",
         allStatuses: "Tüm durumlar",
         active: "Aktif",
         inactive: "Pasif",
         allRoles: "Tüm roller",
         emptyTitle: "Kullanıcı bulunamadı",
-        emptyDescription: "Mevcut filtrelerle eşleşen kullanıcı yok.",
-        mustChangePasswordBadge: "Şifre değiştirmeli",
+        emptyDescription: "Filtrelerle eşleşen kullanıcı yok.",
+        mustChangePasswordBadge: "Parola değiştirmeli",
+        noRoles: "Rol yok",
         open: "Aç",
+        count: (n: number) => `${n} kullanıcı`,
       }
     : {
-        eyebrow: "Administration",
         title: "Users",
-        description: "Create users, manage role assignments and control onboarding posture.",
-        close: "Close",
-        newUser: "New User",
+        description: "Add users and manage their roles and account status.",
+        newUser: "New user",
+        newUserSubtitle: "Send an invite link or set a temporary password",
         email: "Email",
         fullName: "Full name",
-        inviteMode: "Invite + set password",
-        directMode: "Admin sets temp password",
+        mode: "Password",
+        inviteMode: "User sets their own password",
+        directMode: "Set a temporary password",
         temporaryPassword: "Temporary password",
         mustChangePassword: "Must change password on first sign-in",
         roles: "Roles",
         permissionsCount: "{count} permissions",
-        creating: "Creating...",
-        createUser: "Create User",
-        userCreated: "User created.",
+        creating: "Creating",
+        createUser: "Create user",
+        userCreated: "User created",
         setupLink: "Setup link",
-        searchUsers: "Search users",
+        searchUsers: "Search",
+        status: "Status",
         allStatuses: "All statuses",
         active: "Active",
         inactive: "Inactive",
         allRoles: "All roles",
         emptyTitle: "No users found",
-        emptyDescription: "No users match the current filters.",
+        emptyDescription: "No users match the filters.",
         mustChangePasswordBadge: "Must change password",
+        noRoles: "No roles",
         open: "Open",
+        count: (n: number) => `${n} ${n === 1 ? "user" : "users"}`,
       };
 
   async function load() {
@@ -143,111 +153,139 @@ export default function AdminUsersPage() {
     setBusy(false);
 
     if (!response.success) {
-      setMessage(response.error.message);
+      setMessage({ tone: "bad", text: response.error.message });
       return;
     }
 
-    setMessage(text.userCreated);
+    setMessage({ tone: "good", text: text.userCreated });
     setSetupLink(response.data.setupLink || null);
     setForm(initialForm);
     await load();
   }
 
+  const openCreate = () => {
+    setMessage(null);
+    setSetupLink(null);
+    setCreateOpen(true);
+  };
+
   return (
     <PermissionGuard permissions={[permissions.usersView]}>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="space-y-6">
         <PageHeader
-          eyebrow={text.eyebrow}
           title={text.title}
           description={text.description}
-          actions={<button className="plms-button-primary" onClick={() => setCreateOpen((value) => !value)}>{createOpen ? text.close : text.newUser}</button>}
+          actions={<button className="plms-button-primary" onClick={openCreate}>{text.newUser}</button>}
         />
 
-        {createOpen ? (
-          <form className="grid gap-4 rounded-xl border border-line bg-surface p-6 lg:grid-cols-2" onSubmit={handleCreate}>
-            <div className="space-y-4">
-              <input className="plms-input" placeholder={text.email} value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} required />
-              <input className="plms-input" placeholder={text.fullName} value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} required />
-              <select className="plms-input" value={form.mode} onChange={(event) => setForm((current) => ({ ...current, mode: event.target.value, password: "" }))}>
-                <option value="invite">{text.inviteMode}</option>
-                <option value="direct">{text.directMode}</option>
+        <FilterBar
+          left={
+            <>
+              <input className="plms-input max-w-sm" placeholder={text.searchUsers} value={search} onChange={(event) => setSearch(event.target.value)} />
+              <select className="plms-select" aria-label={text.status} value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)}>
+                <option value="all">{text.allStatuses}</option>
+                <option value="active">{text.active}</option>
+                <option value="inactive">{text.inactive}</option>
               </select>
-              {form.mode === "direct" ? (
-                <input className="plms-input" type="password" placeholder={text.temporaryPassword} value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} required />
-              ) : null}
-              <label className="flex items-center gap-3 text-sm font-medium text-ink-2">
-                <input type="checkbox" checked={form.mustChangePassword} onChange={(event) => setForm((current) => ({ ...current, mustChangePassword: event.target.checked }))} />
-                {text.mustChangePassword}
-              </label>
-            </div>
-            <div className="space-y-3 rounded-xl border border-line bg-raised p-5">
-              <div className="text-xs font-medium text-ink-3">{text.roles}</div>
-              {roles.map((role) => (
-                <label key={role.id} className="flex items-start gap-3 rounded-lg border border-line px-4 py-3 text-sm text-ink">
-                  <input
-                    type="checkbox"
-                    checked={form.roleIds.includes(role.id)}
-                    onChange={(event) => setForm((current) => ({
-                      ...current,
-                      roleIds: event.target.checked
-                        ? [...current.roleIds, role.id]
-                        : current.roleIds.filter((value) => value !== role.id),
-                    }))}
-                  />
-                  <span>
-                    <span className="block font-medium">{role.name}</span>
-                    <span className="block text-xs text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            <div className="lg:col-span-2 flex flex-wrap items-center gap-3">
-              <button className="plms-button-primary" type="submit" disabled={busy}>{busy ? text.creating : text.createUser}</button>
-              {message ? <div className="text-sm font-medium text-ink-2">{message}</div> : null}
-              {setupLink ? <div className="w-full rounded-lg border border-accent/20 bg-accent/10 p-4 text-sm text-accent break-all">{text.setupLink}: {setupLink}</div> : null}
-            </div>
-          </form>
-        ) : null}
-
-        <div className="grid gap-4 lg:grid-cols-[1fr_180px_240px]">
-          <input className="plms-input" placeholder={text.searchUsers} value={search} onChange={(event) => setSearch(event.target.value)} />
-          <select className="plms-input" value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)}>
-            <option value="all">{text.allStatuses}</option>
-            <option value="active">{text.active}</option>
-            <option value="inactive">{text.inactive}</option>
-          </select>
-          <select className="plms-input" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="all">{text.allRoles}</option>
-            {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
-          </select>
-        </div>
+              <select className="plms-select" aria-label={text.roles} value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                <option value="all">{text.allRoles}</option>
+                {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+              </select>
+            </>
+          }
+          right={!loading ? <span className="tabular text-sm text-ink-3">{text.count(filteredUsers.length)}</span> : null}
+        />
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
         ) : filteredUsers.length === 0 ? (
           <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
         ) : (
-          <div className="grid gap-4">
+          <DataTable columns={[text.fullName, text.email, text.roles, text.status, ""]}>
             {filteredUsers.map((user) => (
-              <div key={user.id} className="rounded-xl border border-line bg-surface p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="space-y-2">
-                    <div className="text-xl font-medium text-ink">{user.fullName}</div>
-                    <div className="text-sm font-medium text-ink-3">{user.email}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {user.roles.map((role) => <span key={role.id} className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 text-xs font-medium text-accent">{role.name}</span>)}
-                      <span className={`rounded-xl px-2 py-1 text-xs font-medium ${user.isActive ? "bg-good/10 text-good" : "bg-bad/10 text-bad"}`}>{user.isActive ? text.active : text.inactive}</span>
-                      {user.mustChangePassword ? <span className="rounded-xl bg-warn/10 px-2 py-1 text-xs font-medium text-warn">{text.mustChangePasswordBadge}</span> : null}
-                    </div>
+              <tr key={user.id} className="transition-colors hover:bg-raised">
+                <td className="whitespace-nowrap px-4 py-2.5 text-base">
+                  <Link href={`/admin/users/${user.id}`} className="text-ink transition-colors hover:text-accent">{user.fullName}</Link>
+                </td>
+                <td className="px-4 py-2.5 text-base text-ink-2">{user.email}</td>
+                <td className="px-4 py-2.5 text-base text-ink-2">{user.roles.length > 0 ? user.roles.map((role) => role.name).join(", ") : <span className="text-ink-3">{text.noRoles}</span>}</td>
+                <td className="px-4 py-2.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <StatusBadge label={user.isActive ? text.active : text.inactive} tone={user.isActive ? "success" : "neutral"} />
+                    {user.mustChangePassword ? <span className="whitespace-nowrap text-sm text-warn">{text.mustChangePasswordBadge}</span> : null}
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Link href={`/admin/users/${user.id}`} className="plms-button-secondary">{text.open}</Link>
-                  </div>
-                </div>
-              </div>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <Link href={`/admin/users/${user.id}`} className="plms-button-compact">{text.open}</Link>
+                </td>
+              </tr>
             ))}
-          </div>
+          </DataTable>
         )}
+
+        <SlideOver open={createOpen} title={text.newUser} subtitle={text.newUserSubtitle} onClose={() => setCreateOpen(false)}>
+          <form className="space-y-5" onSubmit={handleCreate}>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-user-email" className="plms-label">{text.email}</label>
+              <input id="new-user-email" type="email" className="plms-input" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-user-name" className="plms-label">{text.fullName}</label>
+              <input id="new-user-name" className="plms-input" value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-user-mode" className="plms-label">{text.mode}</label>
+              <select id="new-user-mode" className="plms-select w-full" value={form.mode} onChange={(event) => setForm((current) => ({ ...current, mode: event.target.value, password: "" }))}>
+                <option value="invite">{text.inviteMode}</option>
+                <option value="direct">{text.directMode}</option>
+              </select>
+            </div>
+            {form.mode === "direct" ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="new-user-password" className="plms-label">{text.temporaryPassword}</label>
+                <input id="new-user-password" className="plms-input" type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} required />
+              </div>
+            ) : null}
+            <label className="flex items-center gap-3 text-sm text-ink">
+              <input type="checkbox" className="h-4 w-4 accent-accent" checked={form.mustChangePassword} onChange={(event) => setForm((current) => ({ ...current, mustChangePassword: event.target.checked }))} />
+              {text.mustChangePassword}
+            </label>
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="plms-label mb-1.5">{text.roles}</legend>
+              <div className="divide-y divide-line rounded-lg border border-line">
+                {roles.map((role) => (
+                  <label key={role.id} className="flex cursor-pointer items-start gap-3 px-3 py-2.5 transition-colors hover:bg-raised">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 accent-accent"
+                      checked={form.roleIds.includes(role.id)}
+                      onChange={(event) => setForm((current) => ({
+                        ...current,
+                        roleIds: event.target.checked
+                          ? [...current.roleIds, role.id]
+                          : current.roleIds.filter((value) => value !== role.id),
+                      }))}
+                    />
+                    <span className="flex flex-col">
+                      <span className="text-sm text-ink">{role.name}</span>
+                      <span className="text-sm text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {message ? (
+              <div role="status" className={`rounded-lg px-3 py-2 text-sm ${message.tone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>{message.text}</div>
+            ) : null}
+            {setupLink ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="plms-label">{text.setupLink}</div>
+                <code className="block break-all rounded-md bg-raised px-2.5 py-1.5 font-mono text-xs text-ink-2">{setupLink}</code>
+              </div>
+            ) : null}
+            <button className="plms-button-primary w-full" type="submit" disabled={busy}>{busy ? text.creating : text.createUser}</button>
+          </form>
+        </SlideOver>
       </div>
     </PermissionGuard>
   );

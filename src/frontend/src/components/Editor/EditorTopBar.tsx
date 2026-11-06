@@ -2,17 +2,44 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, ArrowCounterClockwise, ArrowUDownLeft, ArrowUDownRight, Check, Copy, Eye, FloppyDisk, Trash, X } from "@phosphor-icons/react";
-import { EditorCommandButton } from "@/components/Editor/EditorIconButton";
+import { ArrowClockwise, ArrowCounterClockwise, ArrowLeft, ArrowUUpLeft, ArrowUUpRight, Check, Copy, Eye, FloppyDisk, SidebarSimple, Trash, X } from "@phosphor-icons/react";
+import { EditorCommandButton, EditorTooltip } from "@/components/Editor/EditorIconButton";
 import { EditorViewportControls } from "@/components/Editor/EditorViewportControls";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useI18n } from "@/lib/i18n";
+
+function getStatusTone(status: string): "neutral" | "info" | "success" | "warning" | "danger" {
+    switch (status) {
+        case "Draft":
+        case "Rejected":
+            return "warning";
+        case "InReview":
+            return "info";
+        case "Approved":
+        case "Published":
+            return "success";
+        case "Deprecated":
+        case "Archived":
+            return "danger";
+        default:
+            return "neutral";
+    }
+}
+
+function Divider() {
+    return <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-line" />;
+}
 
 export function EditorTopBar({
     name,
     dimensions,
     zoom,
     previewHref,
+    backHref,
+    versionLabel,
+    status,
     isDirty,
+    savePending = false,
     onSave,
     onZoomIn,
     onZoomOut,
@@ -28,12 +55,19 @@ export function EditorTopBar({
     onRotateRight,
     onRenameTemplate,
     onResizeCanvas,
+    hasSelection = true,
+    panelsCollapsed,
+    onTogglePanels,
 }: {
     name: string;
     dimensions: { widthMm: number; heightMm: number };
     zoom: number;
     previewHref?: string;
+    backHref?: string;
+    versionLabel?: string;
+    status?: string;
     isDirty: boolean;
+    savePending?: boolean;
     onSave: () => void;
     onZoomIn: () => void;
     onZoomOut: () => void;
@@ -49,6 +83,9 @@ export function EditorTopBar({
     onRotateRight: () => void;
     onRenameTemplate: (name: string) => Promise<void>;
     onResizeCanvas: (dimensions: { widthMm: number; heightMm: number }) => Promise<void>;
+    hasSelection?: boolean;
+    panelsCollapsed?: boolean;
+    onTogglePanels?: () => void;
 }) {
     const { locale } = useI18n();
     const [editingName, setEditingName] = useState(false);
@@ -60,7 +97,7 @@ export function EditorTopBar({
     const [inlineError, setInlineError] = useState<string | null>(null);
     const text = locale === "tr"
         ? {
-            eyebrow: "Editör",
+            back: "Şablona dön",
             undo: "Geri al",
             redo: "Yinele",
             rotateLeft: "Sola döndür",
@@ -68,30 +105,50 @@ export function EditorTopBar({
             duplicate: "Çoğalt",
             delete: "Sil",
             preview: "Önizleme",
+            save: "Kaydet",
+            saving: "Kaydediliyor",
             saved: "Kaydedildi",
-            saveDraft: "Taslak Kaydet",
-            renameHint: "Düzenlemek için çift tıklayın",
-            invalidName: "Şablon adı boş olamaz.",
-            invalidDimensions: "Genişlik ve yükseklik 10 ile 1000 mm arasında olmalıdır.",
-            renameFailed: "Şablon adı kaydedilemedi.",
-            resizeFailed: "Şablon boyutu kaydedilemedi.",
+            unsaved: "Kaydedilmemiş değişiklikler",
+            renameHint: "Yeniden adlandırmak için çift tıklayın",
+            resizeHint: "Boyutu değiştirmek için çift tıklayın",
+            nameLabel: "Şablon adı",
+            widthLabel: "Genişlik",
+            heightLabel: "Yükseklik",
+            confirm: "Onayla",
+            cancel: "Vazgeç",
+            hidePanels: "Panelleri gizle",
+            showPanels: "Panelleri göster",
+            invalidName: "Şablon adı boş olamaz",
+            invalidDimensions: "Genişlik ve yükseklik 10 ile 1000 mm arasında olmalı",
+            renameFailed: "Şablon adı kaydedilemedi",
+            resizeFailed: "Şablon boyutu kaydedilemedi",
         }
         : {
-            eyebrow: "Unified editor",
+            back: "Back to template",
             undo: "Undo",
             redo: "Redo",
-            rotateLeft: "Rotate Left",
-            rotateRight: "Rotate Right",
+            rotateLeft: "Rotate left",
+            rotateRight: "Rotate right",
             duplicate: "Duplicate",
             delete: "Delete",
             preview: "Preview",
+            save: "Save",
+            saving: "Saving",
             saved: "Saved",
-            saveDraft: "Save Draft",
-            renameHint: "Double click to edit",
-            invalidName: "Template name cannot be empty.",
-            invalidDimensions: "Width and height must stay between 10 and 1000 mm.",
-            renameFailed: "Template name could not be saved.",
-            resizeFailed: "Template size could not be saved.",
+            unsaved: "Unsaved changes",
+            renameHint: "Double-click to rename",
+            resizeHint: "Double-click to change the size",
+            nameLabel: "Template name",
+            widthLabel: "Width",
+            heightLabel: "Height",
+            confirm: "Confirm",
+            cancel: "Cancel",
+            hidePanels: "Hide panels",
+            showPanels: "Show panels",
+            invalidName: "Template name cannot be empty",
+            invalidDimensions: "Width and height must stay between 10 and 1000 mm",
+            renameFailed: "Template name could not be saved",
+            resizeFailed: "Template size could not be saved",
         };
 
     useEffect(() => {
@@ -146,142 +203,175 @@ export function EditorTopBar({
         }
     }
 
+    function cancelName() {
+        setEditingName(false);
+        setDraftName(name);
+        setInlineError(null);
+    }
+
+    function cancelDimensions() {
+        setEditingDimensions(false);
+        setDraftWidth(String(dimensions.widthMm));
+        setDraftHeight(String(dimensions.heightMm));
+        setInlineError(null);
+    }
+
+    const confirmButtons = (onConfirm: () => void, onCancel: () => void) => (
+        <>
+            <button type="button" className="plms-button-primary h-8 w-8 px-0" onClick={onConfirm} disabled={pendingField !== null} aria-label={text.confirm} title={text.confirm}>
+                <Check size={16} />
+            </button>
+            <button type="button" className="plms-button-ghost h-8 w-8 px-0" onClick={onCancel} disabled={pendingField !== null} aria-label={text.cancel} title={text.cancel}>
+                <X size={16} />
+            </button>
+        </>
+    );
+
+    const saveState = savePending ? text.saving : isDirty ? text.unsaved : text.saved;
+
     return (
-        <header className="flex shrink-0 flex-col gap-3 border-b border-line bg-surface px-4 py-3 xl:px-6 2xl:flex-row 2xl:items-start 2xl:justify-between 2xl:gap-4">
-            <div className="flex min-w-0 items-center gap-3 overflow-hidden 2xl:flex-1">
-                <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-ink-3">{text.eyebrow}</div>
-                    {editingName ? (
-                        <div className="mt-1 flex items-center gap-2">
-                            <input
-                                className="h-10 min-w-[240px] rounded-xl border border-accent/30 bg-canvas px-3 text-lg font-medium text-ink outline-none"
-                                value={draftName}
-                                onChange={(event) => setDraftName(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key === "Enter") {
-                                        event.preventDefault();
-                                        void confirmName();
-                                    }
-                                    if (event.key === "Escape") {
-                                        event.preventDefault();
-                                        setEditingName(false);
-                                        setDraftName(name);
-                                        setInlineError(null);
-                                    }
-                                }}
-                                autoFocus
-                            />
-                            <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-good text-white transition-colors hover:bg-good disabled:opacity-50" onClick={() => void confirmName()} disabled={pendingField !== null}>
-                                <Check size={16} weight="bold" />
-                            </button>
-                            <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-raised text-ink-2 transition-colors hover:bg-raised hover:text-ink" onClick={() => { setEditingName(false); setDraftName(name); setInlineError(null); }} disabled={pendingField !== null}>
-                                <X size={16} weight="bold" />
-                            </button>
-                        </div>
-                    ) : (
-                        <h2
-                            className="truncate text-lg font-medium text-ink"
-                            title={text.renameHint}
-                            onDoubleClick={() => {
-                                setEditingName(true);
-                                setEditingDimensions(false);
-                                setInlineError(null);
-                            }}
-                        >
-                            {name}
-                        </h2>
-                    )}
-                    {inlineError ? <div className="mt-2 text-xs font-medium text-bad">{inlineError}</div> : null}
-                </div>
-                {editingDimensions ? (
-                    <div className="hidden items-center gap-2 lg:flex">
+        <header className="relative flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+                {backHref ? (
+                    <EditorTooltip label={text.back} align="start">
+                        <Link href={backHref} aria-label={text.back} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 transition-colors hover:bg-raised hover:text-ink">
+                            <ArrowLeft size={16} />
+                        </Link>
+                    </EditorTooltip>
+                ) : null}
+
+                {editingName ? (
+                    <div className="flex items-center gap-1">
                         <input
-                            className="h-10 w-24 rounded-xl border border-accent/30 bg-canvas px-3 text-xs font-medium text-ink outline-none"
-                            value={draftWidth}
-                            onChange={(event) => setDraftWidth(event.target.value)}
+                            className="plms-input h-8 w-64"
+                            aria-label={text.nameLabel}
+                            value={draftName}
+                            onChange={(event) => setDraftName(event.target.value)}
                             onKeyDown={(event) => {
                                 if (event.key === "Enter") {
                                     event.preventDefault();
-                                    void confirmDimensions();
+                                    void confirmName();
                                 }
                                 if (event.key === "Escape") {
                                     event.preventDefault();
-                                    setEditingDimensions(false);
-                                    setDraftWidth(String(dimensions.widthMm));
-                                    setDraftHeight(String(dimensions.heightMm));
-                                    setInlineError(null);
+                                    cancelName();
                                 }
                             }}
+                            autoFocus
                         />
-                        <span className="text-xs font-medium text-ink-3">x</span>
-                        <input
-                            className="h-10 w-24 rounded-xl border border-accent/30 bg-canvas px-3 text-xs font-medium text-ink outline-none"
-                            value={draftHeight}
-                            onChange={(event) => setDraftHeight(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                    event.preventDefault();
-                                    void confirmDimensions();
-                                }
-                                if (event.key === "Escape") {
-                                    event.preventDefault();
-                                    setEditingDimensions(false);
-                                    setDraftWidth(String(dimensions.widthMm));
-                                    setDraftHeight(String(dimensions.heightMm));
-                                    setInlineError(null);
-                                }
-                            }}
-                        />
-                        <span className="text-xs font-medium text-ink-3">mm</span>
-                        <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-good text-white transition-colors hover:bg-good disabled:opacity-50" onClick={() => void confirmDimensions()} disabled={pendingField !== null}>
-                            <Check size={16} weight="bold" />
-                        </button>
-                        <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-raised text-ink-2 transition-colors hover:bg-raised hover:text-ink" onClick={() => { setEditingDimensions(false); setDraftWidth(String(dimensions.widthMm)); setDraftHeight(String(dimensions.heightMm)); setInlineError(null); }} disabled={pendingField !== null}>
-                            <X size={16} weight="bold" />
-                        </button>
+                        {confirmButtons(() => void confirmName(), cancelName)}
                     </div>
                 ) : (
-                    <div
-                        className="hidden shrink-0 rounded-xl border border-line bg-raised px-3 py-2 text-xs font-medium text-ink-3 lg:block"
+                    <h1
+                        className="min-w-0 cursor-text truncate rounded-md px-1.5 py-1 text-base font-medium text-ink transition-colors hover:bg-raised"
                         title={text.renameHint}
+                        onDoubleClick={() => {
+                            setEditingName(true);
+                            setEditingDimensions(false);
+                            setInlineError(null);
+                        }}
+                    >
+                        {name}
+                    </h1>
+                )}
+
+                {versionLabel ? <span className="shrink-0 font-mono text-xs text-ink-3">{versionLabel}</span> : null}
+                {status ? <span className="hidden shrink-0 lg:inline-flex"><StatusBadge label={status} tone={getStatusTone(status)} /></span> : null}
+
+                {editingDimensions ? (
+                    <div className="flex shrink-0 items-center gap-1">
+                        {[
+                            { value: draftWidth, set: setDraftWidth, label: text.widthLabel },
+                            { value: draftHeight, set: setDraftHeight, label: text.heightLabel },
+                        ].map((field, index) => (
+                            <span key={field.label} className="flex items-center gap-1">
+                                {index === 1 ? <span className="font-mono text-xs text-ink-3">×</span> : null}
+                                <input
+                                    className="plms-input h-8 w-16 px-2 font-mono tabular"
+                                    aria-label={`${field.label} (mm)`}
+                                    inputMode="decimal"
+                                    value={field.value}
+                                    autoFocus={index === 0}
+                                    onChange={(event) => field.set(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === "Enter") {
+                                            event.preventDefault();
+                                            void confirmDimensions();
+                                        }
+                                        if (event.key === "Escape") {
+                                            event.preventDefault();
+                                            cancelDimensions();
+                                        }
+                                    }}
+                                />
+                            </span>
+                        ))}
+                        <span className="mr-1 font-mono text-xs text-ink-3">mm</span>
+                        {confirmButtons(() => void confirmDimensions(), cancelDimensions)}
+                    </div>
+                ) : (
+                    <span
+                        className="hidden shrink-0 cursor-text whitespace-nowrap rounded-md px-1.5 py-1 font-mono text-xs tabular text-ink-3 transition-colors hover:bg-raised hover:text-ink-2 lg:inline"
+                        title={text.resizeHint}
                         onDoubleClick={() => {
                             setEditingDimensions(true);
                             setEditingName(false);
                             setInlineError(null);
                         }}
                     >
-                        {dimensions.widthMm} x {dimensions.heightMm} mm
-                    </div>
+                        {dimensions.widthMm} × {dimensions.heightMm} mm
+                    </span>
                 )}
             </div>
 
-            <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto pb-1 2xl:pb-0">
-                <div className="flex items-center gap-1.5 rounded-lg border border-line bg-raised px-1.5 py-1.5">
-                    <EditorCommandButton icon={ArrowCounterClockwise} label={text.undo} onClick={onUndo} disabled={!canUndo} />
-                    <EditorCommandButton icon={ArrowClockwise} label={text.redo} onClick={onRedo} disabled={!canRedo} />
-                    <EditorCommandButton icon={ArrowUDownLeft} label={text.rotateLeft} onClick={onRotateLeft} />
-                    <EditorCommandButton icon={ArrowUDownRight} label={text.rotateRight} onClick={onRotateRight} />
-                    <EditorCommandButton icon={Copy} label={text.duplicate} onClick={onDuplicate} />
-                    <EditorCommandButton icon={Trash} label={text.delete} onClick={onDelete} tone="danger" />
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-raised px-1.5 py-1.5">
-                    <EditorViewportControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onFit={onFit} onReset={onReset} />
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-raised px-1.5 py-1.5">
-                    {previewHref ? (
-                        <Link href={previewHref} className="inline-flex h-10 min-w-0 items-center gap-2 rounded-xl border border-accent/20 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-accent/15">
-                            <Eye size={16} weight="bold" />
-                            <span className="hidden xl:inline">{text.preview}</span>
-                        </Link>
-                    ) : null}
-                    <button className="inline-flex h-10 min-w-0 items-center gap-2 rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover" type="button" onClick={onSave}>
-                        <FloppyDisk size={16} weight="bold" />
-                        <span className="hidden xl:inline">{isDirty ? text.saveDraft : text.saved}</span>
-                    </button>
-                </div>
+            <div className="flex shrink-0 items-center">
+                <EditorCommandButton icon={ArrowUUpLeft} label={text.undo} shortcut={["Ctrl", "Z"]} onClick={onUndo} disabled={!canUndo} />
+                <EditorCommandButton icon={ArrowUUpRight} label={text.redo} shortcut={["Ctrl", "Shift", "Z"]} onClick={onRedo} disabled={!canRedo} />
+                <Divider />
+                <EditorCommandButton icon={ArrowCounterClockwise} label={text.rotateLeft} shortcut={["Shift", "R"]} onClick={onRotateLeft} disabled={!hasSelection} />
+                <EditorCommandButton icon={ArrowClockwise} label={text.rotateRight} shortcut={["R"]} onClick={onRotateRight} disabled={!hasSelection} />
+                <EditorCommandButton icon={Copy} label={text.duplicate} shortcut={["Ctrl", "D"]} onClick={onDuplicate} disabled={!hasSelection} />
+                <EditorCommandButton icon={Trash} label={text.delete} shortcut={["Del"]} onClick={onDelete} tone="danger" disabled={!hasSelection} />
+                <Divider />
+                <EditorViewportControls zoom={zoom} onZoomIn={onZoomIn} onZoomOut={onZoomOut} onFit={onFit} onReset={onReset} />
+                <Divider />
             </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+                <span className="hidden items-center gap-1.5 whitespace-nowrap text-xs text-ink-3 xl:inline-flex" aria-live="polite">
+                    {isDirty && !savePending ? <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warn" /> : null}
+                    {saveState}
+                </span>
+                {previewHref ? (
+                    <Link href={previewHref} className="plms-button-secondary h-8 px-3" aria-label={text.preview}>
+                        <Eye size={16} />
+                        <span className="hidden lg:inline">{text.preview}</span>
+                    </Link>
+                ) : null}
+                <EditorTooltip label={text.save} shortcut={["Ctrl", "S"]} align="end">
+                    <button className="plms-button-primary h-8 px-3" type="button" onClick={onSave} disabled={savePending} aria-keyshortcuts="Control+S">
+                        <FloppyDisk size={16} />
+                        {text.save}
+                    </button>
+                </EditorTooltip>
+                {onTogglePanels ? (
+                    <span className="hidden xl:inline-flex">
+                        <EditorCommandButton
+                            icon={SidebarSimple}
+                            label={panelsCollapsed ? text.showPanels : text.hidePanels}
+                            onClick={onTogglePanels}
+                            active={!panelsCollapsed}
+                            align="end"
+                        />
+                    </span>
+                ) : null}
+            </div>
+
+            {inlineError ? (
+                <div role="alert" className="absolute left-14 top-full z-40 mt-2 rounded-lg border border-line bg-bad-soft px-3 py-1.5 text-sm text-bad shadow-pop">
+                    {inlineError}
+                </div>
+            ) : null}
         </header>
     );
 }

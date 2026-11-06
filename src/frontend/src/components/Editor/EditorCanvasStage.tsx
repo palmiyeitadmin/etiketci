@@ -13,6 +13,15 @@ import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
 
 const FIT_PADDING = 48;
 const LABEL_SURFACE_NAME = "label-surface";
+// Chrome colors for the Konva layer, matching the design tokens in globals.css (Konva needs literal colors).
+const CHROME = {
+    workspace: "#f4f4f5", // --raised
+    labelEdge: "#d4d4d8", // --line-strong
+    labelShadow: "rgba(23, 23, 23, 0.10)",
+    accent: "#0e7490", // --accent
+    placeholderFill: "#f4f4f5",
+    placeholderStroke: "#a1a1aa",
+};
 
 function getBwipBarcodeType(type?: string) {
     switch ((type || "CODE_128").toUpperCase()) {
@@ -292,17 +301,17 @@ function ElementNode({
             ) : null}
 
             {(element.type === "barcode" || element.type === "qr") ? (
-                image ? <KonvaImage image={image} width={width} height={height} /> : <Rect width={width} height={height} fill="#f8fafc" stroke="#94a3b8" dash={[4, 4]} />
+                image ? <KonvaImage image={image} width={width} height={height} /> : <Rect width={width} height={height} fill={CHROME.placeholderFill} stroke={CHROME.placeholderStroke} dash={[4, 4]} />
             ) : null}
 
             {element.type === "image" ? (
                 image ? (() => {
                     const placement = computeImagePlacement(element as ImageElement, width, height, image);
                     return <KonvaImage image={image} x={placement.x} y={placement.y} width={placement.width} height={placement.height} />;
-                })() : <Rect width={width} height={height} fill="#dbeafe" stroke="#60a5fa" dash={[4, 4]} />
+                })() : <Rect width={width} height={height} fill={CHROME.placeholderFill} stroke={CHROME.placeholderStroke} dash={[4, 4]} />
             ) : null}
 
-            {selected ? <Rect width={width} height={height} stroke="#3b82f6" strokeWidth={1} dash={[6, 4]} listening={false} /> : null}
+            {selected ? <Rect width={width} height={height} stroke={CHROME.accent} strokeWidth={1} dash={[6, 4]} listening={false} /> : null}
         </Group>
     );
 }
@@ -456,7 +465,7 @@ export function EditorCanvasStage() {
     const renderableElements = useMemo(() => model.elements.filter((element) => element.visible !== false), [model.elements]);
 
     return (
-        <div ref={ref} className="relative h-full w-full overflow-hidden bg-canvas">
+        <div ref={ref} className="relative h-full w-full overflow-hidden bg-raised">
             <EditorRulers labelWidthMm={model.dimensions.widthMm} labelHeightMm={model.dimensions.heightMm} labelX={labelX} labelY={labelY} zoom={viewport.zoom} />
             <Stage
                 ref={stageRef}
@@ -469,7 +478,7 @@ export function EditorCanvasStage() {
                 onWheel={handleWheel}
             >
                 <Layer>
-                    <Rect width={size.width} height={size.height} fill="#0b1220" />
+                    <Rect width={size.width} height={size.height} fill={CHROME.workspace} />
                     <Rect
                         name={LABEL_SURFACE_NAME}
                         x={labelX}
@@ -478,10 +487,11 @@ export function EditorCanvasStage() {
                         height={scaledLabelHeight}
                         fill="#ffffff"
                         cornerRadius={6}
-                        shadowBlur={24}
-                        shadowColor="rgba(15, 23, 42, 0.35)"
+                        shadowBlur={12}
+                        shadowOffsetY={1}
+                        shadowColor={CHROME.labelShadow}
                     />
-                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke="#cbd5e1" strokeWidth={1} listening={false} />
+                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke={CHROME.labelEdge} strokeWidth={1} cornerRadius={6} listening={false} />
 
                     {guides.map((guide, index) => (
                         guide.orientation === "vertical" ? (
@@ -491,7 +501,7 @@ export function EditorCanvasStage() {
                                 y={labelY}
                                 width={1}
                                 height={scaledLabelHeight}
-                                fill="#38bdf8"
+                                fill={CHROME.accent}
                                 opacity={0.8}
                                 listening={false}
                             />
@@ -502,7 +512,7 @@ export function EditorCanvasStage() {
                                 y={labelY + UnitConverter.mmToProfile(guide.positionMm, ScreenPreviewProfile, viewport.zoom)}
                                 width={scaledLabelWidth}
                                 height={1}
-                                fill="#38bdf8"
+                                fill={CHROME.accent}
                                 opacity={0.8}
                                 listening={false}
                             />
@@ -571,6 +581,10 @@ export function EditorCanvasStage() {
                     <Transformer
                         ref={transformerRef}
                         rotateEnabled={false}
+                        borderStroke={CHROME.accent}
+                        anchorStroke={CHROME.accent}
+                        anchorFill="#ffffff"
+                        anchorCornerRadius={2}
                         enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]}
                         boundBoxFunc={(oldBox, newBox) => ({
                             ...newBox,
@@ -601,7 +615,7 @@ export function EditorCanvasStage() {
                 </Layer>
             </Stage>
             {guideHint ? (
-                <div className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+                <div className="pointer-events-none absolute left-1/2 top-9 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-2 shadow-pop">
                     {guideHint}
                 </div>
             ) : null}

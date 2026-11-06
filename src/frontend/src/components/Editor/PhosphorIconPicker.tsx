@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { getFeaturedPhosphorIcons, searchPhosphorIcons, type PhosphorIconCatalogItem, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { PhosphorIconPreview } from "@/components/Editor/PhosphorIconPreview";
 import { useI18n } from "@/lib/i18n";
@@ -29,30 +29,30 @@ export function PhosphorIconPicker({
   const canLoadMore = shouldShowFullCatalog && allResults.length > visibleCount;
   const text = locale === "tr"
     ? {
-        placeholder: "Phosphor ikon ara",
-        featured: "Sık Kullanılanlar",
-        featuredDescription: "Hızlı ekleme için seçili Phosphor ikonları.",
+        placeholder: "İkon ara",
+        featured: "Sık kullanılanlar",
         icons: "ikon",
-        fullCatalog: "Tüm Katalog",
-        fullCatalogDescription: "Tüm Phosphor ikonlarını arayıp görsel olarak ekleyin.",
-        showAll: "Tümünü Göster",
-        showLess: "Daha Az Göster",
-        empty: "Sonuç bulunamadı.",
-        insertFailed: "Phosphor ikon eklenemedi.",
-        loadMore: "Daha Fazla Yükle",
+        fullCatalog: "Tüm katalog",
+        fullCatalogDescription: "Bütün ikonları göz atarak bulun",
+        results: "sonuç",
+        showAll: "Tümünü göster",
+        showLess: "Daha az göster",
+        empty: "Sonuç bulunamadı",
+        insertFailed: "İkon eklenemedi",
+        loadMore: "Daha fazla göster",
       }
     : {
-        placeholder: "Search Phosphor icons",
+        placeholder: "Search icons",
         featured: "Featured",
-        featuredDescription: "Quick access to the most useful Phosphor icons.",
         icons: "icons",
         fullCatalog: "Full catalog",
-        fullCatalogDescription: "Search the complete Phosphor set and insert any icon as an image.",
-        showAll: "Show All",
-        showLess: "Show Less",
-        empty: "No results found.",
-        insertFailed: "Phosphor icon could not be inserted.",
-        loadMore: "Load More",
+        fullCatalogDescription: "Browse every icon in the set",
+        results: "results",
+        showAll: "Show all",
+        showLess: "Show less",
+        empty: "No results found",
+        insertFailed: "Icon could not be inserted",
+        loadMore: "Show more",
       };
 
   useEffect(() => {
@@ -73,51 +73,57 @@ export function PhosphorIconPicker({
 
   return (
     <div className="space-y-5">
-      <input
-        className="plms-input"
-        placeholder={text.placeholder}
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
+      <div className="relative">
+        <MagnifyingGlass size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+        <input
+          className="plms-input pl-9"
+          aria-label={text.placeholder}
+          placeholder={text.placeholder}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
 
       {pickerError ? (
-        <div className="rounded-lg border border-bad/20 bg-bad/10 px-4 py-3 text-sm text-bad">
+        <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">
           {pickerError}
         </div>
       ) : null}
 
       {!query.trim() ? (
-        <section className="space-y-3">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-xs font-medium text-ink-3">{text.featured}</div>
-              <p className="mt-1 text-sm text-ink-3">{text.featuredDescription}</p>
-            </div>
-            <div className="text-xs font-medium text-ink-3">{featuredIcons.length} {text.icons}</div>
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-medium text-ink">{text.featured}</h3>
+            <span className="font-mono text-xs tabular text-ink-3">{featuredIcons.length} {text.icons}</span>
           </div>
           <IconGrid items={featuredIcons} onInsert={handleInsert} insertingKey={insertingKey} />
         </section>
       ) : null}
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-raised px-4 py-3">
-          <div>
-            <div className="text-xs font-medium text-ink-3">{text.fullCatalog}</div>
-            <p className="mt-1 text-sm text-ink-3">{text.fullCatalogDescription}</p>
+      <section className="space-y-2">
+        {!query.trim() ? (
+          <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+            <div>
+              <h3 className="text-sm font-medium text-ink">{text.fullCatalog}</h3>
+              <p className="text-xs text-ink-3">{text.fullCatalogDescription}</p>
+            </div>
+            <button
+              type="button"
+              className="plms-button-compact"
+              aria-expanded={showAll}
+              onClick={() => setShowAll((current) => !current)}
+            >
+              {showAll ? <CaretUp size={16} /> : <CaretDown size={16} />}
+              <span>{showAll ? text.showLess : text.showAll}</span>
+            </button>
           </div>
-          <button
-            type="button"
-            className="plms-button-compact"
-            onClick={() => setShowAll((current) => !current)}
-          >
-            {showAll ? <CaretUp size={16} weight="bold" /> : <CaretDown size={16} weight="bold" />}
-            <span>{showAll ? text.showLess : text.showAll}</span>
-          </button>
-        </div>
+        ) : (
+          <div className="font-mono text-xs tabular text-ink-3">{allResults.length} {text.results}</div>
+        )}
 
         {shouldShowFullCatalog ? (
           visibleIcons.length === 0 ? (
-            <div className="rounded-lg border border-line bg-raised px-4 py-6 text-sm text-ink-3">
+            <div className="py-8 text-center text-sm text-ink-3">
               {text.empty}
             </div>
           ) : (
@@ -148,20 +154,19 @@ function IconGrid({
   insertingKey: PhosphorIconKey | null;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-4 gap-1 sm:grid-cols-6">
       {items.map((item) => (
         <button
           key={item.key}
           type="button"
           onClick={() => void onInsert(item)}
-          className="rounded-lg border border-line bg-raised p-4 text-left transition-colors hover:bg-raised disabled:cursor-wait disabled:opacity-60"
+          title={`${item.label} · ${item.key}`}
+          aria-label={item.label}
+          className="flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 pb-2 pt-3 text-ink-2 transition-colors hover:border-line hover:bg-raised hover:text-ink disabled:cursor-wait disabled:opacity-60"
           disabled={insertingKey === item.key}
         >
-          <div className="flex h-16 items-center justify-center rounded-lg border border-line bg-raised text-ink">
-            <PhosphorIconPreview iconKey={item.key} size={28} />
-          </div>
-          <div className="mt-3 truncate text-sm font-medium text-ink">{item.label}</div>
-          <div className="mt-1 truncate text-xs font-medium text-ink-3">{item.key}</div>
+          <PhosphorIconPreview iconKey={item.key} size={24} />
+          <span className="w-full truncate text-center text-xs">{item.label}</span>
         </button>
       ))}
     </div>

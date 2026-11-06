@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useI18n } from "@/lib/i18n";
+import { TemplateRowMenu } from "@/components/Templates/TemplateRowMenu";
 
 type TemplateCategoryDraft = { id?: string; code: string; name: string; isActive: boolean };
 
@@ -38,50 +39,50 @@ export default function TemplateCategoriesPage() {
 
     const text = locale === "tr"
         ? {
-            eyebrow: "Şablon kategori yönetimi",
-            title: "Şablon Kategorileri",
-            description: "Otomatik şablon kodu üreten kategori kayıtları ve kategori bazlı sıra yönetimi.",
-            newCategory: "Yeni Kategori",
-            searchPlaceholder: "Kategori kodu veya adında ara",
-            emptyTitle: "Şablon kategorisi bulunamadı",
-            emptyDescription: "Yeni şablonların otomatik kod üretebilmesi için kategori tanımlayın.",
-            columns: ["Kod", "Ad", "Sıradaki Kod", "Durum", "Aksiyonlar"],
+            title: "Şablon kategorileri",
+            description: "Her kategori, şablon kodlarının ön ekini ve sırasını belirler",
+            newCategory: "Yeni kategori",
+            searchPlaceholder: "Kategori ara",
+            emptyTitle: "Kategori bulunamadı",
+            emptyDescription: "Yeni şablonlara kod verilebilmesi için bir kategori tanımlayın.",
+            columns: ["Kod", "Ad", "Sıradaki şablon kodu", "Durum", "\u00a0"],
             edit: "Düzenle",
             delete: "Sil",
-            editCategory: "Kategoriyi Düzenle",
-            createCategory: "Kategori Oluştur",
-            slideSubtitle: "Kategori kodları şablon kodu üretiminde kullanılır ve oluşturulduktan sonra değiştirilemez.",
+            more: "Diğer işlemler",
+            editCategory: "Kategoriyi düzenle",
+            createCategory: "Kategori oluştur",
+            slideSubtitle: "Kod, şablon kodlarında kullanılır ve kayıttan sonra değiştirilemez",
             code: "Kod",
             name: "Ad",
             active: "Aktif",
-            saving: "Kaydediliyor...",
-            updateCategory: "Kategoriyi Güncelle",
+            saving: "Kaydediliyor",
+            updateCategory: "Kaydet",
             deleteTitle: "Kategoriyi sil",
-            deleteDescription: ` ${deleteTarget?.name ?? ""} kategorisini sil. Bu işlem, şablonlar hâlâ bu kategoriye bağlıysa engellenir.`,
-            deleteConfirm: "Kategoriyi Sil",
+            deleteDescription: `${deleteTarget?.name ?? ""} silinecek. Bu kategoriye bağlı şablon varsa silinemez.`,
+            deleteConfirm: "Kategoriyi sil",
         }
         : {
-            eyebrow: "Template category governance",
-            title: "Template Categories",
-            description: "Category records that drive automatic template code generation and category-based sequencing.",
-            newCategory: "New Category",
-            searchPlaceholder: "Search category code or name",
-            emptyTitle: "No template categories found",
-            emptyDescription: "Create template categories so new templates can generate governed codes.",
-            columns: ["Code", "Name", "Next Code", "Status", "Actions"],
+            title: "Template categories",
+            description: "Each category sets the prefix and sequence of template codes",
+            newCategory: "New category",
+            searchPlaceholder: "Search categories",
+            emptyTitle: "No categories found",
+            emptyDescription: "Create a category so new templates can get a code.",
+            columns: ["Code", "Name", "Next template code", "Status", "\u00a0"],
             edit: "Edit",
             delete: "Delete",
-            editCategory: "Edit Category",
-            createCategory: "Create Category",
-            slideSubtitle: "Category codes are used in generated template codes and cannot be changed after creation.",
+            more: "More actions",
+            editCategory: "Edit category",
+            createCategory: "Create category",
+            slideSubtitle: "The code is used in template codes and cannot be changed after saving",
             code: "Code",
             name: "Name",
             active: "Active",
-            saving: "Saving...",
-            updateCategory: "Update Category",
+            saving: "Saving",
+            updateCategory: "Save",
             deleteTitle: "Delete category",
-            deleteDescription: `Delete ${deleteTarget?.name ?? ""}. This is blocked if templates still reference the category.`,
-            deleteConfirm: "Delete Category",
+            deleteDescription: `${deleteTarget?.name ?? ""} will be deleted. This is blocked while templates still use it.`,
+            deleteConfirm: "Delete category",
         };
 
     async function load() {
@@ -157,36 +158,37 @@ export default function TemplateCategoriesPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-col gap-6">
                 <PageHeader
-                    eyebrow={text.eyebrow}
                     title={text.title}
                     description={text.description}
                     actions={canEdit ? <button className="plms-button-primary" onClick={openCreate}>{text.newCategory}</button> : null}
                 />
 
+                <FilterBar left={<input className="plms-input w-full sm:w-72" placeholder={text.searchPlaceholder} aria-label={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
+
                 {message ? (
-                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">{message}</div>
+                    <div role="status" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{message}</div>
                 ) : null}
 
-                <FilterBar left={<input className="plms-input max-w-xl" placeholder={text.searchPlaceholder} value={query} onChange={(e) => setQuery(e.target.value)} />} />
-
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
                     <DataTable columns={text.columns}>
                         {filtered.map((category) => (
-                            <tr key={category.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4"><span className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">{category.code}</span></td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink">{category.name}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{`PLM-${category.code}-${String(category.nextTemplateSequence).padStart(3, "0")}`}</td>
-                                <td className="px-6 py-4"><StatusBadge label={category.isActive ? "Active" : "Inactive"} tone={category.isActive ? "success" : "danger"} /></td>
-                                <td className="px-6 py-4">
-                                    <div className="flex gap-3">
-                                        {canEdit ? <button className="text-xs font-medium text-accent" onClick={() => openEdit(category)}>{text.edit}</button> : null}
-                                        {canDelete ? <button className="text-xs font-medium text-bad" onClick={() => setDeleteTarget(category)}>{text.delete}</button> : null}
+                            <tr key={category.id} className="transition-colors hover:bg-raised">
+                                <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink">{category.code}</td>
+                                <td className="px-4 py-2.5 text-base text-ink">{category.name}</td>
+                                <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{`PLM-${category.code}-${String(category.nextTemplateSequence).padStart(3, "0")}`}</td>
+                                <td className="whitespace-nowrap px-4 py-2.5"><StatusBadge label={category.isActive ? "Active" : "Inactive"} tone={category.isActive ? "success" : "neutral"} /></td>
+                                <td className="w-px whitespace-nowrap py-2.5 pl-2 pr-3">
+                                    <div className="flex items-center justify-end gap-1">
+                                        {canEdit ? <button type="button" className="plms-button-compact" onClick={() => openEdit(category)}>{text.edit}</button> : null}
+                                        {canDelete ? (
+                                            <TemplateRowMenu label={text.more} items={[{ label: text.delete, onSelect: () => setDeleteTarget(category), tone: "danger" }]} />
+                                        ) : null}
                                     </div>
                                 </td>
                             </tr>
@@ -200,20 +202,20 @@ export default function TemplateCategoriesPage() {
                     subtitle={text.slideSubtitle}
                     onClose={() => setSlideoverOpen(false)}
                 >
-                    <form className="space-y-5" onSubmit={submit}>
-                        <div>
-                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.code}</label>
-                            <input className="plms-input" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} required />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-xs font-medium text-ink-3">{text.name}</label>
+                    <form className="flex flex-col gap-5" onSubmit={submit}>
+                        <label className="flex flex-col gap-1.5">
+                            <span className="plms-label">{text.code}</span>
+                            <input className="plms-input font-mono" value={draft.code} disabled={Boolean(draft.id)} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} required />
+                        </label>
+                        <label className="flex flex-col gap-1.5">
+                            <span className="plms-label">{text.name}</span>
                             <input className="plms-input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
-                        </div>
-                        <label className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm font-medium text-ink">
-                            <input type="checkbox" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-ink">
+                            <input type="checkbox" className="h-4 w-4 accent-accent" checked={draft.isActive} onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })} />
                             {text.active}
                         </label>
-                        <button className="plms-button-primary w-full" type="submit" disabled={submitting}>{submitting ? text.saving : draft.id ? text.updateCategory : text.createCategory}</button>
+                        <button className="plms-button-primary self-start" type="submit" disabled={submitting}>{submitting ? text.saving : draft.id ? text.updateCategory : text.createCategory}</button>
                     </form>
                 </SlideOver>
 

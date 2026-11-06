@@ -11,6 +11,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { DataTable } from "@/components/ui/DataTable";
+import { CaretRight } from "@phosphor-icons/react";
 
 export default function ImportSessionDetailPage() {
     const { formatDateTime, locale } = useI18n();
@@ -18,55 +20,58 @@ export default function ImportSessionDetailPage() {
     const id = String(params.id);
     const text = locale === "tr"
         ? {
-            eyebrow: "İçe aktarım oturumu",
-            title: "İçe Aktarım Oturumu",
-            description: "Oturum detayı, satır bazlı sorunlar ve commit kontrolleri.",
-            back: "İçe Aktarıma Dön",
-            notFound: "İçe aktarım oturumu bulunamadı",
-            notFoundDescription: "İstenen içe aktarım oturumu yüklenemedi.",
-            totalRows: "Toplam Satır",
-            validRows: "Geçerli Satır",
-            issueRows: "Sorunlu Satır",
+            parent: "CSV içe aktar",
+            title: "İçe aktarım",
+            notFound: "İçe aktarım bulunamadı",
+            notFoundDescription: "Bu içe aktarım kaydı yüklenemedi.",
+            totalRows: "Toplam satır",
+            validRows: "Geçerli",
+            issueRows: "Hatalı",
             status: "Durum",
-            enableOverwrite: "Üzerine Yazmayı Etkinleştir",
+            enableOverwrite: "Mevcut ürünlerin üzerine yaz",
             commitImport: "Ürünleri kaydet",
-            createdByOn: "Oluşturan {user} - {date}",
-            rowIssues: "Satır Sorunları",
-            noValidation: "Doğrulama sorunu yok",
-            noValidationDescription: "Bu oturum temiz ve doğrudan commit edilebilir.",
+            createdByOn: "{user} · {date}",
+            rowIssues: "Satır hataları",
+            noValidation: "Hata yok",
+            noValidationDescription: "Tüm satırlar geçerli, ürünleri kaydedebilirsiniz.",
             row: "Satır",
-            notAvailable: "Yok",
-            commitTitle: "İçe aktarım oturumunu commit et",
-            commitDescription: "Bu işlem eklemeleri ve üzerine yazma onaylı güncellemeleri tek bir transaction içinde uygular.",
-            importedSummary: "İçe aktarılan {imported}, güncellenen {updated}.",
+            type: "Tür",
+            sku: "SKU",
+            message: "Açıklama",
+            notAvailable: "–",
+            commitTitle: "Ürünler kaydedilsin mi",
+            commitDescription: "Yeni ürünler eklenir, üzerine yazma onaylı ürünler güncellenir. İşlem tek seferde uygulanır.",
+            importedSummary: "{imported} ürün eklendi, {updated} ürün güncellendi",
         }
         : {
-            eyebrow: "Import session",
-            title: "Import Session",
-            description: "Session detail, row-level issues and commit controls.",
-            back: "Back to Import",
-            notFound: "Import session not found",
-            notFoundDescription: "The requested import session could not be loaded.",
-            totalRows: "Total Rows",
-            validRows: "Valid Rows",
-            issueRows: "Issue Rows",
+            parent: "Import CSV",
+            title: "Import",
+            notFound: "Import not found",
+            notFoundDescription: "This import could not be loaded.",
+            totalRows: "Total rows",
+            validRows: "Valid",
+            issueRows: "With errors",
             status: "Status",
-            enableOverwrite: "Enable Overwrite",
-            commitImport: "Commit Import",
-            createdByOn: "Created by {user} on {date}",
-            rowIssues: "Row Issues",
-            noValidation: "No validation issues",
-            noValidationDescription: "This session is clean and can be committed directly.",
+            enableOverwrite: "Overwrite existing products",
+            commitImport: "Save products",
+            createdByOn: "{user} · {date}",
+            rowIssues: "Row errors",
+            noValidation: "No errors",
+            noValidationDescription: "Every row is valid, you can save the products.",
             row: "Row",
-            notAvailable: "N/A",
-            commitTitle: "Commit import session",
-            commitDescription: "This will apply inserts and overwrite-approved updates in a single transaction.",
-            importedSummary: "Imported {imported} rows, updated {updated} rows.",
+            type: "Type",
+            sku: "SKU",
+            message: "Details",
+            notAvailable: "–",
+            commitTitle: "Save the products",
+            commitDescription: "New products are added and overwrite-approved products are updated, all in one step.",
+            importedSummary: "{imported} added, {updated} updated",
         };
     const [session, setSession] = useState<ImportSession | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [confirmCommit, setConfirmCommit] = useState(false);
+    const [notice, setNotice] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
 
     async function load() {
         const res = await apiFetch<ImportSession>(`/api/Products/import/sessions/${id}`);
@@ -87,84 +92,106 @@ export default function ImportSessionDetailPage() {
 
     async function enableOverwrite() {
         setSubmitting(true);
+        setNotice(null);
         const res = await apiFetch<ImportSession>(`/api/Products/import/sessions/${id}/overwrite`, { method: "POST" });
         setSubmitting(false);
         if (res.success) {
             setSession(res.data);
             return;
         }
-        alert(res.error.message);
+        setNotice({ tone: "bad", text: res.error.message });
     }
 
     async function commit() {
         setSubmitting(true);
+        setNotice(null);
         const res = await apiFetch<ImportCommitResult>(`/api/Products/import/sessions/${id}/commit`, { method: "POST" });
         setSubmitting(false);
         setConfirmCommit(false);
 
         if (res.success) {
             await load();
-            alert(text.importedSummary.replace("{imported}", String(res.data.importedCount)).replace("{updated}", String(res.data.updatedCount)));
+            setNotice({ tone: "good", text: text.importedSummary.replace("{imported}", String(res.data.importedCount)).replace("{updated}", String(res.data.updatedCount)) });
             return;
         }
 
-        alert(res.error.message);
+        setNotice({ tone: "bad", text: res.error.message });
     }
+
+    const tone = (status: string) => status === "ReadyToImport" ? "success" : status === "Imported" ? "info" : "warning";
+    const canOverwrite = session?.status === "ValidationFailed" && onlyOverwriteConflicts && !session.allowOverwrite;
+    const canCommit = session?.status === "ReadyToImport";
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="space-y-6">
+                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                    <Link href="/products/import" className="transition-colors hover:text-ink">{text.parent}</Link>
+                    <CaretRight size={12} aria-hidden />
+                    <span className="text-ink-2">{text.title}</span>
+                </nav>
+
                 <PageHeader
-                    eyebrow={text.eyebrow}
                     title={session ? session.fileName : text.title}
-                    description={text.description}
-                    actions={<Link href="/products/import" className="plms-button-secondary">{text.back}</Link>}
+                    description={session ? text.createdByOn.replace("{user}", session.createdBy).replace("{date}", formatDateTime(session.createdAt)) : undefined}
+                    actions={session && (canOverwrite || canCommit) ? (
+                        <>
+                            {canOverwrite ? (
+                                <button className="plms-button-secondary" onClick={enableOverwrite} disabled={submitting}>{text.enableOverwrite}</button>
+                            ) : null}
+                            {canCommit ? (
+                                <button className="plms-button-primary" onClick={() => setConfirmCommit(true)} disabled={submitting}>{text.commitImport}</button>
+                            ) : null}
+                        </>
+                    ) : undefined}
                 />
 
+                {notice ? (
+                    <div role="status" className={`rounded-lg px-3 py-2 text-sm ${notice.tone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>{notice.text}</div>
+                ) : null}
+
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+                    <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
                 ) : !session ? (
                     <EmptyState title={text.notFound} description={text.notFoundDescription} />
                 ) : (
                     <div className="space-y-6">
-                        <div className="grid gap-5 md:grid-cols-4">
-                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.totalRows}</div><div className="mt-3 text-3xl font-medium text-ink">{session.totalRows}</div></div>
-                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.validRows}</div><div className="mt-3 text-3xl font-medium text-good">{session.validRows}</div></div>
-                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.issueRows}</div><div className="mt-3 text-3xl font-medium text-warn">{session.errorRows}</div></div>
-                            <div className="rounded-xl border border-line bg-surface p-5"><div className="text-xs font-medium text-ink-3">{text.status}</div><div className="mt-3"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></div></div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-5">
-                            {session.status === "ValidationFailed" && onlyOverwriteConflicts && !session.allowOverwrite ? (
-                                <button className="plms-button-secondary" onClick={enableOverwrite} disabled={submitting}>{text.enableOverwrite}</button>
-                            ) : null}
-                            {session.status === "ReadyToImport" ? (
-                                <button className="plms-button-primary" onClick={() => setConfirmCommit(true)} disabled={submitting}>{text.commitImport}</button>
-                            ) : null}
-                            <div className="text-xs font-medium text-ink-3">
-                                {text.createdByOn.replace("{user}", session.createdBy).replace("{date}", formatDateTime(session.createdAt))}
+                        <dl className="plms-card flex flex-wrap gap-x-10 gap-y-4 px-5 py-4">
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.totalRows}</dt>
+                                <dd className="tabular text-lg font-medium text-ink">{session.totalRows}</dd>
                             </div>
-                        </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.validRows}</dt>
+                                <dd className="tabular text-lg font-medium text-ink">{session.validRows}</dd>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.issueRows}</dt>
+                                <dd className={`tabular text-lg font-medium ${session.errorRows > 0 ? "text-bad" : "text-ink"}`}>{session.errorRows}</dd>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <dt className="text-sm text-ink-3">{text.status}</dt>
+                                <dd className="flex h-7 items-center"><StatusBadge label={session.status} tone={tone(session.status)} /></dd>
+                            </div>
+                        </dl>
 
-                        <div className="rounded-xl border border-line bg-surface p-6">
-                            <div className="mb-4 text-sm font-medium text-ink">{text.rowIssues}</div>
+                        <section className="space-y-3">
+                            <h2 className="text-md font-medium text-ink">{text.rowIssues}</h2>
                             {session.issues.length === 0 ? (
                                 <EmptyState title={text.noValidation} description={text.noValidationDescription} />
                             ) : (
-                                <div className="space-y-3">
+                                <DataTable columns={[text.row, text.sku, text.type, text.message]}>
                                     {session.issues.map((issue) => (
-                                        <div key={`${issue.rowNumber}-${issue.sku}-${issue.errorType}`} className="rounded-lg border border-line bg-raised p-4">
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                <span className="font-mono text-xs text-ink-3">{text.row} {issue.rowNumber}</span>
-                                                <StatusBadge label={issue.errorType} tone={issue.errorType === "DuplicateInDb" ? "warning" : "danger"} />
-                                                <span className="text-sm font-medium text-ink">{issue.sku || text.notAvailable}</span>
-                                            </div>
-                                            <p className="mt-3 text-sm font-medium text-ink-2">{issue.message}</p>
-                                        </div>
+                                        <tr key={`${issue.rowNumber}-${issue.sku}-${issue.errorType}`}>
+                                            <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{issue.rowNumber}</td>
+                                            <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink">{issue.sku || text.notAvailable}</td>
+                                            <td className="px-4 py-2.5"><StatusBadge label={issue.errorType} tone={issue.errorType === "DuplicateInDb" ? "warning" : "danger"} /></td>
+                                            <td className="px-4 py-2.5 text-base text-ink-2">{issue.message}</td>
+                                        </tr>
                                     ))}
-                                </div>
+                                </DataTable>
                             )}
-                        </div>
+                        </section>
                     </div>
                 )}
 

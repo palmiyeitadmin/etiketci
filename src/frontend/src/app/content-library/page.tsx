@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useSession } from "next-auth/react";
+import { ArrowClockwise, Trash, UploadSimple } from "@phosphor-icons/react";
 
 export default function ContentLibraryPage() {
   const { locale } = useI18n();
@@ -23,40 +24,39 @@ export default function ContentLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"good" | "bad">("good");
   const text = locale === "tr"
     ? {
-      eyebrow: "Paylaşılan içerik",
-      title: "İçerik Kütüphanesi",
-      description: "Yönetimli şablonlar arasında tekrar kullanmak için yüklenen görsellerin tekilleştirilmiş havuzu.",
-      uploading: "Yükleniyor...",
-      uploadAsset: "Varlık Yükle",
-      reused: "Mevcut paylaşılan varlık yeniden kullanıldı.",
-      uploaded: "Varlık yüklendi.",
-      search: "Varlık adı veya dosya adına göre ara",
+      title: "Kütüphane",
+      description: "Şablonlarda tekrar kullanılan görseller. Aynı dosya iki kez yüklenirse mevcut kayıt kullanılır.",
+      uploading: "Yükleniyor",
+      uploadAsset: "Görsel yükle",
+      uploadHint: "PNG, JPEG veya SVG, en fazla 5 MB",
+      reused: "Bu görsel zaten kütüphanedeydi, mevcut kayıt kullanıldı",
+      uploaded: "Görsel yüklendi",
+      search: "Ara",
       refresh: "Yenile",
-      uploadStatusTitle: "Yükleniyor",
-      uploadStatusDescription: "Paylaşılan kütüphane varlığınızı işliyor. Maksimum boyut 5 MB.",
-      emptyTitle: "Paylaşılan varlık yok",
-      emptyDescription: "Tekrar kullanılabilir görselleri bir kez yükleyin ve kütüphaneden istediğiniz şablona ekleyin.",
-      removed: "Varlık kaldırıldı.",
+      emptyTitle: "Kütüphanede görsel yok",
+      emptyDescription: "Logo ve sembolleri bir kez yükleyin, ardından istediğiniz şablona ekleyin.",
+      removed: "Görsel kaldırıldı",
       delete: "Sil",
+      count: (n: number) => `${n} görsel`,
     }
     : {
-      eyebrow: "Shared content",
-      title: "Content Library",
-      description: "Deduplicated uploaded visuals for reuse across governed templates.",
-      uploading: "Uploading...",
-      uploadAsset: "Upload Asset",
-      reused: "Existing shared asset reused.",
-      uploaded: "Asset uploaded.",
-      search: "Search asset name or filename",
+      title: "Library",
+      description: "Images reused across templates. Uploading the same file twice reuses the existing one.",
+      uploading: "Uploading",
+      uploadAsset: "Upload image",
+      uploadHint: "PNG, JPEG or SVG, up to 5 MB",
+      reused: "This image was already in the library, the existing one is used",
+      uploaded: "Image uploaded",
+      search: "Search",
       refresh: "Refresh",
-      uploadStatusTitle: "Uploading",
-      uploadStatusDescription: "Shared library is processing your asset. Maximum size is 5 MB.",
-      emptyTitle: "No shared assets",
-      emptyDescription: "Upload reusable visuals once and insert them into any template from the library.",
-      removed: "Asset removed.",
+      emptyTitle: "No images in the library",
+      emptyDescription: "Upload logos and symbols once, then add them to any template.",
+      removed: "Image removed",
       delete: "Delete",
+      count: (n: number) => `${n} ${n === 1 ? "image" : "images"}`,
     };
 
   async function load(search = query) {
@@ -74,19 +74,28 @@ export default function ContentLibraryPage() {
 
   const filtered = useMemo(() => assets, [assets]);
 
+  function showMessage(value: string, tone: "good" | "bad") {
+    setMessage(value);
+    setMessageTone(tone);
+  }
+
   return (
     <PermissionGuard permissions={[permissions.assetsView]}>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="space-y-6">
         <PageHeader
-          eyebrow={text.eyebrow}
           title={text.title}
           description={text.description}
           actions={canUpload ? (
-            <label className={`plms-button-primary ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"}`}>
+            <label title={text.uploadHint} className={`plms-button-primary focus-within:ring-2 focus-within:ring-accent/30 ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"}`}>
+              {uploading ? (
+                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-accent-ink/40 border-t-accent-ink" />
+              ) : (
+                <UploadSimple size={16} aria-hidden />
+              )}
               {uploading ? text.uploading : text.uploadAsset}
               <input
                 type="file"
-                className="hidden"
+                className="sr-only"
                 accept="image/png,image/jpeg,image/svg+xml"
                 disabled={uploading}
                 onChange={async (event) => {
@@ -97,10 +106,10 @@ export default function ContentLibraryPage() {
                   try {
                     const response = await uploadAsset(file);
                     if (response.success) {
-                      setMessage(response.data.deduplicated ? text.reused : text.uploaded);
+                      showMessage(response.data.deduplicated ? text.reused : text.uploaded, "good");
                       await load();
                     } else {
-                      setMessage(response.error.message);
+                      showMessage(response.error.message, "bad");
                     }
                   } finally {
                     setUploading(false);
@@ -113,42 +122,65 @@ export default function ContentLibraryPage() {
         />
 
         <FilterBar
-          left={<input className="plms-input max-w-xl" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />}
-          right={<button className="plms-button-secondary" onClick={() => void load()}>{text.refresh}</button>}
+          left={
+            <form className="flex w-full max-w-sm" onSubmit={(event) => { event.preventDefault(); void load(); }}>
+              <input className="plms-input" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
+            </form>
+          }
+          right={
+            <>
+              {!loading ? <span className="tabular text-sm text-ink-3">{text.count(filtered.length)}</span> : null}
+              <button className="plms-button-ghost" onClick={() => void load()}>
+                <ArrowClockwise size={16} aria-hidden />
+                {text.refresh}
+              </button>
+            </>
+          }
         />
 
-        {message ? <div className="rounded-lg border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-accent">{message}</div> : null}
-        {uploading ? (
-          <div className="flex items-center gap-3 rounded-lg border border-accent/20 px-4 py-3 text-sm text-accent">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent/30 border-t-accent/30" />
-            <div>
-              <div className="text-xs font-medium text-accent">{text.uploadStatusTitle}</div>
-              <div className="mt-1 text-sm text-accent">{text.uploadStatusDescription}</div>
-            </div>
-          </div>
+        {message ? (
+          <div role="status" className={`rounded-lg px-3 py-2 text-sm ${messageTone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>{message}</div>
         ) : null}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
         ) : filtered.length === 0 ? (
-          <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
+          <EmptyState title={text.emptyTitle} description={`${text.emptyDescription} ${canUpload ? text.uploadHint : ""}`.trim()} />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {filtered.map((asset) => (
-              <article key={asset.id} className="rounded-xl border border-line bg-surface p-4">
-                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-line bg-raised">
+              <li key={asset.id} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
+                <div className="flex aspect-square items-center justify-center border-b border-line bg-canvas p-4">
                   <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                 </div>
-                <div className="mt-4 truncate text-sm font-medium text-ink">{asset.name}</div>
-                <div className="mt-1 truncate text-xs text-ink-3">{asset.fileName}</div>
-                <div className="mt-2 flex items-center justify-between text-xs font-medium text-ink-3">
-                  <span>{Math.round(asset.byteSize / 1024)} KB</span>
-                  <span>{asset.mimeType.replace("image/", "")}</span>
+                <div className="flex items-start gap-2 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-ink" title={asset.name}>{asset.name}</div>
+                    <div className="tabular truncate font-mono text-xs text-ink-3" title={asset.fileName}>
+                      {asset.mimeType.replace("image/", "").replace("+xml", "")} · {Math.round(asset.byteSize / 1024)} KB
+                    </div>
+                  </div>
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      aria-label={`${text.delete}: ${asset.name}`}
+                      title={text.delete}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-bad-soft hover:text-bad"
+                      onClick={async () => {
+                        const response = await deleteAsset(asset.id);
+                        if (response.success) {
+                          showMessage(text.removed, "good");
+                          await load();
+                        }
+                      }}
+                    >
+                      <Trash size={16} aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
-                {canDelete ? <button className="mt-4 w-full rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={async () => { const response = await deleteAsset(asset.id); if (response.success) { setMessage(text.removed); await load(); } }}>{text.delete}</button> : null}
-              </article>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </PermissionGuard>

@@ -2,9 +2,13 @@
 
 import { useMemo } from "react";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
+import { useI18n } from "@/lib/i18n";
+import { LabelProof } from "@/components/ui/LabelProof";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
 
-const PREVIEW_WIDTH = 220;
+/** The longest side of the preview in px. */
+const PREVIEW_MAX = 280;
+const MM_PER_PT = 0.3528;
 
 export function TemplatePreviewCard({
   template,
@@ -13,6 +17,11 @@ export function TemplatePreviewCard({
   template: LabelTemplate;
   version?: TemplateVersion | null;
 }) {
+  const { locale } = useI18n();
+  const text = locale === "tr"
+    ? { unavailable: "Önizleme yok", barcode: "Barkod", qr: "QR", image: "Görsel" }
+    : { unavailable: "No preview", barcode: "Barcode", qr: "QR", image: "Image" };
+
   const model = useMemo(() => {
     if (!version?.layoutJson) {
       return null;
@@ -25,53 +34,61 @@ export function TemplatePreviewCard({
     }
   }, [template.name, version?.layoutJson]);
 
-  if (!model) {
+  if (!model || model.dimensions.widthMm <= 0 || model.dimensions.heightMm <= 0) {
     return (
-      <div className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed border-line bg-raised text-sm text-ink-3">
-        Preview unavailable
+      <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-line-strong bg-canvas text-sm text-ink-3">
+        {text.unavailable}
       </div>
     );
   }
 
-  const scale = PREVIEW_WIDTH / model.dimensions.widthMm;
-  const previewHeight = Math.max(180, model.dimensions.heightMm * scale);
+  const { widthMm, heightMm } = model.dimensions;
+  const previewWidth = widthMm >= heightMm ? PREVIEW_MAX : (PREVIEW_MAX * widthMm) / heightMm;
+  const scale = previewWidth / widthMm;
+  const placeholderClass = "flex h-full w-full items-center justify-center bg-raised font-mono text-xs text-ink-3";
 
   return (
-    <div className="rounded-xl border border-line bg-raised p-4">
-      <div className="relative mx-auto overflow-hidden rounded-lg border border-line bg-white" style={{ width: PREVIEW_WIDTH, height: previewHeight }}>
-        {model.elements.filter((element) => element.visible !== false).map((element) => (
-          <div
-            key={element.id}
-            className="absolute overflow-hidden"
-            style={{
-              left: element.xMm * scale,
-              top: element.yMm * scale,
-              width: Math.max(1, element.widthMm * scale),
-              height: Math.max(1, element.heightMm * scale),
-              transform: `rotate(${element.rotation || 0}deg)`,
-              transformOrigin: "center center",
-              color: element.fill || "#0f172a",
-              border: element.type === "rect" || element.type === "ellipse" ? `${Math.max(1, (element.strokeWidthMm || 0.3) * scale)}px solid ${element.stroke || "transparent"}` : undefined,
-              borderRadius: element.type === "ellipse" ? "9999px" : undefined,
-              background: element.type === "rect" || element.type === "ellipse" ? element.fill || "transparent" : undefined,
-            }}
-          >
-            {element.type === "text" ? (
-              <div className="h-full w-full truncate font-medium" style={{ fontSize: Math.max(8, (element.fontSizePt || 12) * 0.7), textAlign: element.textAlign || "left" }}>
-                {element.content}
-              </div>
-            ) : null}
-            {element.type === "line" ? <div className="h-full w-full" style={{ background: element.stroke || "#0f172a" }} /> : null}
-            {element.type === "barcode" || element.type === "qr" ? <div className="flex h-full w-full items-center justify-center bg-raised text-xs font-medium text-ink-3">{element.type}</div> : null}
-            {element.type === "image" ? (
+    <div className="flex justify-center rounded-xl border border-line bg-canvas px-8 pb-5 pt-8">
+      <div style={{ width: previewWidth }}>
+        <LabelProof widthMm={widthMm} heightMm={heightMm} caption={version ? `v${version.versionNumber}` : undefined}>
+          {model.elements.filter((element) => element.visible !== false).map((element) => (
+            <div
+              key={element.id}
+              className="absolute overflow-hidden"
+              style={{
+                left: element.xMm * scale,
+                top: element.yMm * scale,
+                width: Math.max(1, element.widthMm * scale),
+                height: Math.max(1, element.heightMm * scale),
+                transform: `rotate(${element.rotation || 0}deg)`,
+                transformOrigin: "center center",
+                color: element.fill || "#0f172a",
+                border: element.type === "rect" || element.type === "ellipse" ? `${Math.max(1, (element.strokeWidthMm || 0.3) * scale)}px solid ${element.stroke || "transparent"}` : undefined,
+                borderRadius: element.type === "ellipse" ? "9999px" : undefined,
+                background: element.type === "rect" || element.type === "ellipse" ? element.fill || "transparent" : undefined,
+              }}
+            >
+              {element.type === "text" ? (
+                <div
+                  className="h-full w-full truncate leading-tight"
+                  style={{ fontSize: Math.max(6, (element.fontSizePt || 12) * MM_PER_PT * scale), textAlign: element.textAlign || "left" }}
+                >
+                  {element.content}
+                </div>
+              ) : null}
+              {element.type === "line" ? <div className="h-full w-full" style={{ background: element.stroke || "#0f172a" }} /> : null}
+              {element.type === "barcode" ? <div className={placeholderClass}>{text.barcode}</div> : null}
+              {element.type === "qr" ? <div className={placeholderClass}>{text.qr}</div> : null}
+              {element.type === "image" ? (
                 element.assetId ? (
-                    <img src={`/api/assets/${element.assetId}/content`} alt="Asset" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
+                  <img src={`/api/assets/${element.assetId}/content`} alt="" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
                 ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-raised text-xs font-medium text-ink-3">asset</div>
+                  <div className={placeholderClass}>{text.image}</div>
                 )
-            ) : null}
-          </div>
-        ))}
+              ) : null}
+            </div>
+          ))}
+        </LabelProof>
       </div>
     </div>
   );

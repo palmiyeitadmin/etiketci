@@ -10,6 +10,7 @@ import { CanonicalLabelModel } from "@/types/canvas";
 import { TemplateCategory } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LabelProof } from "@/components/ui/LabelProof";
 
 type TemplateFormState = {
     name: string;
@@ -60,62 +61,70 @@ export default function NewTemplatePage() {
     const router = useRouter();
     const text = locale === "tr"
         ? {
-            eyebrow: "Şablon oluşturma",
-            title: "Yeni Şablon",
-            description: "Yeni şablon kaydı oluştururken kategoriye bağlı otomatik kod üretilir ve editör taslak V1 ile açılır.",
-            loadFailed: "Şablon kategorileri yüklenemedi.",
-            invalidDimensions: "Etiket boyutları pozitif sayılar olmalıdır.",
-            createFailed: "Şablon oluşturulamadı.",
-            loading: "Şablon kategorileri yükleniyor...",
-            identity: "Kimlik",
-            category: "Şablon Kategorisi",
-            manageCategories: "Kategori Yönetimi",
+            title: "Yeni şablon",
+            description: "Kod kategoriye göre otomatik verilir. Şablon, editörde taslak v1 olarak açılır.",
+            loadFailed: "Şablon kategorileri yüklenemedi",
+            invalidDimensions: "Etiket ölçüleri sıfırdan büyük olmalı",
+            createFailed: "Şablon oluşturulamadı",
+            identity: "Şablon bilgileri",
+            category: "Kategori",
+            manageCategories: "Kategoriler",
             noCategory: "Kategori seçin",
-            noActiveCategoriesTitle: "Aktif şablon kategorisi yok",
-            noActiveCategoriesDescription: "Yeni şablon oluşturabilmek için önce en az bir aktif şablon kategorisi tanımlayın.",
-            code: "Şablon Kodu",
-            name: "Şablon Adı",
+            noActiveCategoriesTitle: "Aktif kategori yok",
+            noActiveCategoriesDescription: "Yeni şablon oluşturmak için önce en az bir aktif şablon kategorisi tanımlayın.",
+            code: "Şablon kodu",
+            name: "Şablon adı",
+            namePlaceholder: "Raf etiketi 60x40",
             descriptionLabel: "Açıklama",
-            dimensions: "Yerleşim Boyutları",
+            descriptionPlaceholder: "Kullanım yeri, malzeme, notlar",
+            dimensions: "Etiket ölçüleri",
             width: "Genişlik (mm)",
             height: "Yükseklik (mm)",
-            governance: "Yonetişim Notları",
-            governanceDescription: "Kategori seçimi kodu otomatik belirler. Yeni şablon taslak V1 olarak açılır ve yayın öncesi approval akışından geçer.",
-            categoryHint: "Kod formatı: PLM-{kategori}-{sıra}",
-            codeHint: "Kod backend tarafında kategori sırası ile üretilir ve değiştirilemez.",
-            dimensionsHelp: "Boş yerleşim bu fiziksel boyutlarla oluşturulur. Sonraki adımda editör içinde metin, şekil, QR, barkod ve görsel öğe yerleştirebilirsiniz.",
-            cancel: "İptal",
-            creating: "Oluşturuluyor...",
-            create: "Şablon Oluştur",
+            dimensionsHelp: "Boş yerleşim bu ölçülerle oluşturulur. Metin, şekil, QR, barkod ve görselleri sonraki adımda editörde eklersiniz.",
+            preview: "Önizleme",
+            blankLabel: "Boş etiket",
+            governance: "Kod nasıl verilir",
+            governanceDescription: "Seçtiğiniz kategori kodu belirler. Yeni şablon taslak v1 olarak açılır ve yayından önce onaydan geçer.",
+            codeFormat: "Kod biçimi",
+            categoryHint: "PLM-{kategori}-{sıra}",
+            codeHint: "Kod sunucuda kategori sırasıyla üretilir ve sonradan değiştirilemez.",
+            categories: "Kategoriler ve sıradaki kod",
+            cancel: "Vazgeç",
+            creating: "Oluşturuluyor",
+            create: "Şablonu oluştur",
         }
         : {
-            eyebrow: "Template creation",
-            title: "New Template",
-            description: "New template records receive a category-based generated code and open in the editor as draft v1.",
-            loadFailed: "Template categories could not be loaded.",
-            invalidDimensions: "Label dimensions must be positive numbers.",
-            createFailed: "Template could not be created.",
-            loading: "Loading template categories...",
-            identity: "Identity",
-            category: "Template Category",
-            manageCategories: "Manage Categories",
-            noCategory: "Select category",
-            noActiveCategoriesTitle: "No active template category",
-            noActiveCategoriesDescription: "Create at least one active template category before creating a new template.",
-            code: "Template Code",
-            name: "Template Name",
+            title: "New template",
+            description: "The code is assigned from the category. The template opens in the editor as draft v1.",
+            loadFailed: "Template categories could not be loaded",
+            invalidDimensions: "Label size must be greater than zero",
+            createFailed: "Template could not be created",
+            identity: "Template details",
+            category: "Category",
+            manageCategories: "Categories",
+            noCategory: "Select a category",
+            noActiveCategoriesTitle: "No active category",
+            noActiveCategoriesDescription: "Create at least one active template category before creating a template.",
+            code: "Template code",
+            name: "Template name",
+            namePlaceholder: "Shelf label 60x40",
             descriptionLabel: "Description",
-            dimensions: "Layout Dimensions",
+            descriptionPlaceholder: "Where it is used, material, notes",
+            dimensions: "Label size",
             width: "Width (mm)",
             height: "Height (mm)",
-            governance: "Governance Notes",
-            governanceDescription: "Category selection defines the generated code. New templates open as draft v1 and continue through the approval flow before publication.",
-            categoryHint: "Code format: PLM-{category}-{sequence}",
-            codeHint: "Code is generated server-side from the category sequence and cannot be edited.",
-            dimensionsHelp: "A blank layout is created with these physical dimensions. Place text, shapes, QR, barcode and image elements in the next step.",
+            dimensionsHelp: "A blank layout is created at this size. Add text, shapes, QR codes, barcodes and images in the editor next.",
+            preview: "Preview",
+            blankLabel: "Blank label",
+            governance: "How codes are assigned",
+            governanceDescription: "The category you pick sets the code. New templates open as draft v1 and need approval before they are published.",
+            codeFormat: "Code format",
+            categoryHint: "PLM-{category}-{sequence}",
+            codeHint: "The code is generated on the server from the category sequence and cannot be changed later.",
+            categories: "Categories and next code",
             cancel: "Cancel",
-            creating: "Creating...",
-            create: "Create Template",
+            creating: "Creating",
+            create: "Create template",
         };
     const [form, setForm] = useState<TemplateFormState>(initialFormState);
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
@@ -204,147 +213,164 @@ export default function NewTemplatePage() {
         setSaving(false);
     };
 
+    const previewWidthMm = Number.parseFloat(form.widthMm);
+    const previewHeightMm = Number.parseFloat(form.heightMm);
+    const previewValid = Number.isFinite(previewWidthMm) && Number.isFinite(previewHeightMm) && previewWidthMm > 0 && previewHeightMm > 0;
+    const previewBoxWidth = previewValid ? (previewWidthMm >= previewHeightMm ? 240 : (240 * previewWidthMm) / previewHeightMm) : 0;
+
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-col gap-6">
                 <PageHeader
-                    eyebrow={text.eyebrow}
                     title={text.title}
                     description={text.description}
                     actions={<Link href="/templates/categories" className="plms-button-secondary">{text.manageCategories}</Link>}
                 />
 
                 {error ? (
-                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
-                        {error}
-                    </div>
+                    <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</div>
                 ) : null}
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" />
                     </div>
                 ) : activeCategories.length === 0 ? (
                     <EmptyState
                         title={text.noActiveCategoriesTitle}
                         description={text.noActiveCategoriesDescription}
+                        action={<Link href="/templates/categories" className="plms-button-primary">{text.manageCategories}</Link>}
                     />
                 ) : (
-                    <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <section className="rounded-xl border border-line bg-surface p-6">
-                                <div className="text-xs font-medium text-ink-3">{text.identity}</div>
-                                <div className="mt-5 grid gap-5 md:grid-cols-2">
-                                    <label className="space-y-2 md:col-span-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.name}</span>
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                            <section className="rounded-xl border border-line bg-surface p-5">
+                                <h2 className="text-md font-medium text-ink">{text.identity}</h2>
+                                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                    <label className="flex flex-col gap-1.5 md:col-span-2">
+                                        <span className="plms-label">{text.name}</span>
                                         <input
                                             value={form.name}
                                             onChange={(e) => handleChange("name", e.target.value)}
                                             required
                                             className="plms-input"
-                                            placeholder={locale === "tr" ? "Yeni etiket şablonu" : "New label template"}
+                                            placeholder={text.namePlaceholder}
                                         />
                                     </label>
 
-                                    <label className="space-y-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.category}</span>
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="plms-label">{text.category}</span>
                                         <select
                                             value={form.templateCategoryId}
                                             onChange={(e) => handleChange("templateCategoryId", e.target.value)}
-                                            className="plms-input"
+                                            className="plms-select w-full"
                                             required
                                         >
                                             <option value="">{text.noCategory}</option>
                                             {activeCategories.map((category) => (
                                                 <option key={category.id} value={category.id}>
-                                                    {category.code} - {category.name}
+                                                    {category.code} · {category.name}
                                                 </option>
                                             ))}
                                         </select>
                                     </label>
 
-                                    <label className="space-y-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.code}</span>
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="plms-label">{text.code}</span>
                                         <input
                                             value={codePreview}
                                             readOnly
-                                            className="plms-input opacity-80"
+                                            className="plms-input bg-raised font-mono text-ink-2"
                                             placeholder="PLM-ETK-001"
                                         />
                                     </label>
 
-                                    <label className="space-y-2 md:col-span-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.descriptionLabel}</span>
+                                    <label className="flex flex-col gap-1.5 md:col-span-2">
+                                        <span className="plms-label">{text.descriptionLabel}</span>
                                         <textarea
                                             value={form.description}
                                             onChange={(e) => handleChange("description", e.target.value)}
-                                            rows={5}
-                                            className="plms-input min-h-36"
-                                            placeholder={locale === "tr" ? "Operasyon notları, alt malzeme ve kullanım kapsamı" : "Operational notes, substrate and usage scope"}
+                                            rows={4}
+                                            className="plms-input min-h-28"
+                                            placeholder={text.descriptionPlaceholder}
                                         />
                                     </label>
                                 </div>
                             </section>
 
-                            <section className="rounded-xl border border-line bg-surface p-6">
-                                <div className="text-xs font-medium text-ink-3">{text.dimensions}</div>
-                                <div className="mt-5 grid gap-5 md:grid-cols-2">
-                                    <label className="space-y-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.width}</span>
-                                        <input type="number" min="1" step="0.1" value={form.widthMm} onChange={(e) => handleChange("widthMm", e.target.value)} required className="plms-input" />
+                            <section className="rounded-xl border border-line bg-surface p-5">
+                                <h2 className="text-md font-medium text-ink">{text.dimensions}</h2>
+                                <p className="mt-0.5 text-sm text-ink-3">{text.dimensionsHelp}</p>
+                                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="plms-label">{text.width}</span>
+                                        <input type="number" min="1" step="0.1" value={form.widthMm} onChange={(e) => handleChange("widthMm", e.target.value)} required className="plms-input tabular font-mono" />
                                     </label>
-                                    <label className="space-y-2">
-                                        <span className="text-xs font-medium text-ink-3">{text.height}</span>
-                                        <input type="number" min="1" step="0.1" value={form.heightMm} onChange={(e) => handleChange("heightMm", e.target.value)} required className="plms-input" />
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="plms-label">{text.height}</span>
+                                        <input type="number" min="1" step="0.1" value={form.heightMm} onChange={(e) => handleChange("heightMm", e.target.value)} required className="plms-input tabular font-mono" />
                                     </label>
-                                </div>
-                                <div className="mt-5 rounded-lg border border-line bg-raised p-4 text-sm font-medium text-ink-3">
-                                    {text.dimensionsHelp}
                                 </div>
                             </section>
 
-                            <div className="flex justify-end gap-3">
-                                <Link href="/templates" className="plms-button-secondary">{text.cancel}</Link>
+                            <div className="flex justify-end gap-2">
+                                <Link href="/templates" className="plms-button-ghost">{text.cancel}</Link>
                                 <button type="submit" disabled={saving || !form.templateCategoryId || !codePreview} className="plms-button-primary">
                                     {saving ? text.creating : text.create}
                                 </button>
                             </div>
                         </form>
 
-                        <aside className="space-y-6">
-                            <section className="rounded-xl border border-line bg-surface p-6">
-                                <div className="text-xs font-medium text-ink-3">{text.governance}</div>
-                                <div className="mt-4 space-y-4 text-sm font-medium text-ink-3">
-                                    <p>{text.governanceDescription}</p>
-                                    <div className="rounded-lg border border-accent/20 bg-accent/10 p-4 text-accent">
-                                        {text.categoryHint}
-                                    </div>
-                                    <div className="rounded-lg border border-line bg-raised p-4">
-                                        {text.codeHint}
-                                    </div>
+                        <aside className="flex flex-col gap-6">
+                            <section className="rounded-xl border border-line bg-surface p-5">
+                                <h2 className="text-md font-medium text-ink">{text.preview}</h2>
+                                <div className="mt-4 flex justify-center rounded-lg border border-line bg-canvas px-8 pb-5 pt-8">
+                                    {previewValid ? (
+                                        <div style={{ width: previewBoxWidth }}>
+                                            <LabelProof widthMm={previewWidthMm} heightMm={previewHeightMm} caption={codePreview || undefined}>
+                                                <div className="flex h-full w-full flex-col justify-between p-3">
+                                                    <span className="truncate text-sm text-ink">{form.name || text.blankLabel}</span>
+                                                    <span className="truncate font-mono text-xs text-ink-3">{codePreview}</span>
+                                                </div>
+                                            </LabelProof>
+                                        </div>
+                                    ) : (
+                                        <span className="py-12 text-sm text-ink-3">{text.invalidDimensions}</span>
+                                    )}
                                 </div>
                             </section>
 
-                            <section className="rounded-xl border border-line bg-surface p-6">
-                                <div className="text-xs font-medium text-ink-3">{text.category}</div>
-                                <div className="mt-4 space-y-3">
-                                    {activeCategories.map((category) => (
-                                        <div
-                                            key={category.id}
-                                            className={`rounded-lg border px-4 py-3 transition-colors ${form.templateCategoryId === category.id ? "border-accent/30 bg-accent/10" : "border-line bg-raised"}`}
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div>
-                                                    <div className="text-sm font-medium text-ink">{category.name}</div>
-                                                    <div className="mt-1 text-xs font-mono text-ink-3">{category.code}</div>
-                                                </div>
-                                                <div className="rounded-xl border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-xs font-medium text-accent">
-                                                    PLM-{category.code}-{String(category.nextTemplateSequence).padStart(3, "0")}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                            <section className="rounded-xl border border-line bg-surface p-5">
+                                <h2 className="text-md font-medium text-ink">{text.governance}</h2>
+                                <div className="mt-2 flex flex-col gap-3 text-sm text-ink-2">
+                                    <p>{text.governanceDescription}</p>
+                                    <p>
+                                        <span className="text-ink-3">{text.codeFormat} </span>
+                                        <span className="font-mono text-ink">{text.categoryHint}</span>
+                                    </p>
+                                    <p className="text-ink-3">{text.codeHint}</p>
                                 </div>
+                            </section>
+
+                            <section className="overflow-hidden rounded-xl border border-line bg-surface">
+                                <h2 className="border-b border-line px-5 py-3 text-md font-medium text-ink">{text.categories}</h2>
+                                <ul className="divide-y divide-line">
+                                    {activeCategories.map((category) => {
+                                        const selected = form.templateCategoryId === category.id;
+                                        return (
+                                            <li
+                                                key={category.id}
+                                                className={`flex items-center justify-between gap-3 px-5 py-2.5 text-sm ${selected ? "bg-accent-soft" : ""}`}
+                                                aria-current={selected || undefined}
+                                            >
+                                                <span className={selected ? "font-medium text-ink" : "text-ink-2"}>{category.name}</span>
+                                                <span className={`tabular whitespace-nowrap font-mono text-xs ${selected ? "text-accent" : "text-ink-3"}`}>
+                                                    PLM-{category.code}-{String(category.nextTemplateSequence).padStart(3, "0")}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
                             </section>
                         </aside>
                     </div>

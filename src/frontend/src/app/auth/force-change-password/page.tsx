@@ -3,11 +3,40 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
+import { CheckCircle } from "@phosphor-icons/react";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
 
 export default function ForceChangePasswordPage() {
-  const { t } = useI18n();
+  const { locale } = useI18n();
+  const text = locale === "tr"
+    ? {
+        title: "Parolanızı değiştirin",
+        description: "Hesabınız geçici bir parolayla açıldı. Devam etmek için yeni bir parola belirleyin.",
+        currentPassword: "Geçici parola",
+        newPassword: "Yeni parola",
+        newPasswordHint: "En az 8 karakter",
+        confirmPassword: "Yeni parola tekrar",
+        updating: "Değiştiriliyor",
+        submit: "Parolayı değiştir",
+        loading: "Yükleniyor",
+        mismatch: "Yeni parolalar eşleşmiyor",
+        success: "Parolanız değiştirildi. Yeni parolanızla tekrar giriş yapın.",
+      }
+    : {
+        title: "Change your password",
+        description: "Your account was opened with a temporary password. Set a new one to continue.",
+        currentPassword: "Temporary password",
+        newPassword: "New password",
+        newPasswordHint: "At least 8 characters",
+        confirmPassword: "Repeat new password",
+        updating: "Changing",
+        submit: "Change password",
+        loading: "Loading",
+        mismatch: "The new passwords do not match",
+        success: "Your password was changed. Sign in again with the new one.",
+      };
   const router = useRouter();
   const { data: session, status } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
@@ -28,7 +57,7 @@ export default function ForceChangePasswordPage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError(t("auth.forcePassword.mismatch"));
+      setError(text.mismatch);
       return;
     }
 
@@ -48,14 +77,14 @@ export default function ForceChangePasswordPage() {
       return;
     }
 
-    setMessage(t("auth.forcePassword.success"));
+    setMessage(text.success);
     setTimeout(() => {
       signOut({ callbackUrl: "/auth/login" });
     }, 1200);
   }
 
   if (status === "loading") {
-    return <div className="flex min-h-screen items-center justify-center bg-surface text-ink">{t("auth.forcePassword.loading")}</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-canvas text-sm text-ink-2">{text.loading}</div>;
   }
 
   if (!session) {
@@ -63,22 +92,39 @@ export default function ForceChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-6 py-12">
-      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-8">
-        <div className="text-xs font-medium text-ink-3">{t("auth.forcePassword.securityAction")}</div>
-        <h1 className="mt-3 text-3xl font-medium text-ink">{t("auth.forcePassword.title")}</h1>
-        <p className="mt-3 text-sm font-medium text-ink-2">
-          {t("auth.forcePassword.description")}
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
+      <div className="flex w-full max-w-sm flex-col gap-8">
+        <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={122} height={40} priority className="h-8 w-auto self-start" />
+        <div className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6 sm:p-8">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-lg font-medium text-ink">{text.title}</h1>
+            <p className="text-sm text-ink-2">{text.description}</p>
+          </div>
 
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-          {error ? <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{error}</div> : null}
-          {message ? <div className="rounded-lg border border-good/20 bg-good/10 p-4 text-sm font-medium text-good">{message}</div> : null}
-          <input className="plms-input" type="password" placeholder={t("auth.forcePassword.currentPassword")} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
-          <input className="plms-input" type="password" placeholder={t("auth.forcePassword.newPassword")} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
-          <input className="plms-input" type="password" placeholder={t("auth.forcePassword.confirmPassword")} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} required />
-          <button className="plms-button-primary w-full" type="submit" disabled={busy}>{busy ? t("auth.forcePassword.updating") : t("auth.forcePassword.submit")}</button>
-        </form>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            {error ? <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</div> : null}
+            {message ? (
+              <div role="status" className="flex items-start gap-2 rounded-lg bg-good-soft px-3 py-2 text-sm text-good">
+                <CheckCircle size={16} aria-hidden className="mt-0.5 shrink-0" />
+                {message}
+              </div>
+            ) : null}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="current-password" className="plms-label">{text.currentPassword}</label>
+              <input id="current-password" className="plms-input" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-password" className="plms-label">{text.newPassword}</label>
+              <input id="new-password" className="plms-input" type="password" autoComplete="new-password" aria-describedby="new-password-hint" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
+              <span id="new-password-hint" className="text-xs text-ink-3">{text.newPasswordHint}</span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="confirm-password" className="plms-label">{text.confirmPassword}</label>
+              <input id="confirm-password" className="plms-input" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={8} required />
+            </div>
+            <button className="plms-button-primary mt-2 h-10 w-full" type="submit" disabled={busy}>{busy ? text.updating : text.submit}</button>
+          </form>
+        </div>
       </div>
     </div>
   );

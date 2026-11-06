@@ -40,14 +40,15 @@ export function PhosphorIconPreview({
 
   if (failed) {
     return (
-      <div className={`flex items-center justify-center text-xs font-medium text-ink-3 ${className}`}>
+      <div className={`flex items-center justify-center font-mono text-xs text-ink-3 ${className}`} style={{ width: size, height: size }}>
         {iconKey.slice(0, 2)}
       </div>
     );
   }
 
   if (!IconComponent) {
-    return <div className={`h-7 w-7 animate-pulse rounded-lg bg-raised ${className}`} />;
+    // Quiet placeholder of the same size while the icon module loads (no looping animation).
+    return <div aria-hidden className={`rounded-md bg-raised ${className}`} style={{ width: size, height: size }} />;
   }
 
   return <IconComponent size={size} weight="regular" className={className} />;

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ElementType, VariableCatalogItem } from "@/types/canvas";
 import { useI18n } from "@/lib/i18n";
+import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
 
 export function EditorVariablePicker({
     supportedTypes,
@@ -15,19 +16,19 @@ export function EditorVariablePicker({
     const { locale } = useI18n();
     const text = locale === "tr"
         ? {
-            title: "Değişken Seçici",
-            description: "Mevcut içerik alanına desteklenen yer tutucular ekleyin.",
-            search: "Değişkenleri ara",
-            loading: "Değişkenler yükleniyor...",
-            empty: "Bu eleman tipi için değişken bulunamadı.",
+            title: "Değişken ekle",
+            description: "Seçtiğiniz değişken içeriğin sonuna eklenir",
+            search: "Değişken ara",
+            loading: "Değişkenler yükleniyor",
+            empty: "Bu öğe türü için değişken yok",
             sample: "Örnek",
         }
         : {
-            title: "Variable Picker",
-            description: "Insert supported placeholders into the current content field.",
+            title: "Insert variable",
+            description: "The variable is added to the end of the content",
             search: "Search variables",
-            loading: "Loading variables...",
-            empty: "No variables available for this element type.",
+            loading: "Loading variables",
+            empty: "No variables for this element type",
             sample: "Sample",
         };
 
@@ -53,30 +54,40 @@ export function EditorVariablePicker({
     );
 
     return (
-        <div className="space-y-3 rounded-lg border border-line bg-surface p-4">
+        <div className="space-y-2">
             <div>
-                <div className="text-xs font-medium text-ink-3">{text.title}</div>
-                <div className="mt-1 text-xs font-medium text-ink-2">{text.description}</div>
+                <div className="plms-label">{text.title}</div>
+                <div className="text-xs text-ink-3">{text.description}</div>
             </div>
-            <input className="plms-input" placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
-            <div className="custom-scrollbar max-h-56 space-y-2 overflow-y-auto pr-1">
+            <div className="relative">
+                <MagnifyingGlass size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+                <input className="plms-input h-8 pl-9" aria-label={text.search} placeholder={text.search} value={query} onChange={(event) => setQuery(event.target.value)} />
+            </div>
+            <div className="custom-scrollbar max-h-56 overflow-y-auto rounded-lg border border-line">
                 {loading ? (
-                    <div className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-xs font-medium text-ink-3">{text.loading}</div>
+                    <div className="px-3 py-6 text-center text-xs text-ink-3">{text.loading}</div>
                 ) : filtered.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-xs font-medium text-ink-3">{text.empty}</div>
-                ) : filtered.map((item) => (
-                    <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => onInsert(`{{ ${item.key} }}`)}
-                        className="w-full rounded-lg border border-line bg-raised px-4 py-3 text-left transition-colors hover:bg-raised"
-                    >
-                        <div className="text-sm font-medium text-ink">{item.label}</div>
-                        <div className="mt-1 font-mono text-xs text-accent">{`{{ ${item.key} }}`}</div>
-                        <div className="mt-2 text-xs font-medium text-ink-2">{item.description}</div>
-                        <div className="mt-1 text-xs font-medium text-ink-3">{text.sample}: {item.sampleValue}</div>
-                    </button>
-                ))}
+                    <div className="px-3 py-6 text-center text-xs text-ink-3">{text.empty}</div>
+                ) : (
+                    <div className="divide-y divide-line">
+                        {filtered.map((item) => (
+                            <button
+                                key={item.key}
+                                type="button"
+                                onClick={() => onInsert(`{{ ${item.key} }}`)}
+                                className="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-raised"
+                            >
+                                <Plus size={16} className="mt-0.5 shrink-0 text-ink-3" />
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm text-ink">{item.label}</span>
+                                    <span className="block truncate font-mono text-xs text-ink-2">{`{{ ${item.key} }}`}</span>
+                                    {item.description ? <span className="mt-0.5 block text-xs text-ink-3">{item.description}</span> : null}
+                                    {item.sampleValue ? <span className="block truncate text-xs text-ink-3">{text.sample}: <span className="font-mono">{item.sampleValue}</span></span> : null}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

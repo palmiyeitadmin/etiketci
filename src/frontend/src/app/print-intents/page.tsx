@@ -2,22 +2,80 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
-import { getPrintIntentStatusLabel, getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
-import { PrintIntentDto } from "@/types/operational";
+import { getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
+import { PrintIntentDto, PrintIntentStatus } from "@/types/operational";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
+type StatusFilter = "all" | "Pending" | "ReadyForPrint" | "SentToClient" | "done";
+
+const doneStatuses: PrintIntentStatus[] = ["UserPrinted", "Failed", "Cancelled"];
+
+function matchesFilter(status: PrintIntentStatus, filter: StatusFilter) {
+    if (filter === "all") return true;
+    if (filter === "done") return doneStatuses.includes(status);
+    return status === filter;
+}
+
 export default function PrintIntentsPage() {
-    const { formatDateTime, t } = useI18n();
+    const { formatDateTime, locale } = useI18n();
     const [intents, setIntents] = useState<PrintIntentDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+    const text = locale === "tr"
+        ? {
+            title: "Baskı talepleri",
+            description: "Açılan baskı talepleri, PDF'in açılması ve baskı sonucu",
+            createIntent: "Baskı talebi oluştur",
+            searchPlaceholder: "Ürün, şablon veya kişi ara",
+            loading: "Yükleniyor",
+            emptyTitle: "Baskı talebi yok",
+            emptyDescription: "Yeni bir baskı talebi oluşturun.",
+            noMatchTitle: "Eşleşen talep yok",
+            noMatchDescription: "Aramayı veya durum filtresini değiştirin.",
+            filters: { all: "Tümü", Pending: "Bekliyor", ReadyForPrint: "Baskıya hazır", SentToClient: "PDF açıldı", done: "Tamamlanan" },
+            statusFilter: "Durum filtresi",
+            columns: ["Ürün", "Şablon", "Adet", "Durum", "Talep eden", "Oluşturulma"],
+            status: {
+                Pending: "Bekliyor",
+                ReadyForPrint: "Baskıya hazır",
+                SentToClient: "PDF açıldı",
+                UserPrinted: "Basıldı",
+                Failed: "Hatalı",
+                Cancelled: "İptal edildi",
+            } as Record<PrintIntentStatus, string>,
+        }
+        : {
+            title: "Print requests",
+            description: "Open print requests, PDF opening and print outcome",
+            createIntent: "Create print request",
+            searchPlaceholder: "Search product, template or person",
+            loading: "Loading",
+            emptyTitle: "No print requests",
+            emptyDescription: "Create a new print request.",
+            noMatchTitle: "No matching requests",
+            noMatchDescription: "Change the search or the status filter.",
+            filters: { all: "All", Pending: "Pending", ReadyForPrint: "Ready to print", SentToClient: "PDF opened", done: "Completed" },
+            statusFilter: "Status filter",
+            columns: ["Product", "Template", "Quantity", "Status", "Requested by", "Created"],
+            status: {
+                Pending: "Pending",
+                ReadyForPrint: "Ready to print",
+                SentToClient: "PDF opened",
+                UserPrinted: "Printed",
+                Failed: "Failed",
+                Cancelled: "Cancelled",
+            } as Record<PrintIntentStatus, string>,
+        };
 
     useEffect(() => {
         async function load() {
@@ -34,94 +92,97 @@ export default function PrintIntentsPage() {
     const filtered = useMemo(
         () =>
             intents.filter((intent) =>
-                [intent.productName, intent.templateName, intent.requestedBy, intent.status]
+                matchesFilter(intent.status, statusFilter) &&
+                [intent.productName, intent.templateName, intent.requestedBy, intent.status, text.status[intent.status]]
                     .join(" ")
                     .toLowerCase()
                     .includes(query.toLowerCase())
             ),
-        [intents, query]
+        [intents, query, statusFilter, text.status]
     );
+
+    const filterKeys: StatusFilter[] = ["all", "Pending", "ReadyForPrint", "SentToClient", "done"];
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator", "Reviewer", "Viewer"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-col gap-6 pb-10">
                 <PageHeader
-                    eyebrow={t("printIntents.eyebrow")}
-                    title={t("printIntents.title")}
-                    description={t("printIntents.description")}
+                    title={text.title}
+                    description={text.description}
                     actions={
                         <RoleGuard allowedRoles={["Admin", "Operator"]}>
                             <Link href="/print-intents/new" className="plms-button-primary">
-                                {t("printIntents.createIntent")}
+                                <Plus size={16} />
+                                {text.createIntent}
                             </Link>
                         </RoleGuard>
                     }
                 />
 
-                <div className="grid gap-5 md:grid-cols-3">
-                    <div className="rounded-xl border border-line bg-surface p-5">
-                        <div className="text-xs font-medium text-ink-3">{t("printIntents.pendingReview")}</div>
-                        <div className="mt-3 text-3xl font-medium text-ink">
-                            {intents.filter((intent) => intent.status === "Pending").length}
-                        </div>
-                    </div>
-                    <div className="rounded-xl border border-line bg-surface p-5">
-                        <div className="text-xs font-medium text-ink-3">{t("printIntents.awaitingDispatch")}</div>
-                        <div className="mt-3 text-3xl font-medium text-ink">
-                            {intents.filter((intent) => intent.status === "ReadyForPrint").length}
-                        </div>
-                    </div>
-                    <div className="rounded-xl border border-line bg-surface p-5">
-                        <div className="text-xs font-medium text-ink-3">{t("printIntents.awaitingConfirmation")}</div>
-                        <div className="mt-3 text-3xl font-medium text-ink">
-                            {intents.filter((intent) => intent.status === "SentToClient").length}
-                        </div>
-                    </div>
-                    <div className="rounded-xl border border-line bg-surface p-5">
-                        <div className="text-xs font-medium text-ink-3">{t("printIntents.completed")}</div>
-                        <div className="mt-3 text-3xl font-medium text-ink">
-                            {intents.filter((intent) => intent.status === "UserPrinted" || intent.status === "Failed" || intent.status === "Cancelled").length}
-                        </div>
-                    </div>
-                </div>
-
                 <FilterBar
                     left={
                         <input
-                            className="plms-input max-w-xl"
-                            placeholder={t("printIntents.searchPlaceholder")}
+                            className="plms-input max-w-sm"
+                            placeholder={text.searchPlaceholder}
                             value={query}
                             onChange={(event) => setQuery(event.target.value)}
                         />
                     }
+                    right={
+                        <div role="group" aria-label={text.statusFilter} className="flex flex-wrap gap-1 rounded-lg border border-line bg-surface p-1">
+                            {filterKeys.map((key) => {
+                                const count = intents.filter((intent) => matchesFilter(intent.status, key)).length;
+                                const active = statusFilter === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        aria-pressed={active}
+                                        onClick={() => setStatusFilter(key)}
+                                        className={`inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-sm transition-colors ${
+                                            active ? "bg-raised font-medium text-ink" : "text-ink-2 hover:bg-raised hover:text-ink"
+                                        }`}
+                                    >
+                                        {text.filters[key]}
+                                        <span className="tabular font-mono text-xs text-ink-3">{count}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    }
                 />
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" />
+                    <div className="flex items-center justify-center gap-3 py-20 text-sm text-ink-2">
+                        <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-line-strong border-t-accent" />
+                        {text.loading}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <EmptyState
-                        title={t("printIntents.emptyTitle")}
-                        description={t("printIntents.emptyDescription")}
-                    />
+                    intents.length === 0 ? (
+                        <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
+                    ) : (
+                        <EmptyState title={text.noMatchTitle} description={text.noMatchDescription} />
+                    )
                 ) : (
-                    <DataTable columns={[t("printIntents.table.product"), t("printIntents.table.template"), t("printIntents.table.version"), t("printIntents.table.quantity"), t("printIntents.table.status"), t("printIntents.table.requestedBy"), t("printIntents.table.created"), t("printIntents.table.open")]}>
+                    <DataTable columns={text.columns}>
                         {filtered.map((intent) => (
-                            <tr key={intent.id} className="transition-colors hover:bg-white/5">
-                                <td className="px-6 py-4 text-sm font-medium text-ink">{intent.productName}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{intent.templateName}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink-2">v{intent.versionNumber}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink">{intent.quantity}</td>
-                                <td className="px-6 py-4"><StatusBadge label={getPrintIntentStatusLabel(intent.status)} tone={getPrintIntentStatusTone(intent.status)} /></td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink-2">{intent.requestedBy}</td>
-                                <td className="px-6 py-4 text-sm font-medium text-ink-3">
-                                    {formatDateTime(intent.createdAt)}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <Link href={`/print-intents/${intent.id}`} className="text-xs font-medium text-accent hover:text-accent">
-                                        {t("common.open")}
+                            <tr key={intent.id} className="transition-colors hover:bg-raised">
+                                <td className="px-4 py-2.5 text-base">
+                                    <Link href={`/print-intents/${intent.id}`} className="font-medium text-ink transition-colors hover:text-accent">
+                                        {intent.productName}
                                     </Link>
+                                </td>
+                                <td className="px-4 py-2.5 text-base text-ink-2">
+                                    <span className="whitespace-nowrap">{intent.templateName}</span>
+                                    <span className="ml-2 whitespace-nowrap font-mono text-xs text-ink-3">v{intent.versionNumber}</span>
+                                </td>
+                                <td className="tabular px-4 py-2.5 font-mono text-sm text-ink">{intent.quantity}</td>
+                                <td className="px-4 py-2.5">
+                                    <StatusBadge label={text.status[intent.status]} tone={intent.status === "Cancelled" ? "neutral" : getPrintIntentStatusTone(intent.status)} />
+                                </td>
+                                <td className="px-4 py-2.5 text-base text-ink-2">{intent.requestedBy}</td>
+                                <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-xs text-ink-3">
+                                    {formatDateTime(intent.createdAt)}
                                 </td>
                             </tr>
                         ))}

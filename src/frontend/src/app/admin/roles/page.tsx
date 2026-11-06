@@ -7,6 +7,7 @@ import { permissions } from "@/lib/permissions";
 import { PermissionCatalogGroup, RoleSummary } from "@/types/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n";
+import { LockSimple } from "@phosphor-icons/react";
 
 const emptyRoleForm = {
   id: "",
@@ -22,47 +23,44 @@ export default function RolesPage() {
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [form, setForm] = useState(emptyRoleForm);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"general" | "permissions">("permissions");
+  const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
 
   const text = locale === "tr"
     ? {
-        eyebrow: "Yönetim",
         title: "Roller",
-        description: "Varsayılan ve özel rolleri yönetin, sonra aksiyon seviyesinde yetki atayın.",
-        newRole: "Yeni Rol",
+        description: "Rolleri ve her rolün hangi işlemleri yapabileceğini yönetin.",
+        newRole: "Yeni rol",
+        newRoleTitle: "Yeni rol",
         permissionsCount: "{count} yetki",
         usersCount: "{count} kullanıcı",
         roleName: "Rol adı",
         descriptionLabel: "Açıklama",
-        immutableWarning: "Bu rol değiştirilemez. Yetkiler değiştirilemez.",
-        saveRole: "Rolü Kaydet",
-        deleteRole: "Rolü Sil",
-        updated: "Rol güncellendi.",
-        created: "Rol oluşturuldu.",
-        deleted: "Rol silindi.",
-        generalSettings: "Genel Ayarlar",
-        permissionsTab: "Yetki Ayarları",
-        selectedCount: "{count} seçili",
+        immutableWarning: "Bu bir sistem rolü, yetkileri değiştirilemez.",
+        saveRole: "Rolü kaydet",
+        deleteRole: "Rolü sil",
+        updated: "Rol güncellendi",
+        created: "Rol oluşturuldu",
+        deleted: "Rol silindi",
+        permissionsTitle: "Yetkiler",
+        system: "Sistem",
       }
     : {
-        eyebrow: "Administration",
         title: "Roles",
-        description: "Manage default and custom roles, then assign action-level permissions.",
-        newRole: "New Role",
+        description: "Manage roles and which actions each role can take.",
+        newRole: "New role",
+        newRoleTitle: "New role",
         permissionsCount: "{count} permissions",
         usersCount: "{count} users",
         roleName: "Role name",
         descriptionLabel: "Description",
-        immutableWarning: "This role is immutable. Permissions cannot be changed.",
-        saveRole: "Save Role",
-        deleteRole: "Delete Role",
-        updated: "Role updated.",
-        created: "Role created.",
-        deleted: "Role deleted.",
-        generalSettings: "General Settings",
-        permissionsTab: "Permissions",
-        selectedCount: "{count} selected",
+        immutableWarning: "This is a system role, its permissions cannot be changed.",
+        saveRole: "Save role",
+        deleteRole: "Delete role",
+        updated: "Role updated",
+        created: "Role created",
+        deleted: "Role deleted",
+        permissionsTitle: "Permissions",
+        system: "System",
       };
 
   async function load() {
@@ -113,11 +111,11 @@ export default function RolesPage() {
     const response = await apiFetch<RoleSummary>(endpoint, { method, body: JSON.stringify(payload) });
 
     if (!response.success) {
-      setMessage(response.error.message);
+      setMessage({ tone: "bad", text: response.error.message });
       return;
     }
 
-    setMessage(form.id ? text.updated : text.created);
+    setMessage({ tone: "good", text: form.id ? text.updated : text.created });
     await load();
     setSelectedRoleId(response.data.id);
   }
@@ -129,11 +127,11 @@ export default function RolesPage() {
 
     const response = await apiFetch(`/api/roles/${selectedRole.id}`, { method: "DELETE" });
     if (!response.success) {
-      setMessage(response.error.message);
+      setMessage({ tone: "bad", text: response.error.message });
       return;
     }
 
-    setMessage(text.deleted);
+    setMessage({ tone: "good", text: text.deleted });
     setSelectedRoleId("");
     setForm(emptyRoleForm);
     await load();
@@ -148,113 +146,115 @@ export default function RolesPage() {
     }));
   }
 
+  const locked = Boolean(selectedRole?.isImmutable);
+
   return (
     <PermissionGuard permissions={[permissions.rolesView]}>
-      <div className="mx-auto w-full max-w-[1600px] px-2 sm:px-4 lg:px-8 space-y-6">
+      <div className="space-y-6">
         <PageHeader
-          eyebrow={text.eyebrow}
           title={text.title}
           description={text.description}
-          actions={<button className="plms-button-primary" onClick={() => { setSelectedRoleId(""); setForm(emptyRoleForm); }}>{text.newRole}</button>}
+          actions={<button className="plms-button-secondary" onClick={() => { setSelectedRoleId(""); setForm(emptyRoleForm); }}>{text.newRole}</button>}
         />
-        {message ? <div className="rounded-lg border border-accent/20 bg-accent/10 p-4 text-sm text-accent">{message}</div> : null}
+        {message ? (
+          <div role="status" className={`rounded-lg px-3 py-2 text-sm ${message.tone === "good" ? "bg-good-soft text-good" : "bg-bad-soft text-bad"}`}>{message.text}</div>
+        ) : null}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-accent/30" /></div>
+          <div className="flex items-center justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" /></div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-            <div className="space-y-4">
-              {roles.map((role) => (
-                <button key={role.id} onClick={() => setSelectedRoleId(role.id)} className={`w-full rounded-xl border p-5 text-left transition-colors ${selectedRoleId === role.id ? "border-accent/40 bg-accent/10" : "border-line bg-surface"}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-lg font-medium text-ink">{role.name}</div>
-                      <div className="mt-1 text-sm text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</div>
-                    </div>
-                    <div className="text-right text-xs font-medium text-ink-3">{text.usersCount.replace("{count}", String(role.assignedUserCount))}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <nav aria-label={text.title} className="plms-card flex flex-col gap-0.5 p-1.5">
+              {roles.map((role) => {
+                const active = selectedRoleId === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => setSelectedRoleId(role.id)}
+                    aria-current={active ? "true" : undefined}
+                    className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-raised" : "hover:bg-raised"}`}
+                  >
+                    <span className="min-w-0">
+                      <span className={`block truncate text-base ${active ? "font-medium text-ink" : "text-ink-2"}`}>{role.name}</span>
+                      <span className="block truncate text-sm text-ink-3">{text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                    </span>
+                    <span className="tabular shrink-0 font-mono text-xs text-ink-3" title={text.usersCount.replace("{count}", String(role.assignedUserCount))}>
+                      {role.assignedUserCount}
+                    </span>
+                  </button>
+                );
+              })}
+              {!selectedRoleId ? (
+                <div className="flex items-center rounded-lg bg-raised px-3 py-2 text-base font-medium text-ink">{text.newRoleTitle}</div>
+              ) : null}
+            </nav>
 
-            <div className="rounded-xl border border-line bg-surface p-6">
-              {/* TABS HEADER */}
-              <div className="mb-6 flex gap-6 border-b border-line">
-                <button
-                  className={`pb-3 text-sm font-medium transition-colors ${activeTab === "general" ? "border-b-2 border-accent/30 text-accent" : "text-ink-3 hover:text-ink-2"}`}
-                  onClick={() => setActiveTab("general")}
-                >
-                  {text.generalSettings}
-                </button>
-                <button
-                  className={`pb-3 text-sm font-medium transition-colors ${activeTab === "permissions" ? "border-b-2 border-accent/30 text-accent" : "text-ink-3 hover:text-ink-2"}`}
-                  onClick={() => setActiveTab("permissions")}
-                >
-                  {text.permissionsTab}
-                </button>
+            <section className="plms-card divide-y divide-line">
+              <div className="space-y-4 p-5">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h2 className="text-md font-medium text-ink">{selectedRole ? selectedRole.name : text.newRoleTitle}</h2>
+                  {selectedRole ? (
+                    <span className="text-sm text-ink-3">
+                      {selectedRole.isSystem ? `${text.system} · ` : ""}{text.usersCount.replace("{count}", String(selectedRole.assignedUserCount))}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="grid gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="role-name" className="plms-label">{text.roleName}</label>
+                    <input id="role-name" className="plms-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="role-description" className="plms-label">{text.descriptionLabel}</label>
+                    <input id="role-description" className="plms-input" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+                  </div>
+                </div>
+                {locked ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-raised px-3 py-2 text-sm text-ink-2">
+                    <LockSimple size={16} aria-hidden className="text-ink-3" />
+                    {text.immutableWarning}
+                  </div>
+                ) : null}
               </div>
 
-              {/* GENERAL TAB */}
-              {activeTab === "general" && (
-                <div className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <input className="plms-input" placeholder={text.roleName} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} disabled={Boolean(selectedRole?.isSystem)} />
-                    <input className="plms-input" placeholder={text.descriptionLabel} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
-                  </div>
-
-                  {selectedRole?.isImmutable ? (
-                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm text-warn">{text.immutableWarning}</div>
-                  ) : null}
-
-                  <div className="pt-4 flex flex-wrap gap-3">
-                    <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
-                    {selectedRole && !selectedRole.isSystem ? <button className="rounded-lg bg-bad px-4 py-3 text-xs font-medium text-white" onClick={deleteRole}>{text.deleteRole}</button> : null}
-                  </div>
+              <div className="space-y-5 p-5">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="text-base font-medium text-ink">{text.permissionsTitle}</h3>
+                  <span className="tabular font-mono text-sm text-ink-3">
+                    {form.permissionKeys.length} / {catalog.reduce((sum, group) => sum + group.items.length, 0)}
+                  </span>
                 </div>
-              )}
-
-              {/* PERMISSIONS TAB */}
-              {activeTab === "permissions" && (
-                <div className="space-y-6">
-                  {selectedRole?.isImmutable ? (
-                    <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm text-warn">{text.immutableWarning}</div>
-                  ) : null}
-
-                  <div className="columns-1 lg:columns-2 gap-5 space-y-5">
-                    {catalog.map((group) => {
-                      const selectedCount = group.items.filter(item => form.permissionKeys.includes(item.key)).length;
-                      return (
-                        <details key={group.key} className="break-inside-avoid group rounded-lg border border-line bg-raised overflow-hidden">
-                          <summary className="cursor-pointer bg-raised px-5 py-4 text-sm font-medium text-ink flex justify-between items-center hover:bg-raised transition-colors list-none [&::-webkit-details-marker]:hidden">
-                            <span>{group.label}</span>
-                            <span className="text-ink-3 text-xs normal-case font-medium">
-                              {selectedCount > 0 ? text.selectedCount.replace("{count}", String(selectedCount)) : ""}
-                            </span>
-                          </summary>
-                          <div className="p-5 border-t border-line bg-black/20">
-                            <div className="grid gap-3">
-                              {group.items.map((item) => (
-                                <label key={item.key} className="flex items-start gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:border-line">
-                                  <input type="checkbox" className="mt-1" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={Boolean(selectedRole?.isImmutable)} />
-                                  <span>
-                                    <span className="block font-medium">{item.label}</span>
-                                    <span className="block text-xs text-ink-3">{item.description}</span>
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </div>
-
-                  <div className="pt-4 flex flex-wrap gap-3">
-                    <button className="plms-button-primary" onClick={saveRole} disabled={selectedRole?.isImmutable}>{text.saveRole}</button>
-                  </div>
+                <div className="grid gap-x-8 gap-y-6 xl:grid-cols-2">
+                  {catalog.map((group) => {
+                    const selectedCount = group.items.filter((item) => form.permissionKeys.includes(item.key)).length;
+                    return (
+                      <fieldset key={group.key} className="min-w-0">
+                        <legend className="flex w-full items-baseline justify-between gap-3 border-b border-line pb-2">
+                          <span className="text-sm font-medium text-ink">{group.label}</span>
+                          <span className="tabular font-mono text-xs text-ink-3">{selectedCount}/{group.items.length}</span>
+                        </legend>
+                        <div className="mt-1 flex flex-col">
+                          {group.items.map((item) => (
+                            <label key={item.key} className={`flex items-start gap-3 rounded-md px-2 py-2 transition-colors ${locked ? "" : "cursor-pointer hover:bg-raised"}`}>
+                              <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-accent" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={locked} />
+                              <span className="min-w-0">
+                                <span className="block text-sm text-ink">{item.label}</span>
+                                {item.description ? <span className="block text-sm text-ink-3">{item.description}</span> : null}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4">
+                {selectedRole && !selectedRole.isSystem ? <button className="plms-button-danger mr-auto" onClick={deleteRole}>{text.deleteRole}</button> : null}
+                <button className="plms-button-primary" onClick={saveRole} disabled={locked}>{text.saveRole}</button>
+              </div>
+            </section>
           </div>
         )}
       </div>

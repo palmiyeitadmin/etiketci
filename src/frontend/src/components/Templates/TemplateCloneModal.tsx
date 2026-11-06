@@ -33,7 +33,42 @@ function buildDefaultName(templateName: string, locale: "tr" | "en") {
 }
 
 export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClose, onCloned }: Props) {
-    const { locale, t } = useI18n();
+    const { locale } = useI18n();
+    const text = locale === "tr"
+        ? {
+            title: "Şablonu klonla",
+            description: "Seçilen sürümün yerleşimiyle yeni bir şablon oluşturulur ve taslak v1 olarak açılır.",
+            sourceVersion: "Kaynak sürüm",
+            generatedCode: "Yeni kod",
+            targetCategory: "Kategori",
+            selectCategory: "Kategori seçin",
+            name: "Şablon adı",
+            namePlaceholder: "Yeni şablonun adı",
+            descriptionLabel: "Açıklama",
+            descriptionPlaceholder: "Kaynaktan farkı ve notlar",
+            noCategories: "Klonlamak için en az bir aktif şablon kategorisi gerekli.",
+            manageCategories: "Kategorilere git",
+            cancel: "Vazgeç",
+            creating: "Oluşturuluyor",
+            create: "Klonu oluştur",
+        }
+        : {
+            title: "Clone template",
+            description: "A new template is created from the layout of the selected version and opens as draft v1.",
+            sourceVersion: "Source version",
+            generatedCode: "New code",
+            targetCategory: "Category",
+            selectCategory: "Select a category",
+            name: "Template name",
+            namePlaceholder: "Name of the new template",
+            descriptionLabel: "Description",
+            descriptionPlaceholder: "How it differs from the source, notes",
+            noCategories: "At least one active template category is needed to clone.",
+            manageCategories: "Go to categories",
+            cancel: "Cancel",
+            creating: "Creating",
+            create: "Create clone",
+        };
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -124,6 +159,15 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
         };
     }, [form.templateCategoryId, open]);
 
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && !submitting) onClose();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [open, submitting, onClose]);
+
     if (!open || !sourceTemplate || !sourceVersion) {
         return null;
     }
@@ -161,96 +205,80 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
     return (
         <Portal>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
-                <div className="w-full max-w-2xl rounded-xl border border-line bg-surface p-6">
-                    <div className="text-xs font-medium text-ink-3">
-                        {t("templates.detailPage.cloneTemplate")}
+                <div role="dialog" aria-modal="true" aria-labelledby="clone-modal-title" className="flex w-full max-w-2xl flex-col gap-5 rounded-xl border border-line bg-surface p-5 shadow-pop">
+                    <div className="flex flex-col gap-1.5">
+                        <h2 id="clone-modal-title" className="text-md font-medium text-ink">{text.title}</h2>
+                        <p className="text-sm text-ink-2">{text.description}</p>
                     </div>
-                    <h2 className="mt-2 text-2xl font-medium text-ink">
-                        {sourceTemplate.code} · v{sourceVersion.versionNumber}
-                    </h2>
-                    <p className="mt-3 max-w-2xl text-sm font-medium text-ink-2">
-                        {t("templates.detailPage.cloneTemplateDescription")}
-                    </p>
 
                     {error ? (
-                        <div className="mt-5 rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
-                            {error}
-                        </div>
+                        <div role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</div>
                     ) : null}
 
-                    <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <label className="space-y-2">
-                                <span className="text-xs font-medium text-ink-3">
-                                    {t("templates.detailPage.sourceVersion")}
-                                </span>
-                                <input value={`${sourceTemplate.name} · v${sourceVersion.versionNumber}`} readOnly className="plms-input opacity-80" />
+                    <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <label className="flex flex-col gap-1.5">
+                                <span className="plms-label">{text.sourceVersion}</span>
+                                <input value={`${sourceTemplate.code} · v${sourceVersion.versionNumber}`} readOnly className="plms-input bg-raised font-mono text-ink-2" title={sourceTemplate.name} />
                             </label>
-                            <label className="space-y-2">
-                                <span className="text-xs font-medium text-ink-3">
-                                    {t("templates.detailPage.generatedCode")}
-                                </span>
-                                <input value={codePreview} readOnly className="plms-input opacity-80" placeholder="PLM-ETK-001" />
+                            <label className="flex flex-col gap-1.5">
+                                <span className="plms-label">{text.generatedCode}</span>
+                                <input value={codePreview} readOnly className="plms-input bg-raised font-mono text-ink-2" placeholder="PLM-ETK-001" />
                             </label>
-                            <label className="space-y-2">
-                                <span className="text-xs font-medium text-ink-3">
-                                    {t("templates.detailPage.targetCategory")}
-                                </span>
+                            <label className="flex flex-col gap-1.5">
+                                <span className="plms-label">{text.targetCategory}</span>
                                 <select
                                     value={form.templateCategoryId}
                                     onChange={(event) => setForm((current) => ({ ...current, templateCategoryId: event.target.value }))}
-                                    className="plms-input"
+                                    className="plms-select w-full"
                                     required
                                 >
-                                    <option value="">{t("templates.detailPage.selectCategory")}</option>
+                                    <option value="">{text.selectCategory}</option>
                                     {activeCategories.map((category) => (
                                         <option key={category.id} value={category.id}>
-                                            {category.code} - {category.name}
+                                            {category.code} · {category.name}
                                         </option>
                                     ))}
                                 </select>
                             </label>
-                            <label className="space-y-2">
-                                <span className="text-xs font-medium text-ink-3">
-                                    {t("templates.detailPage.cloneName")}
-                                </span>
+                            <label className="flex flex-col gap-1.5">
+                                <span className="plms-label">{text.name}</span>
                                 <input
                                     value={form.name}
                                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                                     className="plms-input"
-                                    placeholder={t("templates.detailPage.cloneNamePlaceholder")}
+                                    placeholder={text.namePlaceholder}
                                     required
+                                    autoFocus
                                 />
                             </label>
-                            <label className="space-y-2 md:col-span-2">
-                                <span className="text-xs font-medium text-ink-3">
-                                    {t("templates.detailPage.cloneDescriptionLabel")}
-                                </span>
+                            <label className="flex flex-col gap-1.5 md:col-span-2">
+                                <span className="plms-label">{text.descriptionLabel}</span>
                                 <textarea
                                     value={form.description || ""}
                                     onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                                    className="plms-input min-h-32"
-                                    placeholder={t("templates.detailPage.cloneDescriptionPlaceholder")}
-                                    rows={4}
+                                    className="plms-input min-h-24"
+                                    placeholder={text.descriptionPlaceholder}
+                                    rows={3}
                                 />
                             </label>
                         </div>
 
-                        {activeCategories.length === 0 ? (
-                            <div className="rounded-lg border border-warn/20 bg-warn/10 p-4 text-sm font-medium text-warn">
-                                <div>{t("templates.detailPage.noTemplateCategories")}</div>
-                                <Link href="/templates/categories" className="mt-3 inline-flex text-sm font-medium text-accent underline underline-offset-4">
-                                    {t("templates.detailPage.manageCategories")}
+                        {!loadingCategories && activeCategories.length === 0 ? (
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">
+                                <span>{text.noCategories}</span>
+                                <Link href="/templates/categories" className="font-medium text-accent hover:text-accent-hover">
+                                    {text.manageCategories}
                                 </Link>
                             </div>
                         ) : null}
 
-                        <div className="flex justify-end gap-3">
-                            <button type="button" className="plms-button-secondary" onClick={onClose}>
-                                {t("common.cancel")}
+                        <div className="flex justify-end gap-2">
+                            <button type="button" className="plms-button-ghost" onClick={onClose}>
+                                {text.cancel}
                             </button>
                             <button type="submit" className="plms-button-primary" disabled={submitDisabled}>
-                                {submitting ? t("templates.detailPage.cloneCreating") : t("templates.detailPage.createClone")}
+                                {submitting ? text.creating : text.create}
                             </button>
                         </div>
                     </form>

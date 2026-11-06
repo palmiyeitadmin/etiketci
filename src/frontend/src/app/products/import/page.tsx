@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CaretRight, FileCsv } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { buildApiUrl } from "@/lib/api-base-url";
 import { apiFetch } from "@/lib/api-client";
@@ -18,45 +19,49 @@ export default function ProductImportPage() {
     const router = useRouter();
     const text = locale === "tr"
         ? {
-            eyebrow: "CSV içe aktarım akışı",
-            title: "Ürün İçe Aktarımı",
+            parent: "Ürünler",
+            title: "CSV içe aktar",
             description: "Dosya önce kontrol edilir. Ürünler siz onaylayana kadar kaydedilmez.",
-            back: "Ürünlere Dön",
-            create: "İçe Aktarım Oturumu Oluştur",
-            headers: "Başlıklar `Sku,Name,Description,CategoryCode,VendorCode` ile eşleşmelidir.",
-            processing: "İşleniyor...",
+            create: "CSV dosyası",
+            headers: "Sütunlar",
+            choose: "Dosya seçin",
+            chooseHint: "Yalnızca .csv",
+            processing: "Kontrol ediliyor",
             initialize: "Dosyayı kontrol et",
-            uploadFailed: "Dosya yüklenemedi.",
-            networkError: "API ile iletişim kurulamadı.",
-            sessions: "Son Oturumlar",
-            noSessions: "İçe aktarım oturumu yok",
-            noSessionsDescription: "İlk içe aktarım oturumunu oluşturmak için bir dry-run doğrulaması çalıştırın.",
+            uploadFailed: "Dosya yüklenemedi",
+            networkError: "Sunucuya ulaşılamadı",
+            sessions: "Son içe aktarımlar",
+            noSessions: "Henüz içe aktarım yok",
+            noSessionsDescription: "Bir CSV dosyasını kontrol ettiğinizde burada listelenir.",
             file: "Dosya",
-            rows: "Satırlar",
-            actor: "İşlemi Yapan",
-            created: "Oluşturuldu",
-            issues: "sorun",
+            status: "Durum",
+            rows: "Satır",
+            actor: "Yükleyen",
+            created: "Tarih",
+            issues: "hatalı",
             open: "Aç",
         }
         : {
-            eyebrow: "CSV import workflow",
-            title: "Product Import",
-            description: "Dry-run validation persists an import session before any data is committed.",
-            back: "Back to Products",
-            create: "Create Import Session",
-            headers: "Headers must match `Sku,Name,Description,CategoryCode,VendorCode`.",
-            processing: "Processing...",
-            initialize: "Initialize Dry-Run",
-            uploadFailed: "Failed to upload file.",
-            networkError: "Network error communicating with API.",
-            sessions: "Recent Sessions",
-            noSessions: "No import sessions",
-            noSessionsDescription: "Run a dry-run validation to create the first import session.",
+            parent: "Products",
+            title: "Import CSV",
+            description: "The file is checked first. Nothing is saved until you confirm.",
+            create: "CSV file",
+            headers: "Columns",
+            choose: "Choose a file",
+            chooseHint: ".csv only",
+            processing: "Checking",
+            initialize: "Check file",
+            uploadFailed: "The file could not be uploaded",
+            networkError: "The server could not be reached",
+            sessions: "Recent imports",
+            noSessions: "No imports yet",
+            noSessionsDescription: "Files you check appear here.",
             file: "File",
+            status: "Status",
             rows: "Rows",
-            actor: "Actor",
-            created: "Created",
-            issues: "issues",
+            actor: "Uploaded by",
+            created: "Date",
+            issues: "with errors",
             open: "Open",
         };
     const [file, setFile] = useState<File | null>(null);
@@ -105,51 +110,58 @@ export default function ProductImportPage() {
 
     return (
         <RoleGuard allowedRoles={["Admin", "Operator"]}>
-            <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader
-                    eyebrow={text.eyebrow}
-                    title={text.title}
-                    description={text.description}
-                    actions={<Link href="/products" className="plms-button-secondary">{text.back}</Link>}
-                />
+            <div className="space-y-6">
+                <nav className="flex items-center gap-1.5 text-sm text-ink-3">
+                    <Link href="/products" className="transition-colors hover:text-ink">{text.parent}</Link>
+                    <CaretRight size={12} aria-hidden />
+                    <span className="text-ink-2">{text.title}</span>
+                </nav>
 
-                <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                    <div className="rounded-xl border border-dashed border-line-strong bg-surface p-8 text-center">
-                        <div className="mx-auto max-w-md space-y-5">
-                            <div className="text-4xl">CSV</div>
-                            <div>
-                                <h2 className="text-2xl font-medium text-ink">{text.create}</h2>
-                                <p className="mt-2 text-sm font-medium text-ink-3">
-                                    {text.headers}
-                                </p>
-                            </div>
-                            <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] || null)} className="plms-input" />
-                            <button className="plms-button-primary w-full" onClick={handleUpload} disabled={!file || loading}>
-                                {loading ? text.processing : text.initialize}
-                            </button>
-                            {error ? <div className="rounded-lg border border-bad/20 bg-bad/10 p-4 text-sm font-medium text-bad">{error}</div> : null}
+                <PageHeader title={text.title} description={text.description} />
+
+                <div className="grid items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+                    <section className="plms-card space-y-4 p-5">
+                        <h2 className="text-md font-medium text-ink">{text.create}</h2>
+                        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-line-strong bg-canvas px-4 py-8 text-center transition-colors hover:bg-raised focus-within:border-accent">
+                            <FileCsv size={24} aria-hidden className="text-ink-3" />
+                            <span className="max-w-full truncate text-sm text-ink">{file ? file.name : text.choose}</span>
+                            <span className="text-xs text-ink-3">{text.chooseHint}</span>
+                            <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] || null)} className="sr-only" />
+                        </label>
+                        <div className="space-y-1.5">
+                            <div className="text-sm text-ink-3">{text.headers}</div>
+                            <code className="block break-all rounded-md bg-raised px-2.5 py-1.5 font-mono text-xs text-ink-2">Sku,Name,Description,CategoryCode,VendorCode</code>
                         </div>
-                    </div>
+                        <button className="plms-button-primary w-full" onClick={handleUpload} disabled={!file || loading}>
+                            {loading ? text.processing : text.initialize}
+                        </button>
+                        {error ? <div className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{error}</div> : null}
+                    </section>
 
-                    <div className="space-y-4">
-                        <div className="text-sm font-medium text-ink">{text.sessions}</div>
+                    <section className="space-y-3">
+                        <h2 className="text-md font-medium text-ink">{text.sessions}</h2>
                         {sessions.length === 0 ? (
                             <EmptyState title={text.noSessions} description={text.noSessionsDescription} />
                         ) : (
-                            <DataTable columns={[text.file, "Status", text.rows, text.actor, text.created, text.open]}>
+                            <DataTable columns={[text.file, text.status, text.rows, text.actor, text.created, ""]}>
                                 {sessions.map((session) => (
-                                    <tr key={session.id} className="transition-colors hover:bg-white/5">
-                                        <td className="px-6 py-4 text-sm font-medium text-ink">{session.fileName}</td>
-                                        <td className="px-6 py-4"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></td>
-                                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{session.totalRows} / {session.errorRows} {text.issues}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-ink-2">{session.createdBy}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-ink-3">{formatDateTime(session.createdAt)}</td>
-                                        <td className="px-6 py-4"><Link href={`/products/import/sessions/${session.id}`} className="text-xs font-medium text-accent">{text.open}</Link></td>
+                                    <tr key={session.id} className="transition-colors hover:bg-raised">
+                                        <td className="px-4 py-2.5 text-base">
+                                            <Link href={`/products/import/sessions/${session.id}`} className="font-mono text-sm text-ink transition-colors hover:text-accent">{session.fileName}</Link>
+                                        </td>
+                                        <td className="px-4 py-2.5"><StatusBadge label={session.status} tone={session.status === "ReadyToImport" ? "success" : session.status === "Imported" ? "info" : "warning"} /></td>
+                                        <td className="tabular whitespace-nowrap px-4 py-2.5 text-base text-ink-2">
+                                            <span className="font-mono text-sm">{session.totalRows}</span>
+                                            {session.errorRows > 0 ? <span className="text-bad"> · <span className="font-mono text-sm">{session.errorRows}</span> {text.issues}</span> : null}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-base text-ink-2">{session.createdBy}</td>
+                                        <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{formatDateTime(session.createdAt)}</td>
+                                        <td className="px-4 py-2.5 text-right"><Link href={`/products/import/sessions/${session.id}`} className="plms-button-compact">{text.open}</Link></td>
                                     </tr>
                                 ))}
                             </DataTable>
                         )}
-                    </div>
+                    </section>
                 </div>
             </div>
         </RoleGuard>

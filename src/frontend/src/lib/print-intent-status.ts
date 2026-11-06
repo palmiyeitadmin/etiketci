@@ -18,19 +18,6 @@ export function normalizePrintIntentStatus(status: unknown): PrintIntentStatus {
   return "Pending";
 }
 
-export function getPrintIntentStatusLabel(status: PrintIntentStatus): string {
-  switch (status) {
-    case "ReadyForPrint":
-      return "Ready For Print";
-    case "SentToClient":
-      return "Sent To Client";
-    case "UserPrinted":
-      return "Printed";
-    default:
-      return status;
-  }
-}
-
 export function getPrintIntentStatusTone(status: PrintIntentStatus): StatusTone {
   switch (status) {
     case "Pending":
