@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { phosphorIconLoaders } from "@/lib/phosphor-icon-loaders";
 import { phosphorIconManifest } from "@/lib/phosphor-icon-manifest";
 import { turkishIconAliases } from "@/lib/phosphor-icon-aliases-tr";
+import { turkishIconName } from "@/lib/phosphor-icon-names-tr";
 
 export type PhosphorIconKey = keyof typeof phosphorIconLoaders;
 
@@ -94,7 +95,24 @@ function turkishAliasMatches(folded: string) {
   return keys;
 }
 
-export function searchPhosphorIcons(query: string) {
+let foldedTurkishNames: Map<string, string> | null = null;
+
+/** Folded Turkish names with punctuation turned into spaces, so a query can match at the start of any word. */
+function getFoldedTurkishNames() {
+  if (!foldedTurkishNames) {
+    foldedTurkishNames = new Map(
+      phosphorIconManifestItems.map((item) => [item.key, ` ${foldTurkish(turkishIconName(item.key)).replace(/[^a-z0-9#@+]+/g, " ")} `])
+    );
+  }
+  return foldedTurkishNames;
+}
+
+export interface PhosphorIconSearchOptions {
+  /** Also match the Turkish display names (the picker turns this on when the UI is Turkish). */
+  turkishNames?: boolean;
+}
+
+export function searchPhosphorIcons(query: string, options: PhosphorIconSearchOptions = {}) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
     return phosphorIconManifestItems;
@@ -102,6 +120,22 @@ export function searchPhosphorIcons(query: string) {
 
   const folded = foldTurkish(query);
   const aliasKeys = turkishAliasMatches(folded);
+  if (options.turkishNames) {
+    // Word starts only, so "ok" finds "Aşağı ok" but not "Kokteyl bardağı".
+    // Names that start with the query come first: typing "güneş paneli" puts "Güneş paneli" on top.
+    const needle = ` ${folded.replace(/[^a-z0-9#@+]+/g, " ").trim()}`;
+    if (needle.trim()) {
+      const leading: string[] = [];
+      const inner: string[] = [];
+      getFoldedTurkishNames().forEach((name, key) => {
+        if (name.startsWith(needle)) leading.push(key);
+        else if (name.includes(needle)) inner.push(key);
+      });
+      const ordered = new Set([...leading, ...Array.from(aliasKeys), ...inner]);
+      aliasKeys.clear();
+      ordered.forEach((key) => aliasKeys.add(key));
+    }
+  }
   const aliasHits = Array.from(aliasKeys)
     .map((key) => manifestByKey.get(key as PhosphorIconKey))
     .filter((item): item is PhosphorIconCatalogItem => Boolean(item));

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { getFeaturedPhosphorIcons, searchPhosphorIcons, type PhosphorIconCatalogItem, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { PhosphorIconPreview } from "@/components/Editor/PhosphorIconPreview";
-import { useText } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
+import { turkishIconName } from "@/lib/phosphor-icon-names-tr";
 
 const PAGE_SIZE = 96;
 
@@ -20,7 +21,13 @@ export function PhosphorIconPicker({
   const [pickerError, setPickerError] = useState<string | null>(null);
   const featuredIcons = useMemo(() => getFeaturedPhosphorIcons(), []);
   const shouldShowFullCatalog = showAll || query.trim().length > 0;
-  const allResults = useMemo(() => searchPhosphorIcons(query), [query]);
+  const { locale } = useI18n();
+  const isTurkish = locale === "tr";
+  const allResults = useMemo(() => searchPhosphorIcons(query, { turkishNames: isTurkish }), [query, isTurkish]);
+  const labelOf = useCallback(
+    (item: PhosphorIconCatalogItem) => (isTurkish ? turkishIconName(item.key) : item.label),
+    [isTurkish]
+  );
   const visibleIcons = useMemo(
     () => (shouldShowFullCatalog ? allResults.slice(0, visibleCount) : featuredIcons),
     [allResults, featuredIcons, shouldShowFullCatalog, visibleCount]
@@ -36,7 +43,7 @@ export function PhosphorIconPicker({
     try {
       setPickerError(null);
       setInsertingKey(item.key);
-      await onInsert({ key: item.key, content: "", name: item.label });
+      await onInsert({ key: item.key, content: "", name: labelOf(item) });
     } catch (error) {
       setPickerError(error instanceof Error ? error.message : text.insertFailed);
     } finally {
@@ -69,7 +76,7 @@ export function PhosphorIconPicker({
             <h3 className="text-sm font-medium text-ink">{text.featured}</h3>
             <span className="font-mono text-xs tabular text-ink-3">{featuredIcons.length} {text.icons}</span>
           </div>
-          <IconGrid items={featuredIcons} onInsert={handleInsert} insertingKey={insertingKey} />
+          <IconGrid items={featuredIcons} labelOf={labelOf} onInsert={handleInsert} insertingKey={insertingKey} />
         </section>
       ) : null}
 
@@ -101,7 +108,7 @@ export function PhosphorIconPicker({
             </div>
           ) : (
             <div className="space-y-3">
-              <IconGrid items={visibleIcons} onInsert={handleInsert} insertingKey={insertingKey} />
+              <IconGrid items={visibleIcons} labelOf={labelOf} onInsert={handleInsert} insertingKey={insertingKey} />
               {canLoadMore ? (
                 <div className="flex justify-center">
                   <button type="button" className="plms-button-compact" onClick={() => setVisibleCount((current) => current + PAGE_SIZE)}>
@@ -119,29 +126,34 @@ export function PhosphorIconPicker({
 
 function IconGrid({
   items,
+  labelOf,
   onInsert,
   insertingKey,
 }: {
   items: readonly PhosphorIconCatalogItem[];
+  labelOf: (item: PhosphorIconCatalogItem) => string;
   onInsert: (item: PhosphorIconCatalogItem) => Promise<void>;
   insertingKey: PhosphorIconKey | null;
 }) {
   return (
     <div className="grid grid-cols-4 gap-1 sm:grid-cols-6">
-      {items.map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          onClick={() => void onInsert(item)}
-          title={`${item.label} · ${item.key}`}
-          aria-label={item.label}
-          className="flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 pb-2 pt-3 text-ink-2 transition-colors hover:border-line hover:bg-raised hover:text-ink disabled:cursor-wait disabled:opacity-60"
-          disabled={insertingKey === item.key}
-        >
-          <PhosphorIconPreview iconKey={item.key} size={24} />
-          <span className="w-full truncate text-center text-xs">{item.label}</span>
-        </button>
-      ))}
+      {items.map((item) => {
+        const label = labelOf(item);
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => void onInsert(item)}
+            title={`${label} · ${item.key}`}
+            aria-label={label}
+            className="flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 pb-2 pt-3 text-ink-2 transition-colors hover:border-line hover:bg-raised hover:text-ink disabled:cursor-wait disabled:opacity-60"
+            disabled={insertingKey === item.key}
+          >
+            <PhosphorIconPreview iconKey={item.key} size={24} />
+            <span className="w-full truncate text-center text-xs">{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
