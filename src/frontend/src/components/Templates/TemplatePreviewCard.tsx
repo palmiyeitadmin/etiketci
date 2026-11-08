@@ -78,6 +78,7 @@ export function TemplatePreviewCard({
               {element.type === "qr" ? <div className={placeholderClass}>{text.qr}</div> : null}
               {element.type === "image" ? (
                 element.assetId ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- uploaded asset served by the authenticated proxy; next/image would fetch it without the session
                   <img src={`/api/assets/${element.assetId}/content`} alt="" className="h-full w-full" style={{ objectFit: (element.imageFit as any) || "contain" }} />
                 ) : (
                   <div className={placeholderClass}>{text.image}</div>

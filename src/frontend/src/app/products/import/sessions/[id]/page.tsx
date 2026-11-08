@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { DataTable } from "@/components/ui/DataTable";
 import { CaretRight } from "@phosphor-icons/react";
+import { useLatest } from "@/lib/useLatest";
 
 export default function ImportSessionDetailPage() {
     const { formatDateTime, locale } = useI18n();
@@ -34,9 +35,10 @@ export default function ImportSessionDetailPage() {
         setLoading(false);
     }
 
+    const loadRef = useLatest(load);
     useEffect(() => {
-        load();
-    }, [id]);
+        loadRef.current();
+    }, [id, loadRef]);
 
     const onlyOverwriteConflicts = useMemo(() => {
         if (!session || session.issues.length === 0) return false;

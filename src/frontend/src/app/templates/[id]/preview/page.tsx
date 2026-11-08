@@ -15,6 +15,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/StatusBadge";
 import { LabelProof } from "@/components/ui/LabelProof";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { checkIssueText, type CheckIssue } from "@/lib/backend-text";
+import { useLatest } from "@/lib/useLatest";
 
 interface VariableResolutionDetail {
     name: string;
@@ -97,6 +98,8 @@ export default function TemplatePreviewPage() {
 
     const text = useText("templateDetail").preview;
 
+    const textRef = useLatest(text);
+
     function localizeReadinessIssue(issue: CheckIssue) {
         if (issue.code === "version_not_printable") {
             return text.versionStateBlocked(translateLabel(normalizeTemplateStatus(issue.params.status ?? "")));
@@ -138,7 +141,7 @@ export default function TemplatePreviewPage() {
                     });
                 } else {
                     setMetadata(null);
-                    setActionMessage(metadataRes.success ? text.metadataLoadError : metadataRes.error.message);
+                    setActionMessage(metadataRes.success ? textRef.current.metadataLoadError : metadataRes.error.message);
                 }
 
                 if (productsRes.success && Array.isArray(productsRes.data)) {
@@ -146,14 +149,14 @@ export default function TemplatePreviewPage() {
                 }
             } catch (err) {
                 console.error("Failed to load preview metadata", err);
-                setActionMessage((err as Error).message || text.loadPreviewFailed);
+                setActionMessage((err as Error).message || textRef.current.loadPreviewFailed);
             } finally {
                 setLoading(false);
             }
         };
 
         load();
-    }, [id, versionId, selectedProductId]);
+    }, [id, versionId, selectedProductId, textRef]);
 
     useEffect(() => {
         if (!previewFileUrl) return;
@@ -175,7 +178,7 @@ export default function TemplatePreviewPage() {
 
                 if (!response.ok) {
                     const body = await response.text();
-                    throw new Error(body || text.pdfRenderError);
+                    throw new Error(body || textRef.current.pdfRenderError);
                 }
 
                 const blob = await response.blob();
@@ -192,7 +195,7 @@ export default function TemplatePreviewPage() {
                     return null;
                 });
                 setPdfStatus("error");
-                setPdfErrorMessage((error as Error).message || text.pdfRenderError);
+                setPdfErrorMessage((error as Error).message || textRef.current.pdfRenderError);
             }
         }
 
@@ -204,7 +207,7 @@ export default function TemplatePreviewPage() {
                 URL.revokeObjectURL(nextObjectUrl);
             }
         };
-    }, [previewFileUrl, pdfReloadKey]);
+    }, [previewFileUrl, pdfReloadKey, textRef]);
 
     const handleCreateIntent = async () => {
         if (!metadata) return;

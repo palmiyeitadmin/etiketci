@@ -12,6 +12,7 @@ import { FilterBar } from "@/components/ui/FilterBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useSession } from "next-auth/react";
 import { ArrowClockwise, Trash, UploadSimple } from "@phosphor-icons/react";
+import { useLatest } from "@/lib/useLatest";
 
 export default function ContentLibraryPage() {
   const { data: session } = useSession();
@@ -35,9 +36,10 @@ export default function ContentLibraryPage() {
     setLoading(false);
   }
 
+  const loadRef = useLatest(load);
   useEffect(() => {
-    void load("");
-  }, []);
+    void loadRef.current("");
+  }, [loadRef]);
 
   const filtered = useMemo(() => assets, [assets]);
 
@@ -118,6 +120,7 @@ export default function ContentLibraryPage() {
             {filtered.map((asset) => (
               <li key={asset.id} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
                 <div className="flex aspect-square items-center justify-center border-b border-line bg-canvas p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- uploaded asset served by the authenticated proxy; next/image would fetch it without the session */}
                   <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                 </div>
                 <div className="flex items-start gap-2 px-3 py-2.5">

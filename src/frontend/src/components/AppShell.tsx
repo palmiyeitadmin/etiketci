@@ -167,8 +167,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const isEditorRoute = /^\/templates\/[^/]+\/edit$/.test(pathname);
     // The editor needs the width: the sidebar collapses to icons there.
     const collapsed = desktopCollapsed || isEditorRoute;
-    const userRoles = ((session?.user as any)?.roles || []) as string[];
-    const userPermissions = ((session?.user as any)?.permissions || []) as string[];
+    const sessionRoles = (session?.user as any)?.roles as string[] | undefined;
+    const sessionPermissions = (session?.user as any)?.permissions as string[] | undefined;
+    const userRoles = useMemo(() => sessionRoles ?? [], [sessionRoles]);
+    const userPermissions = useMemo(() => sessionPermissions ?? [], [sessionPermissions]);
     const mustChangePassword = Boolean((session?.user as any)?.mustChangePassword);
 
     const visibleGroups = useMemo(

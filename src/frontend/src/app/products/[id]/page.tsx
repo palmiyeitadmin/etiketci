@@ -16,6 +16,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { Portal } from "@/components/ui/Portal";
+import { useLatest } from "@/lib/useLatest";
 
 export default function ProductDetailPage() {
   const { formatDateTime } = useI18n();
@@ -58,9 +59,10 @@ export default function ProductDetailPage() {
     setLoading(false);
   }
 
+  const loadRef = useLatest(load);
   useEffect(() => {
-    load();
-  }, [id]);
+    loadRef.current();
+  }, [id, loadRef]);
 
   const availableTemplates = useMemo(
     () => templates.filter((template) => !links.some((link) => link.templateId === template.id)),

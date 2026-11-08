@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Portal } from "@/components/ui/Portal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useLatest } from "@/lib/useLatest";
 
 function getTemplateTone(status: string): "neutral" | "info" | "success" | "warning" | "danger" {
   switch (status) {
@@ -89,9 +90,10 @@ export default function TemplateDetailPage() {
     setLoading(false);
   }
 
+  const loadRef = useLatest(load);
   useEffect(() => {
-    load();
-  }, [id]);
+    loadRef.current();
+  }, [id, loadRef]);
 
   const activeVersion = template?.currentActiveVersion || null;
   const editableDraft = useMemo(() => {

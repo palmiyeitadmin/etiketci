@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n, useText } from "@/lib/i18n";
 import { permissionDescription, permissionGroupLabel, permissionLabel, roleDisplayName } from "@/lib/backend-text";
 import { LockSimple } from "@phosphor-icons/react";
+import { useLatest } from "@/lib/useLatest";
 
 const emptyRoleForm = {
   id: "",
@@ -51,9 +52,10 @@ export default function RolesPage() {
     setLoading(false);
   }
 
+  const loadRef = useLatest(load);
   useEffect(() => {
-    load();
-  }, []);
+    loadRef.current();
+  }, [loadRef]);
 
   useEffect(() => {
     const selected = roles.find((role) => role.id === selectedRoleId);

@@ -11,6 +11,7 @@ import { TemplateCategory } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LabelProof } from "@/components/ui/LabelProof";
+import { useLatest } from "@/lib/useLatest";
 
 type TemplateFormState = {
     name: string;
@@ -59,6 +60,7 @@ function createInitialLayout(name: string, widthMm: number, heightMm: number): s
 export default function NewTemplatePage() {
     const router = useRouter();
     const text = useText("templates").newTemplate;
+    const textRef = useLatest(text);
     const [form, setForm] = useState<TemplateFormState>(initialFormState);
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
     const [codePreview, setCodePreview] = useState("");
@@ -72,7 +74,7 @@ export default function NewTemplatePage() {
         async function loadCategories() {
             const response = await apiFetch<TemplateCategory[]>("/api/template-categories");
             if (!response.success) {
-                setError(response.error.message || text.loadFailed);
+                setError(response.error.message || textRef.current.loadFailed);
                 setLoading(false);
                 return;
             }
@@ -87,7 +89,7 @@ export default function NewTemplatePage() {
         }
 
         void loadCategories();
-    }, []);
+    }, [textRef]);
 
     useEffect(() => {
         async function loadCodePreview() {
@@ -99,7 +101,7 @@ export default function NewTemplatePage() {
             const response = await apiFetch<TemplateCodePreview>(`/api/template-categories/${form.templateCategoryId}/next-code`);
             if (!response.success) {
                 setCodePreview("");
-                setError(response.error.message || text.loadFailed);
+                setError(response.error.message || textRef.current.loadFailed);
                 return;
             }
 
@@ -107,7 +109,7 @@ export default function NewTemplatePage() {
         }
 
         void loadCodePreview();
-    }, [form.templateCategoryId]);
+    }, [form.templateCategoryId, textRef]);
 
     const handleChange = (field: keyof TemplateFormState, value: string) => {
         setForm((current) => ({ ...current, [field]: value }));

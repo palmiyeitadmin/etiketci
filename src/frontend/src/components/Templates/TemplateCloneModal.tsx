@@ -88,7 +88,7 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
         return () => {
             active = false;
         };
-    }, [open]);
+    }, [open, sourceTemplate?.templateCategoryId]);
 
     useEffect(() => {
         if (!open || !form.templateCategoryId) {

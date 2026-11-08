@@ -15,6 +15,7 @@ import { CanonicalLabelModel } from "@/types/canvas";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import Link from "next/link";
 import { useText } from "@/lib/i18n";
+import { useLatest } from "@/lib/useLatest";
 
 export default function TemplateEditorPage() {
     const { id: routeId } = useParams();
@@ -43,6 +44,8 @@ export default function TemplateEditorPage() {
 
     const text = useText("templateDetail").edit;
 
+    const textRef = useLatest(text);
+
     useEffect(() => {
         let cancelled = false;
 
@@ -68,11 +71,11 @@ export default function TemplateEditorPage() {
                         router.replace(`/templates/${id}/edit?versionId=${version.id}`);
                     }
                 } else {
-                    setError(res.success ? text.loadError : res.error.message);
+                    setError(res.success ? textRef.current.loadError : res.error.message);
                 }
             } catch (err) {
                 if (!cancelled) {
-                    setError((err as Error).message || text.loadFailed);
+                    setError((err as Error).message || textRef.current.loadFailed);
                 }
             } finally {
                 if (!cancelled) {
@@ -87,7 +90,7 @@ export default function TemplateEditorPage() {
         return () => {
             cancelled = true;
         };
-    }, [id, requestedVersionId, router]);
+    }, [id, requestedVersionId, router, textRef]);
 
     const handleCreateDraft = async () => {
         if (!template) {
@@ -99,7 +102,7 @@ export default function TemplateEditorPage() {
             const draft = await resolveEditorDraftVersion(template, requestedVersionId);
             router.replace(`/templates/${id}/edit?versionId=${draft.id}`);
         } catch (err) {
-            setError((err as Error).message || text.loadFailed);
+            setError((err as Error).message || textRef.current.loadFailed);
         } finally {
             setCreatingDraft(false);
         }

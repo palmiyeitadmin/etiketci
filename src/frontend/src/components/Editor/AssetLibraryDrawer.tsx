@@ -11,6 +11,7 @@ import { PickerErrorBoundary } from "@/components/Editor/PickerErrorBoundary";
 import { useSession } from "next-auth/react";
 import { ArrowClockwise, CircleNotch, MagnifyingGlass, Plus, Trash, UploadSimple } from "@phosphor-icons/react";
 import { SlideOver } from "@/components/ui/SlideOver";
+import { useLatest } from "@/lib/useLatest";
 
 export function AssetLibraryDrawer({
   open,
@@ -43,10 +44,11 @@ export function AssetLibraryDrawer({
     setLoading(false);
   }
 
+  const loadAssetsRef = useLatest(loadAssets);
   useEffect(() => {
     if (!open) return;
-    void loadAssets("");
-  }, [open]);
+    void loadAssetsRef.current("");
+  }, [open, loadAssetsRef]);
 
   const emptyText = useMemo(() => loading ? text.loading : text.empty, [loading, text.empty, text.loading]);
 
@@ -150,6 +152,7 @@ export function AssetLibraryDrawer({
                 {assets.map((asset) => (
                   <article key={asset.id} className="overflow-hidden rounded-xl border border-line bg-surface">
                     <div className="flex aspect-square items-center justify-center border-b border-line bg-raised p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- uploaded asset served by the authenticated proxy; next/image would fetch it without the session */}
                       <img src={buildAssetContentUrl(asset.id)} alt={asset.name} className="max-h-full max-w-full object-contain" />
                     </div>
                     <div className="space-y-0.5 px-3 pt-2.5">

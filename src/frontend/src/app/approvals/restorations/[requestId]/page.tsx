@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { TemplateRestorationRequest } from "@/types/template";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useLatest } from "@/lib/useLatest";
 
 export default function RestorationApprovalDetailPage() {
     const { formatDate, formatDateTime } = useI18n();
@@ -33,9 +34,10 @@ export default function RestorationApprovalDetailPage() {
         setLoading(false);
     }
 
+    const loadRef = useLatest(load);
     useEffect(() => {
-        load();
-    }, [requestId]);
+        loadRef.current();
+    }, [requestId, loadRef]);
 
     async function review(approve: boolean) {
         setSubmitting(true);

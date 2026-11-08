@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useI18n, useText } from "@/lib/i18n";
 import { roleDescription, roleDisplayName } from "@/lib/backend-text";
+import { useLatest } from "@/lib/useLatest";
 
 export default function AdminUserDetailPage() {
   const text = useText("admin").userDetail;
@@ -50,9 +51,10 @@ export default function AdminUserDetailPage() {
     setLoading(false);
   }
 
+  const loadRef = useLatest(load);
   useEffect(() => {
-    load();
-  }, [id]);
+    loadRef.current();
+  }, [id, loadRef]);
 
   async function saveChanges() {
     const response = await apiFetch<UserSummary>(`/api/users/${id}`, {

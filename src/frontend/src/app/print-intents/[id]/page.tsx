@@ -21,6 +21,7 @@ import { PrintIntentDetailDto, PrintIntentDto, PrintIntentStatus } from "@/types
 import { AuditLogDto } from "@/types/audit";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useLatest } from "@/lib/useLatest";
 
 /** Stored by the backend with default (PascalCase) JSON names; older code read camelCase. */
 interface ReadinessSnapshot {
@@ -98,9 +99,10 @@ export default function PrintIntentDetailPage() {
     setLoading(false);
   }
 
+  const loadIntentRef = useLatest(loadIntent);
   useEffect(() => {
-    loadIntent();
-  }, [id]);
+    loadIntentRef.current();
+  }, [id, loadIntentRef]);
 
   // For a reprint, load the original request so the link can say which print it repeats.
   const reprintOfId = intent?.reprintOfId ?? null;

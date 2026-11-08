@@ -22,6 +22,7 @@ import { StatusBadge, type StatusTone } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard";
+import { useLatest } from "@/lib/useLatest";
 
 type TemplateListStatusFilter = "all" | TemplateStatus | "DraftOnly";
 type VersionActionTarget = { template: LabelTemplate; version: TemplateVersion };
@@ -101,9 +102,10 @@ export default function TemplatesPage() {
         setLoading(false);
     }
 
+    const loadRef = useLatest(load);
     useEffect(() => {
-        void load();
-    }, []);
+        void loadRef.current();
+    }, [loadRef]);
 
     const viewerIdentityCandidates = useMemo(() => {
         const user = (session?.user as any) || {};

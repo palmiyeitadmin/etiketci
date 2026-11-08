@@ -9,6 +9,7 @@ import { useText } from "@/lib/i18n";
 import { ProductCategory, Vendor } from "@/types/product";
 import { CaretRight } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useLatest } from "@/lib/useLatest";
 
 type ProductFormState = {
     sku: string;
@@ -42,6 +43,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export default function NewProductPage() {
     const router = useRouter();
     const text = useText("products").create;
+    const textRef = useLatest(text);
     const [form, setForm] = useState<ProductFormState>(initialFormState);
     const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -65,14 +67,14 @@ export default function NewProductPage() {
                     setVendors(vendorRes.data.filter((vendor) => vendor.isActive));
                 }
             } catch {
-                setError(text.referenceLoadFailed);
+                setError(textRef.current.referenceLoadFailed);
             } finally {
                 setLoading(false);
             }
         }
 
         loadOptions();
-    }, []);
+    }, [textRef]);
 
     const handleChange = (field: keyof ProductFormState, value: string | boolean) => {
         setForm((current) => ({ ...current, [field]: value }));
