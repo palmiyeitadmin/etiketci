@@ -13,6 +13,9 @@ namespace Plms.Api.Services
     {
         private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
+        /// <summary>Serializes audit parameters for <see cref="AuditLog.Metadata"/> (camelCase keys).</summary>
+        public static string Json(object parameters) => JsonSerializer.Serialize(parameters, JsonOptions);
+
         public static AuditLog Add(
             ApplicationDbContext context,
             string action,
@@ -33,7 +36,7 @@ namespace Plms.Api.Services
                 UserId = userId,
                 CorrelationId = correlationId,
                 Details = details,
-                Metadata = parameters == null ? string.Empty : JsonSerializer.Serialize(parameters, JsonOptions),
+                Metadata = parameters == null ? string.Empty : Json(parameters),
             };
             context.AuditLogs.Add(entry);
             return entry;

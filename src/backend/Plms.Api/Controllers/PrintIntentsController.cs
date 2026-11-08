@@ -170,7 +170,7 @@ namespace Plms.Api.Controllers
             var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
             if (readiness.Status == ReadinessStatus.Blocked)
             {
-                return BadRequest(new { success = false, error = "Intent creation blocked.", details = readiness.Errors });
+                return BadRequest(new { success = false, error = "Intent creation blocked.", code = "readiness_blocked", details = readiness.Errors, issues = readiness.Issues });
             }
 
             var pi = NewIntent(product, template, version, dto.Quantity, readiness, channel: null);
@@ -216,7 +216,7 @@ namespace Plms.Api.Controllers
             var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
             if (readiness.Status == ReadinessStatus.Blocked)
             {
-                return BadRequest(new { success = false, error = "Intent creation blocked.", details = readiness.Errors });
+                return BadRequest(new { success = false, error = "Intent creation blocked.", code = "readiness_blocked", details = readiness.Errors, issues = readiness.Issues });
             }
 
             var pi = NewIntent(product, template, version, dto.Quantity, readiness, channel: "station");
@@ -224,7 +224,7 @@ namespace Plms.Api.Controllers
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
             if (!safetyCheck.IsSafe)
             {
-                return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
+                return BadRequest(new { success = false, error = "Final safety check failed.", code = "safety_check_failed", details = safetyCheck });
             }
 
             var snapshotError = CaptureSnapshot(pi);
@@ -275,9 +275,9 @@ namespace Plms.Api.Controllers
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
             if (!safetyCheck.IsSafe)
             {
-                Audit("PrintIntentHandoffFailed", pi, $"Safety check failed: {string.Join(", ", safetyCheck.Messages)}", new { messages = safetyCheck.Messages });
+                Audit("PrintIntentHandoffFailed", pi, $"Safety check failed: {string.Join(", ", safetyCheck.Messages)}", new { messages = safetyCheck.Messages, issues = safetyCheck.Issues.Select(issue => issue.Code) });
                 await _context.SaveChangesAsync();
-                return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
+                return BadRequest(new { success = false, error = "Final safety check failed.", code = "safety_check_failed", details = safetyCheck });
             }
 
             pi.Status = PrintIntentStatuses.ReadyForPrint;
@@ -308,7 +308,7 @@ namespace Plms.Api.Controllers
                 safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
                 if (!safetyCheck.IsSafe)
                 {
-                    return BadRequest(new { success = false, error = "Final safety check failed.", details = safetyCheck });
+                    return BadRequest(new { success = false, error = "Final safety check failed.", code = "safety_check_failed", details = safetyCheck });
                 }
 
                 var snapshotError = CaptureSnapshot(pi);

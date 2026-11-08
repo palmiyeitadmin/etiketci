@@ -118,6 +118,7 @@ namespace Plms.Api.DTOs.Template
         // Sprint 10 additions
         public Plms.Api.Models.Operational.ReadinessStatus ReadinessStatus { get; set; }
         public List<string> ReadinessErrors { get; set; } = new();
+        public List<Plms.Api.Models.Operational.CheckIssue> ReadinessIssues { get; set; } = new();
         public List<Plms.Api.Models.Operational.VariableResolutionDetail> VariableDetails { get; set; } = new();
     }
 

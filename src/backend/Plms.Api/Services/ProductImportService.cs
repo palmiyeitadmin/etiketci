@@ -4,6 +4,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Import;
@@ -71,6 +72,7 @@ namespace Plms.Api.Services
                 EntityId = session.Id.ToString(),
                 EntityType = "ImportSession",
                 UserId = createdBy,
+                Metadata = AuditWriter.Json(new { fileName, rows = session.TotalRows }),
                 Details = $"Import session created for file '{fileName}' with {session.TotalRows} rows.",
                 CorrelationId = Guid.NewGuid().ToString("N")
             });
@@ -195,6 +197,7 @@ namespace Plms.Api.Services
                 EntityId = session.Id.ToString(),
                 EntityType = "ImportSession",
                 UserId = actor,
+                Metadata = AuditWriter.Json(new { imported = importedCount, updated = updatedCount }),
                 Details = $"Import session committed. Imported: {importedCount}, Updated: {updatedCount}.",
                 CorrelationId = correlationId
             });
@@ -285,7 +288,8 @@ namespace Plms.Api.Services
                     {
                         RowNumber = rowNum,
                         Sku = row.Sku,
-                        ErrorType = "InvalidReference",
+                        ErrorType = "UnknownCategory",
+                        Value = row.CategoryCode,
                         Message = $"Category Code '{row.CategoryCode}' not found."
                     });
                     hasError = true;
@@ -297,7 +301,8 @@ namespace Plms.Api.Services
                     {
                         RowNumber = rowNum,
                         Sku = row.Sku,
-                        ErrorType = "InvalidReference",
+                        ErrorType = "UnknownVendor",
+                        Value = row.VendorCode,
                         Message = $"Vendor Code '{row.VendorCode}' not found."
                     });
                     hasError = true;

@@ -24,13 +24,13 @@ namespace Plms.Api.Services
             // 1. Lifecycle Check
             if (version.Status != TemplateStatus.Published && version.Status != TemplateStatus.Approved)
             {
-                readiness.Errors.Add($"Template version is in '{version.Status}' state. Only Approved or Published versions can be used for print intents.");
+                readiness.AddError("version_not_printable", $"Template version is in '{version.Status}' state. Only Approved or Published versions can be used for print intents.", new() { ["status"] = version.Status.ToString() });
             }
 
             // 2. Product Context Check
             if (product == null)
             {
-                readiness.Errors.Add("Product context is missing. Print intents require a specific product.");
+                readiness.AddError("product_missing", "Product context is missing. Print intents require a specific product.");
             }
             else
             {
@@ -38,7 +38,7 @@ namespace Plms.Api.Services
                 var isLinked = await _context.ProductTemplates.AnyAsync(pt => pt.ProductId == product.Id && pt.TemplateId == version.TemplateId);
                 if (!isLinked)
                 {
-                    readiness.Warnings.Add("Product is not explicitly linked to this template in the catalog.");
+                    readiness.AddWarning("product_not_linked", "Product is not explicitly linked to this template in the catalog.");
                 }
             }
 
@@ -48,11 +48,11 @@ namespace Plms.Api.Services
             {
                 if (v.Status == VariableStatus.Missing)
                 {
-                    readiness.Errors.Add($"Missing required data for variable: {v.Name}");
+                    readiness.AddError("variable_missing", $"Missing required data for variable: {v.Name}", new() { ["name"] = v.Name });
                 }
                 else if (v.Status == VariableStatus.Unsupported)
                 {
-                    readiness.Errors.Add($"Unsupported variable placeholder: {v.Name}");
+                    readiness.AddError("variable_unsupported", $"Unsupported variable placeholder: {v.Name}", new() { ["name"] = v.Name });
                 }
             }
 

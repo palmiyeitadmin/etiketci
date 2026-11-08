@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.DTOs.ProductCategory;
 
@@ -85,6 +86,7 @@ namespace Plms.Api.Controllers
                 Action = "CategoryCreated",
                 EntityId = cat.Id.ToString(),
                 EntityType = "ProductCategory",
+                Metadata = AuditWriter.Json(new { name = cat.Name, code = cat.Code }),
                 Details = $"Category '{cat.Name}' ({cat.Code}) created."
             });
 
@@ -123,6 +125,7 @@ namespace Plms.Api.Controllers
                 Action = "CategoryUpdated",
                 EntityId = cat.Id.ToString(),
                 EntityType = "ProductCategory",
+                Metadata = AuditWriter.Json(new { name = cat.Name, code = cat.Code, active = cat.IsActive }),
                 Details = $"Category '{cat.Name}' updated. IsActive: {cat.IsActive}"
             });
 
@@ -157,6 +160,7 @@ namespace Plms.Api.Controllers
                 Action = "CategoryDeleted",
                 EntityId = id.ToString(),
                 EntityType = "ProductCategory",
+                Metadata = AuditWriter.Json(new { name = cat.Name, code = cat.Code }),
                 Details = $"Category '{cat.Name}' ({cat.Code}) deleted."
             });
 

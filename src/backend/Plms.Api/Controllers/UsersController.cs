@@ -135,6 +135,7 @@ namespace Plms.Api.Controllers
                 EntityId = user.Id.ToString(),
                 EntityType = "User",
                 UserId = actor,
+                Metadata = AuditWriter.Json(new { email = user.Email, roles = roleNames, mode = mode.ToString() }),
                 Details = $"User {user.Email} created with roles: {string.Join(", ", roleNames)}. Mode: {mode}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -221,6 +222,7 @@ namespace Plms.Api.Controllers
                 EntityId = user.Id.ToString(),
                 EntityType = "User",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { email = user.Email, fromRoles = currentRoles, toRoles = requestedRoleNames, active = user.IsActive }),
                 Details = $"User updated. Roles: [{string.Join(", ", currentRoles)}] -> [{string.Join(", ", requestedRoleNames)}], Active: {user.IsActive}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -263,6 +265,7 @@ namespace Plms.Api.Controllers
                     EntityId = user.Id.ToString(),
                     EntityType = "User",
                     UserId = User.Identity?.Name ?? "System",
+                    Metadata = AuditWriter.Json(new { email = user.Email }),
                     Details = $"Setup/reset link issued for {user.Email}.",
                     CorrelationId = HttpContext.TraceIdentifier
                 });
@@ -303,6 +306,7 @@ namespace Plms.Api.Controllers
                 EntityId = user.Id.ToString(),
                 EntityType = "User",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { email = user.Email }),
                 Details = $"Temporary password issued for {user.Email}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -347,6 +351,7 @@ namespace Plms.Api.Controllers
                 EntityId = user.Id.ToString(),
                 EntityType = "User",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { email = user.Email }),
                 Details = $"User {user.Email} active state changed to {active}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });

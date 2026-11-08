@@ -171,6 +171,7 @@ namespace Plms.Api.Controllers
                 EntityId = p.Id.ToString(),
                 EntityType = "Product",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { sku = p.Sku, name = p.Name }),
                 Details = $"Product {p.Sku} created.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -209,6 +210,7 @@ namespace Plms.Api.Controllers
                 EntityId = p.Id.ToString(),
                 EntityType = "Product",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { sku = p.Sku, name = p.Name }),
                 Details = $"Product {p.Sku} updated.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -327,6 +329,7 @@ namespace Plms.Api.Controllers
                 EntityId = id.ToString(),
                 EntityType = "Product",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { sku = p.Sku, name = p.Name }),
                 Details = hasPrintHistory
                     ? $"Product {p.Sku} has print history, so it was deactivated instead of deleted."
                     : $"Product {p.Sku} deleted.",

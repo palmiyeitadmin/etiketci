@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.DTOs.Auth;
 using Plms.Api.Security;
@@ -80,7 +81,8 @@ namespace Plms.Api.Controllers
             }
 
             await ReplacePermissionsAsync(role.Id, request.PermissionKeys);
-            await WriteAuditAsync("RoleCreated", role.Id.ToString(), $"Role {role.Name} created with permissions: {string.Join(", ", request.PermissionKeys)}.");
+            await WriteAuditAsync("RoleCreated", role.Id.ToString(), $"Role {role.Name} created with permissions: {string.Join(", ", request.PermissionKeys)}.",
+                new { name = role.Name, permissions = request.PermissionKeys });
 
             return Ok(new { success = true, data = await MapRoleAsync(role) });
         }
@@ -134,7 +136,13 @@ namespace Plms.Api.Controllers
             await WriteAuditAsync(
                 "RoleUpdated",
                 role.Id.ToString(),
-                $"Role {role.Name} updated. Permissions: [{string.Join(", ", oldPermissions)}] -> [{string.Join(", ", request.PermissionKeys.OrderBy(item => item))}].");
+                $"Role {role.Name} updated. Permissions: [{string.Join(", ", oldPermissions)}] -> [{string.Join(", ", request.PermissionKeys.OrderBy(item => item))}].",
+                new
+                {
+                    name = role.Name,
+                    added = request.PermissionKeys.Except(oldPermissions).OrderBy(item => item),
+                    removed = oldPermissions.Except(request.PermissionKeys).OrderBy(item => item),
+                });
 
             return Ok(new { success = true, data = await MapRoleAsync(role) });
         }
@@ -168,7 +176,7 @@ namespace Plms.Api.Controllers
             }
 
             await _roleManager.DeleteAsync(role);
-            await WriteAuditAsync("RoleDeleted", role.Id.ToString(), $"Role {role.Name} deleted.");
+            await WriteAuditAsync("RoleDeleted", role.Id.ToString(), $"Role {role.Name} deleted.", new { name = role.Name });
 
             return Ok(new { success = true });
         }
@@ -247,7 +255,7 @@ namespace Plms.Api.Controllers
             };
         }
 
-        private async Task WriteAuditAsync(string action, string entityId, string details)
+        private async Task WriteAuditAsync(string action, string entityId, string details, object? parameters = null)
         {
             _context.AuditLogs.Add(new AuditLog
             {
@@ -258,6 +266,7 @@ namespace Plms.Api.Controllers
                 EntityType = "Role",
                 UserId = User.Identity?.Name ?? "System",
                 Details = details,
+                Metadata = parameters == null ? string.Empty : AuditWriter.Json(parameters),
                 CorrelationId = HttpContext.TraceIdentifier
             });
             await _context.SaveChangesAsync();

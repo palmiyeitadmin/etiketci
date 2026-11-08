@@ -315,6 +315,7 @@ namespace Plms.Api.Controllers
                 EntityId = request.Id.ToString(),
                 EntityType = "TemplateRestorationRequest",
                 UserId = request.RequestedBy,
+                Metadata = AuditWriter.Json(new { code = version.Template?.Code, version = version.VersionNumber }),
                 Details = $"Restoration requested for template {version.Template?.Code} version {version.VersionNumber}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -466,6 +467,7 @@ namespace Plms.Api.Controllers
                 EntityId = clonedTemplate.Id.ToString(),
                 EntityType = "LabelTemplate",
                 UserId = actor,
+                Metadata = AuditWriter.Json(new { code = generatedCode, sourceCode = sourceTemplate.Code, sourceVersion = sourceVersion.VersionNumber }),
                 Details = $"Template {generatedCode} cloned from {sourceTemplate.Code} v{sourceVersion.VersionNumber}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -520,6 +522,7 @@ namespace Plms.Api.Controllers
                 EntityId = template.Id.ToString(),
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { oldName, name = template.Name, descriptionChanged = oldDescription != template.Description }),
                 Details = $"Template metadata updated. Name: '{oldName}' -> '{template.Name}'. DescriptionChanged={oldDescription != template.Description}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -563,6 +566,7 @@ namespace Plms.Api.Controllers
                     EntityId = id.ToString(),
                     EntityType = "LabelTemplate",
                     UserId = User.Identity?.Name ?? "System",
+                    Metadata = AuditWriter.Json(new { code = template.Code }),
                     Details = $"Template {template.Code} marked as favorite.",
                     CorrelationId = HttpContext.TraceIdentifier
                 });
@@ -601,6 +605,7 @@ namespace Plms.Api.Controllers
                     EntityId = id.ToString(),
                     EntityType = "LabelTemplate",
                     UserId = User.Identity?.Name ?? "System",
+                    Metadata = AuditWriter.Json(new { code = template.Code }),
                     Details = $"Template {template.Code} removed from favorites.",
                     CorrelationId = HttpContext.TraceIdentifier
                 });
@@ -649,6 +654,7 @@ namespace Plms.Api.Controllers
                 EntityId = id.ToString(),
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = template.Code }),
                 Details = $"Template {template.Code} archived.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -706,6 +712,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = template.Code, version = version.VersionNumber }),
                 Details = $"Template {template.Code} version {version.VersionNumber} archived.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -743,6 +750,7 @@ namespace Plms.Api.Controllers
                 EntityId = id.ToString(),
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = template.Code }),
                 Details = $"Template {template.Code} restored from archive.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -780,6 +788,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { version = version.VersionNumber, from = oldStatus.ToString(), to = version.Status.ToString() }),
                 Details = $"Status changed from {oldStatus} to {version.Status}",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -833,6 +842,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { version = version.VersionNumber, from = oldStatus.ToString(), to = version.Status.ToString(), comments = dto.Comments, selfApproval = dto.Approve && isOwnWork }),
                 Details = $"Status changed from {oldStatus} to {version.Status}. Comments: {dto.Comments}" + (dto.Approve && isOwnWork ? " [Self-approval by administrator]" : string.Empty),
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -880,6 +890,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { version = version.VersionNumber }),
                 Details = $"Version {version.VersionNumber} published.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -918,6 +929,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { version = version.VersionNumber, layoutChanged, notesChanged }),
                 Details = $"Draft version {version.VersionNumber} saved. LayoutChanged={layoutChanged}; ChangeNotesChanged={notesChanged}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -970,6 +982,7 @@ namespace Plms.Api.Controllers
                 EntityId = newVersion.Id.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { version = newVersion.VersionNumber, sourceVersion = sourceVersion.VersionNumber }),
                 Details = $"Draft V{newVersion.VersionNumber} created from V{sourceVersion.VersionNumber}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -1061,6 +1074,7 @@ namespace Plms.Api.Controllers
                 Orientation = (previewModel?.Dimensions.WidthMm ?? 0) > (previewModel?.Dimensions.HeightMm ?? 0) ? "landscape" : "portrait",
                 ReadinessStatus = readiness.Status,
                 ReadinessErrors = readiness.Errors,
+                ReadinessIssues = readiness.Issues,
                 VariableDetails = variableDetails
             };
 
@@ -1275,6 +1289,7 @@ namespace Plms.Api.Controllers
                 EntityId = request.Id.ToString(),
                 EntityType = "TemplateRestorationRequest",
                 UserId = request.ReviewedBy ?? "System",
+                Metadata = AuditWriter.Json(new { code = request.Template?.Code, version = request.TemplateVersion?.VersionNumber, comments = dto.Comments }),
                 Details = $"Restoration request reviewed for template {request.Template?.Code} version {request.TemplateVersion?.VersionNumber}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -1343,6 +1358,7 @@ namespace Plms.Api.Controllers
                 EntityId = id.ToString(),
                 EntityType = "LabelTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = t.Code }),
                 Details = $"Template {t.Code} deleted.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -1414,6 +1430,7 @@ namespace Plms.Api.Controllers
                 EntityId = versionId.ToString(),
                 EntityType = "LabelTemplateVersion",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = template.Code, version = version.VersionNumber }),
                 Details = $"Template {template.Code} version {version.VersionNumber} deleted.",
                 CorrelationId = HttpContext.TraceIdentifier
             });

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.DTOs.Vendor;
 
@@ -85,6 +86,7 @@ namespace Plms.Api.Controllers
                 Action = "VendorCreated",
                 EntityId = vendor.Id.ToString(),
                 EntityType = "Vendor",
+                Metadata = AuditWriter.Json(new { name = vendor.Name, code = vendor.Code }),
                 Details = $"Vendor '{vendor.Name}' ({vendor.Code}) created."
             });
 
@@ -123,6 +125,7 @@ namespace Plms.Api.Controllers
                 Action = "VendorUpdated",
                 EntityId = vendor.Id.ToString(),
                 EntityType = "Vendor",
+                Metadata = AuditWriter.Json(new { name = vendor.Name, code = vendor.Code, active = vendor.IsActive }),
                 Details = $"Vendor '{vendor.Name}' updated. IsActive: {vendor.IsActive}"
             });
 
@@ -157,6 +160,7 @@ namespace Plms.Api.Controllers
                 Action = "VendorDeleted",
                 EntityId = id.ToString(),
                 EntityType = "Vendor",
+                Metadata = AuditWriter.Json(new { name = vendor.Name, code = vendor.Code }),
                 Details = $"Vendor '{vendor.Name}' ({vendor.Code}) deleted."
             });
 

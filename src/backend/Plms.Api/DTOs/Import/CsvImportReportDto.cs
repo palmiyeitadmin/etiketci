@@ -12,7 +12,10 @@ namespace Plms.Api.DTOs.Import
     {
         public int RowNumber { get; set; }
         public string Sku { get; set; } = string.Empty;
-        public string ErrorType { get; set; } = string.Empty; // e.g., "DuplicateSku", "InvalidCategory", "Malformed"
+        /// <summary>Code the UI translates: Malformed, DuplicateInFile, DuplicateInDb, UnknownCategory, UnknownVendor.</summary>
+        public string ErrorType { get; set; } = string.Empty;
+        /// <summary>The offending value (category or vendor code), when there is one.</summary>
+        public string? Value { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 

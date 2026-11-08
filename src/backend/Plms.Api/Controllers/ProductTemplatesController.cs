@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Operational;
@@ -99,6 +100,7 @@ namespace Plms.Api.Controllers
                 EntityId = pt.Id.ToString(),
                 EntityType = "ProductTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = template.Code, sku = product.Sku, isDefault = pt.IsDefault }),
                 Details = $"Template {template.Code} linked to product {product.Sku}. Default: {pt.IsDefault}",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -132,6 +134,8 @@ namespace Plms.Api.Controllers
             var pt = await _context.ProductTemplates.FindAsync(id);
             if (pt == null || pt.ProductId != productId) return NotFound(new { success = false, error = "Link not found." });
 
+            var linkedTemplateCode = await _context.Templates.Where(t => t.Id == pt.TemplateId).Select(t => t.Code).FirstOrDefaultAsync();
+            var linkedProductSku = await _context.Products.Where(p => p.Id == productId).Select(p => p.Sku).FirstOrDefaultAsync();
             _context.ProductTemplates.Remove(pt);
 
             _context.AuditLogs.Add(new AuditLog
@@ -142,6 +146,7 @@ namespace Plms.Api.Controllers
                 EntityId = id.ToString(),
                 EntityType = "ProductTemplate",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { code = linkedTemplateCode, sku = linkedProductSku }),
                 Details = $"Link removed between Product {productId} and Template {pt.TemplateId}",
                 CorrelationId = HttpContext.TraceIdentifier
             });

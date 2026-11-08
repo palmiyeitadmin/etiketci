@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Plms.Api.Data;
+using Plms.Api.Services;
 using Plms.Api.Domain.Entities;
 using Plms.Api.DTOs.TemplateCategory;
 
@@ -115,6 +116,7 @@ namespace Plms.Api.Controllers
                 EntityId = category.Id.ToString(),
                 EntityType = "TemplateCategory",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { name = category.Name, code = category.Code }),
                 Details = $"Template category '{category.Name}' ({category.Code}) created.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -156,6 +158,7 @@ namespace Plms.Api.Controllers
                 EntityId = category.Id.ToString(),
                 EntityType = "TemplateCategory",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { name = category.Name, code = category.Code, active = category.IsActive }),
                 Details = $"Template category '{category.Name}' updated. IsActive={category.IsActive}.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
@@ -200,6 +203,7 @@ namespace Plms.Api.Controllers
                 EntityId = category.Id.ToString(),
                 EntityType = "TemplateCategory",
                 UserId = User.Identity?.Name ?? "System",
+                Metadata = AuditWriter.Json(new { name = category.Name, code = category.Code }),
                 Details = $"Template category '{category.Name}' ({category.Code}) deleted.",
                 CorrelationId = HttpContext.TraceIdentifier
             });
