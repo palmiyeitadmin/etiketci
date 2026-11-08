@@ -88,7 +88,8 @@ function turkishAliasMatches(folded: string) {
   // Ordered: the first key listed for the matching word comes first in the results.
   const keys = new Set<string>();
   for (const alias of foldedAliases) {
-    if (alias.word.includes(folded) || (folded.length >= 3 && folded.includes(alias.word))) {
+    // Short alias words ("el", "su") would match inside unrelated queries ("cetvel"), so only longer ones match that way.
+    if (alias.word.includes(folded) || (folded.length >= 3 && alias.word.length >= 3 && folded.includes(alias.word))) {
       alias.keys.forEach((key) => keys.add(key));
     }
   }
@@ -122,13 +123,13 @@ export function searchPhosphorIcons(query: string, options: PhosphorIconSearchOp
   const aliasKeys = turkishAliasMatches(folded);
   if (options.turkishNames) {
     // Word starts only, so "ok" finds "Aşağı ok" but not "Kokteyl bardağı".
-    // Names that start with the query come first: typing "güneş paneli" puts "Güneş paneli" on top.
+    // Names whose first words are the query come first: "güneş paneli" puts "Güneş paneli" on top.
     const needle = ` ${folded.replace(/[^a-z0-9#@+]+/g, " ").trim()}`;
     if (needle.trim()) {
       const leading: string[] = [];
       const inner: string[] = [];
       getFoldedTurkishNames().forEach((name, key) => {
-        if (name.startsWith(needle)) leading.push(key);
+        if (name.startsWith(`${needle} `)) leading.push(key);
         else if (name.includes(needle)) inner.push(key);
       });
       const ordered = new Set([...leading, ...Array.from(aliasKeys), ...inner]);
