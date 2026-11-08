@@ -1,104 +1,20 @@
 import { DashboardFeedItem } from "@/types/dashboard";
 import { Locale } from "@/lib/i18n";
 
-export const auditActionLabels: Record<Locale, Record<string, string>> = {
-    tr: {
-        CategoryCreated: "Kategori oluşturuldu",
-        CategoryUpdated: "Kategori güncellendi",
-        CategoryDeleted: "Kategori silindi",
-        ImportSessionCreated: "İçe aktarma dosyası kontrol edildi",
-        ImportSessionCommitted: "Ürünler içe aktarıldı",
-        PrintIntentCreated: "Baskı talebi oluşturuldu",
-        PrintIntentHandoffConfirmed: "Baskıya hazır olarak onaylandı",
-        PrintIntentHandoffFailed: "Hazırlık kontrolü başarısız",
-        PrintIntentPdfDispatched: "Baskı PDF'i açıldı",
-        PrintIntentUserPrinted: "Etiketler basıldı",
-        PrintIntentFailed: "Baskı hatalı olarak işaretlendi",
-        PrintIntentCancelled: "Baskı talebi iptal edildi",
-        ProductCreated: "Ürün oluşturuldu",
-        ProductUpdated: "Ürün güncellendi",
-        ProductDeleted: "Ürün silindi",
-        ProductDeactivated: "Ürün pasife alındı",
-        ProductTemplateLinked: "Ürüne şablon bağlandı",
-        ProductTemplateUnlinked: "Ürünün şablon bağlantısı kaldırıldı",
-        TemplateApprovalRequested: "Taslak onaya gönderildi",
-        TemplateApproved: "Sürüm onaylandı",
-        TemplateRejected: "Sürüm reddedildi",
-        TemplatePublished: "Sürüm yayına alındı",
-        TemplateArchived: "Şablon arşivlendi",
-        TemplateVersionArchived: "Sürüm arşivlendi",
-        TemplateCategoryCreated: "Şablon kategorisi oluşturuldu",
-        TemplateCategoryUpdated: "Şablon kategorisi güncellendi",
-        TemplateCategoryDeleted: "Şablon kategorisi silindi",
-        TemplateCloned: "Şablon kopyalandı",
-        TemplateDeleted: "Şablon silindi",
-        TemplateVersionDeleted: "Taslak sürüm silindi",
-        TemplateDraftSaved: "Taslak kaydedildi",
-        TemplateRevisionCreated: "Yeni taslak oluşturuldu",
-        TemplateFavorited: "Şablon favorilere eklendi",
-        TemplateUnfavorited: "Şablon favorilerden çıkarıldı",
-        TemplateUpdated: "Şablon bilgileri güncellendi",
-        TemplateRestorationRequested: "Geri yükleme talebi oluşturuldu",
-        TemplateRestorationApproved: "Geri yükleme onaylandı",
-        TemplateRestorationRejected: "Geri yükleme reddedildi",
-        TemplateRestored: "Şablon geri yüklendi",
-        UserCreated: "Kullanıcı oluşturuldu",
-        UserUpdated: "Kullanıcı güncellendi",
-        UserPasswordResetIssued: "Parola sıfırlama gönderildi",
-        UserTemporaryPasswordIssued: "Geçici parola verildi",
-        VendorCreated: "Tedarikçi oluşturuldu",
-        VendorUpdated: "Tedarikçi güncellendi",
-        VendorDeleted: "Tedarikçi silindi",
-    },
-    en: {
-        CategoryCreated: "Category created",
-        CategoryUpdated: "Category updated",
-        CategoryDeleted: "Category deleted",
-        ImportSessionCreated: "Import file checked",
-        ImportSessionCommitted: "Products imported",
-        PrintIntentCreated: "Print request created",
-        PrintIntentHandoffConfirmed: "Marked ready to print",
-        PrintIntentHandoffFailed: "Readiness check failed",
-        PrintIntentPdfDispatched: "Print PDF opened",
-        PrintIntentUserPrinted: "Labels printed",
-        PrintIntentFailed: "Print marked as failed",
-        PrintIntentCancelled: "Print request cancelled",
-        ProductCreated: "Product created",
-        ProductUpdated: "Product updated",
-        ProductDeleted: "Product deleted",
-        ProductDeactivated: "Product deactivated",
-        ProductTemplateLinked: "Template linked to product",
-        ProductTemplateUnlinked: "Template unlinked from product",
-        TemplateApprovalRequested: "Draft submitted for review",
-        TemplateApproved: "Version approved",
-        TemplateRejected: "Version rejected",
-        TemplatePublished: "Version published",
-        TemplateArchived: "Template archived",
-        TemplateVersionArchived: "Version archived",
-        TemplateCategoryCreated: "Template category created",
-        TemplateCategoryUpdated: "Template category updated",
-        TemplateCategoryDeleted: "Template category deleted",
-        TemplateCloned: "Template cloned",
-        TemplateDeleted: "Template deleted",
-        TemplateVersionDeleted: "Draft version deleted",
-        TemplateDraftSaved: "Draft saved",
-        TemplateRevisionCreated: "New draft created",
-        TemplateFavorited: "Template added to favorites",
-        TemplateUnfavorited: "Template removed from favorites",
-        TemplateUpdated: "Template details updated",
-        TemplateRestorationRequested: "Restoration requested",
-        TemplateRestorationApproved: "Restoration approved",
-        TemplateRestorationRejected: "Restoration rejected",
-        TemplateRestored: "Template restored",
-        UserCreated: "User created",
-        UserUpdated: "User updated",
-        UserPasswordResetIssued: "Password reset issued",
-        UserTemporaryPasswordIssued: "Temporary password issued",
-        VendorCreated: "Vendor created",
-        VendorUpdated: "Vendor updated",
-        VendorDeleted: "Vendor deleted",
-    },
-};
+import { getText } from "@/lib/i18n/useText";
+import { humanizeCode } from "@/lib/i18n/text/audit";
+
+/** Human name of an audit action in the given language; unknown codes are humanized. */
+export function auditActionLabel(locale: Locale, action: string) {
+    const actions = getText("audit", locale).actions as Record<string, string>;
+    return actions[action] ?? humanizeCode(action);
+}
+
+/** Human name of an audited record type ("PrintIntent" → "Baskı talebi"). */
+export function auditEntityLabel(locale: Locale, entityType: string) {
+    const entities = getText("audit", locale).entities as Record<string, string>;
+    return entities[entityType] ?? humanizeCode(entityType);
+}
 
 /**
  * Backend audit details are English sentences. In Turkish, show only the codes they mention
@@ -113,13 +29,6 @@ function extractCodes(details?: string) {
         codes.add(match[2] ? `${match[1]} v${match[2]}` : match[1]);
     }
     return codes.size > 0 ? Array.from(codes).join(" · ") : undefined;
-}
-
-function humanizeAction(action: string) {
-    return action
-        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-        .replace(/[_-]+/g, " ")
-        .trim();
 }
 
 function formatDraftSavedSubtitle(locale: Locale, details?: string) {
@@ -166,7 +75,7 @@ export function localizeDashboardFeedItem(locale: Locale, item: DashboardFeedIte
     if (item.type === "audit") {
         return {
             ...item,
-            title: auditActionLabels[locale][item.title] || humanizeAction(item.title),
+            title: auditActionLabel(locale, item.title),
             subtitle: formatAuditSubtitle(locale, item),
             status: undefined,
         };
@@ -175,7 +84,7 @@ export function localizeDashboardFeedItem(locale: Locale, item: DashboardFeedIte
     if (item.type === "import") {
         return {
             ...item,
-            title: auditActionLabels[locale][item.title] || humanizeAction(item.title),
+            title: auditActionLabel(locale, item.title),
         };
     }
 

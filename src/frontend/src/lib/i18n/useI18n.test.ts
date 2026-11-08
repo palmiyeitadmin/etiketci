@@ -2,8 +2,8 @@ import { translate, translateKnownLabel, normalizeLocale } from "@/lib/i18n";
 
 describe("i18n helpers", () => {
   it("resolves translated messages with interpolation", () => {
-    expect(translate("tr", "dashboard.metrics.activeProducts", undefined, { count: 4 })).toBe("4 aktif");
-    expect(translate("en", "approvals.requestedByOn", undefined, { user: "Alex", date: "2025-01-01" })).toBe("Requested by Alex on 2025-01-01");
+    expect(translate("tr", "pulse.waitingApproval", undefined, { count: 4 })).toBe("4 onay bekliyor");
+    expect(translate("en", "pulse.waitingOutcome", undefined, { count: 2 })).toBe("2 prints awaiting outcome");
   });
 
   it("falls back to the provided fallback when a key is missing", () => {

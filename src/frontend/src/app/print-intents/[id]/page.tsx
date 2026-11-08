@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { auditActionLabels } from "@/lib/dashboard-feed";
+import { auditActionLabel } from "@/lib/dashboard-feed";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ArrowSquareOut, Check, X } from "@phosphor-icons/react";
@@ -370,7 +370,7 @@ export default function PrintIntentDetailPage() {
                   {auditLogs.map((log) => (
                     <li key={log.id} className="flex flex-col gap-0.5 px-5 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                       <div className="min-w-0">
-                        <div className="text-base text-ink">{auditActionLabels[locale][log.action] ?? log.action}</div>
+                        <div className="text-base text-ink">{auditActionLabel(locale, log.action)}</div>
                         {log.details ? <div className="text-sm text-ink-2">{log.details}</div> : null}
                       </div>
                       <div className="flex shrink-0 flex-col gap-0.5 sm:items-end">

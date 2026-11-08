@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { auditActionLabel, auditEntityLabel } from "@/lib/dashboard-feed";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n } from "@/lib/i18n";
@@ -13,74 +14,10 @@ import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { SlideOver } from "@/components/ui/SlideOver";
 
 // Audit codes come from the backend in English PascalCase; the Turkish UI names them in plain words.
-const actionLabelsTr: Record<string, string> = {
-    CategoryCreated: "Kategori oluşturuldu",
-    CategoryDeleted: "Kategori silindi",
-    CategoryUpdated: "Kategori güncellendi",
-    ImportSessionCommitted: "CSV içe aktarımı kaydedildi",
-    ImportSessionCreated: "CSV dosyası kontrol edildi",
-    PrintIntentCancelled: "Baskı talebi iptal edildi",
-    PrintIntentCreated: "Baskı talebi oluşturuldu",
-    PrintIntentFailed: "Baskı başarısız",
-    PrintIntentHandoffConfirmed: "Baskıya gönderim onaylandı",
-    PrintIntentHandoffFailed: "Baskıya gönderim başarısız",
-    PrintIntentPdfDispatched: "Baskı PDF'i açıldı",
-    PrintIntentUserPrinted: "Baskı tamamlandı",
-    ProductCreated: "Ürün oluşturuldu",
-    ProductTemplateLinked: "Şablon ürüne bağlandı",
-    ProductTemplateUnlinked: "Şablon bağlantısı kaldırıldı",
-    ProductUpdated: "Ürün güncellendi",
-    TemplateApprovalRequested: "Şablon onaya gönderildi",
-    TemplateArchived: "Şablon arşivlendi",
-    TemplateCategoryCreated: "Şablon kategorisi oluşturuldu",
-    TemplateCategoryDeleted: "Şablon kategorisi silindi",
-    TemplateCategoryUpdated: "Şablon kategorisi güncellendi",
-    TemplateCloned: "Şablon kopyalandı",
-    TemplateDeleted: "Şablon silindi",
-    TemplateDraftSaved: "Taslak kaydedildi",
-    TemplateFavorited: "Şablon favorilere eklendi",
-    TemplatePublished: "Şablon yayınlandı",
-    TemplateRestorationRequested: "Geri yükleme istendi",
-    TemplateRestored: "Şablon geri yüklendi",
-    TemplateRevisionCreated: "Yeni taslak oluşturuldu",
-    TemplateUnfavorited: "Şablon favorilerden çıkarıldı",
-    TemplateUpdated: "Şablon güncellendi",
-    TemplateVersionArchived: "Sürüm arşivlendi",
-    TemplateVersionDeleted: "Sürüm silindi",
-    UserCreated: "Kullanıcı oluşturuldu",
-    UserPasswordResetIssued: "Kurulum bağlantısı oluşturuldu",
-    UserTemporaryPasswordIssued: "Geçici parola atandı",
-    UserUpdated: "Kullanıcı güncellendi",
-    VendorCreated: "Tedarikçi oluşturuldu",
-    VendorDeleted: "Tedarikçi silindi",
-    VendorUpdated: "Tedarikçi güncellendi",
-};
-
-const entityLabelsTr: Record<string, string> = {
-    ImportSession: "CSV içe aktarımı",
-    LabelTemplate: "Şablon",
-    LabelTemplateVersion: "Şablon sürümü",
-    PrintIntent: "Baskı talebi",
-    Product: "Ürün",
-    ProductCategory: "Kategori",
-    ProductTemplate: "Ürün şablonu",
-    Role: "Rol",
-    TemplateCategory: "Şablon kategorisi",
-    TemplateRestorationRequest: "Geri yükleme talebi",
-    User: "Kullanıcı",
-    Vendor: "Tedarikçi",
-};
-
-/** "PrintIntentUserPrinted" → "Print intent user printed" for codes without a translation. */
-function humanize(code: string) {
-    const words = code.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
-    return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 export default function AuditLogsPage() {
     const { formatDateTime, locale } = useI18n();
-    const actionLabel = (code: string) => (locale === "tr" ? actionLabelsTr[code] : undefined) ?? humanize(code);
-    const entityLabel = (code: string) => (locale === "tr" ? entityLabelsTr[code] : undefined) ?? humanize(code);
+    const actionLabel = (code: string) => auditActionLabel(locale, code);
+    const entityLabel = (code: string) => auditEntityLabel(locale, code);
     const [logs, setLogs] = useState<AuditLogDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<AuditLogDto | null>(null);
