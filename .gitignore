@@ -49,3 +49,6 @@ git_status_full.txt
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Golden image test output on mismatch
+src/backend/Plms.Tests/Golden/_actual/

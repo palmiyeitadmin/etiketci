@@ -18,67 +18,100 @@ namespace Plms.Api.Services
 
         /// <summary>Renders the label with a proof watermark (for versions that are not approved for production).</summary>
         byte[] GeneratePdf(CanonicalLabelModel model, string? proofWatermark);
+
+        /// <summary>Renders <paramref name="copies"/> identical pages, one label per page (the printer's roll).</summary>
+        byte[] GeneratePdf(CanonicalLabelModel model, int copies, string? proofWatermark);
+
+        /// <summary>Renders the label as PNG images (one per page) from the same document as the PDF. Used by tests and checks.</summary>
+        IReadOnlyList<byte[]> GenerateImages(CanonicalLabelModel model, int dpi = 300, string? proofWatermark = null);
     }
 
     public class LabelRenderService : ILabelRenderService
     {
         private readonly ApplicationDbContext? _dbContext;
 
+        /// <summary>Upper bound for one print job; larger runs should be split.</summary>
+        public const int MaxCopies = 2000;
+
         public LabelRenderService(ApplicationDbContext? dbContext = null)
         {
             _dbContext = dbContext;
             QuestPDF.Settings.License = LicenseType.Community;
+            LabelFonts.EnsureRegistered();
         }
 
-        public byte[] GeneratePdf(CanonicalLabelModel model) => GeneratePdf(model, null);
+        public byte[] GeneratePdf(CanonicalLabelModel model) => GeneratePdf(model, 1, null);
 
-        public byte[] GeneratePdf(CanonicalLabelModel model, string? proofWatermark)
+        public byte[] GeneratePdf(CanonicalLabelModel model, string? proofWatermark) => GeneratePdf(model, 1, proofWatermark);
+
+        public byte[] GeneratePdf(CanonicalLabelModel model, int copies, string? proofWatermark)
+        {
+            return ComposeDocument(model, copies, proofWatermark).GeneratePdf();
+        }
+
+        public IReadOnlyList<byte[]> GenerateImages(CanonicalLabelModel model, int dpi = 300, string? proofWatermark = null)
+        {
+            var settings = new ImageGenerationSettings { ImageFormat = ImageFormat.Png, RasterDpi = dpi };
+            return ComposeDocument(model, 1, proofWatermark).GenerateImages(settings).ToList();
+        }
+
+        /// <summary>The single place where a label becomes a document, so PDF and images can never drift apart.</summary>
+        private IDocument ComposeDocument(CanonicalLabelModel model, int copies, string? proofWatermark)
+        {
+            if (copies < 1 || copies > MaxCopies)
+            {
+                throw new ArgumentOutOfRangeException(nameof(copies), copies, $"Copies must be between 1 and {MaxCopies}.");
+            }
+
+            return Document.Create(container =>
+            {
+                for (var copy = 0; copy < copies; copy++)
+                {
+                    container.Page(page => ComposePage(page, model, proofWatermark));
+                }
+            });
+        }
+
+        private void ComposePage(PageDescriptor page, CanonicalLabelModel model, string? proofWatermark)
         {
             var pageWidthMm = model.Dimensions.WidthMm;
             var pageHeightMm = model.Dimensions.HeightMm;
 
-            var document = Document.Create(container =>
+            page.Size(pageWidthMm, pageHeightMm, Unit.Millimetre);
+            page.Margin(0);
+            page.PageColor(Colors.White);
+            page.DefaultTextStyle(style => style.FontFamily(LabelFonts.DefaultFamily));
+
+            page.Content().Layers(layers =>
             {
-                container.Page(page =>
+                layers.PrimaryLayer()
+                    .Width(pageWidthMm, Unit.Millimetre)
+                    .Height(pageHeightMm, Unit.Millimetre);
+
+                foreach (var element in model.Elements.Where(element => element.Visible != false))
                 {
-                    page.Size(pageWidthMm, pageHeightMm, Unit.Millimetre);
-                    page.Margin(0);
-                    page.PageColor(Colors.White);
-
-                    page.Content().Layers(layers =>
-                    {
-                        layers.PrimaryLayer()
-                            .Width(pageWidthMm, Unit.Millimetre)
-                            .Height(pageHeightMm, Unit.Millimetre);
-
-                        foreach (var element in model.Elements.Where(element => element.Visible != false))
-                        {
-                            layers.Layer()
-                                .Unconstrained()
-                                .TranslateX(element.XMm, Unit.Millimetre)
-                                .TranslateY(element.YMm, Unit.Millimetre)
-                                .Width(element.WidthMm, Unit.Millimetre)
-                                .Height(element.HeightMm, Unit.Millimetre)
-                                .Element(container => RenderRotatedElement(container, element));
-                        }
-                    });
-
-                    if (!string.IsNullOrWhiteSpace(proofWatermark))
-                    {
-                        var fontSize = Math.Clamp(Math.Min(pageWidthMm, pageHeightMm) * 0.9f, 6f, 28f);
-                        page.Foreground()
-                            .AlignCenter()
-                            .AlignMiddle()
-                            .Rotate(-20)
-                            .Text(proofWatermark)
-                            .FontSize(fontSize)
-                            .FontColor("#80DC2626")
-                            .SemiBold();
-                    }
-                });
+                    layers.Layer()
+                        .Unconstrained()
+                        .TranslateX(element.XMm, Unit.Millimetre)
+                        .TranslateY(element.YMm, Unit.Millimetre)
+                        .Width(element.WidthMm, Unit.Millimetre)
+                        .Height(element.HeightMm, Unit.Millimetre)
+                        .Element(container => RenderRotatedElement(container, element));
+                }
             });
 
-            return document.GeneratePdf();
+            if (!string.IsNullOrWhiteSpace(proofWatermark))
+            {
+                var fontSize = Math.Clamp(Math.Min(pageWidthMm, pageHeightMm) * 0.9f, 6f, 28f);
+                page.Foreground()
+                    .AlignCenter()
+                    .AlignMiddle()
+                    .Rotate(-20)
+                    .Text(proofWatermark)
+                    .FontSize(fontSize)
+                    .FontColor("#80DC2626")
+                    .SemiBold();
+            }
         }
 
         private void RenderRotatedElement(IContainer container, LabelElement element)
@@ -140,7 +173,7 @@ namespace Plms.Api.Services
             {
                 var span = text.Span(element.Content ?? string.Empty)
                     .FontSize(element.FontSizePt ?? 12)
-                    .FontFamily(string.IsNullOrWhiteSpace(element.Font) ? Fonts.Arial : element.Font)
+                    .FontFamily(LabelFonts.Resolve(element.Font))
                     .FontColor(string.IsNullOrWhiteSpace(element.Fill) ? "#000000" : element.Fill)
                     .LineHeight(1f);
 

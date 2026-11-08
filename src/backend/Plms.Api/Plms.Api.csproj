@@ -25,4 +25,11 @@
     <PackageReference Include="ZXing.Net.Bindings.SkiaSharp" Version="0.16.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Fonts used by the PDF renderer; see Services/LabelFonts.cs. -->
+    <None Update="Assets\Fonts\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
