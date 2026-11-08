@@ -89,7 +89,9 @@ function turkishAliasMatches(folded: string) {
   const keys = new Set<string>();
   for (const alias of foldedAliases) {
     // Short alias words ("el", "su") would match inside unrelated queries ("cetvel"), so only longer ones match that way.
-    if (alias.word.includes(folded) || (folded.length >= 3 && alias.word.length >= 3 && folded.includes(alias.word))) {
+    // The query must start a word of the alias ("ok" finds "ok", not "avokado"; "kar" finds "kar", not "yukarı").
+    const startsAWord = ` ${alias.word}`.includes(` ${folded}`);
+    if (startsAWord || (folded.length >= 3 && alias.word.length >= 3 && folded.includes(alias.word))) {
       alias.keys.forEach((key) => keys.add(key));
     }
   }

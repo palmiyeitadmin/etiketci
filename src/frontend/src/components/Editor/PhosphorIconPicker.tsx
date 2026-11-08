@@ -150,7 +150,7 @@ function IconGrid({
             disabled={insertingKey === item.key}
           >
             <PhosphorIconPreview iconKey={item.key} size={24} />
-            <span className="w-full truncate text-center text-xs">{label}</span>
+            <span className="line-clamp-2 w-full break-words text-center text-xs leading-4">{label}</span>
           </button>
         );
       })}

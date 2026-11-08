@@ -67,4 +67,12 @@ describe("Turkish icon search", () => {
     const missing = Object.values(turkishIconAliases).flat().filter((key) => !known.has(key));
     expect(missing).toEqual([]);
   });
+
+  it("matches Turkish words at the start of a word", () => {
+    const ok = searchPhosphorIcons("ok", { turkishNames: true }).map((item) => item.key);
+    expect(ok).not.toContain("Avocado");
+    const kar = searchPhosphorIcons("kar", { turkishNames: true }).map((item) => item.key);
+    expect(kar).toContain("Snowflake");
+    expect(kar.slice(0, 5)).not.toContain("ArrowUp");
+  });
 });
