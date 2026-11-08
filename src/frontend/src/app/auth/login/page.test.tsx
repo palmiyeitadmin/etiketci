@@ -40,7 +40,7 @@ describe("LoginPage", () => {
   it("renders the showcase panel and the login form", () => {
     const { getByText, getByLabelText, getByRole } = render(<LoginPage />);
 
-    expect(getByText("Ürün etiketlerini tasarlayın, onaylatın ve basın")).not.toBeNull();
+    expect(getByText("Profil, aksesuar ve koli etiketlerini tek yerden yönetin")).not.toBeNull();
     expect(getByRole("heading", { name: "Giriş yap" })).not.toBeNull();
     expect(getByRole("button", { name: "Giriş yap" })).not.toBeNull();
     expect(getByLabelText("E-posta")).not.toBeNull();

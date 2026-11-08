@@ -52,7 +52,7 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null)
             {
-                return NotFound(new { success = false, error = "User not found." });
+                return NotFound(ApiError.Of("user_not_found", "User not found."));
             }
 
             return Ok(new { success = true, data = await MapUserAsync(user) });
@@ -64,30 +64,30 @@ namespace Plms.Api.Controllers
         {
             if (!request.RoleIds.Any())
             {
-                return BadRequest(new { success = false, error = "At least one role must be assigned." });
+                return BadRequest(ApiError.Of("role_required", "At least one role must be assigned."));
             }
 
             var roles = await _context.Roles.Where(role => request.RoleIds.Contains(role.Id)).ToListAsync();
             if (roles.Count != request.RoleIds.Distinct().Count())
             {
-                return BadRequest(new { success = false, error = "One or more selected roles do not exist." });
+                return BadRequest(ApiError.Of("roles_not_found", "One or more selected roles do not exist."));
             }
 
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
             {
-                return BadRequest(new { success = false, error = "A user with this email already exists." });
+                return BadRequest(ApiError.Of("user_email_exists", "A user with this email already exists."));
             }
 
             var mode = request.Mode.Trim().ToLowerInvariant();
             if (mode != "invite" && mode != "direct")
             {
-                return BadRequest(new { success = false, error = "Invalid onboarding mode." });
+                return BadRequest(ApiError.Of("invalid_onboarding_mode", "Invalid onboarding mode."));
             }
 
             if (mode == "direct" && string.IsNullOrWhiteSpace(request.Password))
             {
-                return BadRequest(new { success = false, error = "Password is required for direct onboarding." });
+                return BadRequest(ApiError.Of("password_required", "Password is required for direct onboarding."));
             }
 
             var actor = User.Identity?.Name ?? "System";
@@ -116,7 +116,7 @@ namespace Plms.Api.Controllers
 
             if (!result.Succeeded)
             {
-                return BadRequest(new { success = false, errors = result.Errors.Select(error => error.Description) });
+                return BadRequest(ApiError.Identity(result.Errors));
             }
 
             var roleNames = roles.Select(role => role.Name!).ToArray();
@@ -124,7 +124,7 @@ namespace Plms.Api.Controllers
             if (!addRolesResult.Succeeded)
             {
                 await _userManager.DeleteAsync(user);
-                return BadRequest(new { success = false, errors = addRolesResult.Errors.Select(error => error.Description) });
+                return BadRequest(ApiError.Identity(addRolesResult.Errors));
             }
 
             _context.AuditLogs.Add(new AuditLog
@@ -158,18 +158,18 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null)
             {
-                return NotFound(new { success = false, error = "User not found." });
+                return NotFound(ApiError.Of("user_not_found", "User not found."));
             }
 
             if (!request.RoleIds.Any())
             {
-                return BadRequest(new { success = false, error = "At least one role must be assigned." });
+                return BadRequest(ApiError.Of("role_required", "At least one role must be assigned."));
             }
 
             var roles = await _context.Roles.Where(role => request.RoleIds.Contains(role.Id)).ToListAsync();
             if (roles.Count != request.RoleIds.Distinct().Count())
             {
-                return BadRequest(new { success = false, error = "One or more selected roles do not exist." });
+                return BadRequest(ApiError.Of("roles_not_found", "One or more selected roles do not exist."));
             }
 
             var currentRoles = await _userManager.GetRolesAsync(user);
@@ -180,7 +180,7 @@ namespace Plms.Api.Controllers
                 var otherActiveAdmins = await CountOtherActiveAdminsAsync(user.Id);
                 if (otherActiveAdmins == 0)
                 {
-                    return BadRequest(new { success = false, error = "The last active admin cannot be deactivated or stripped of Admin role." });
+                    return BadRequest(ApiError.Of("last_admin_change", "The last active admin cannot be deactivated or stripped of Admin role."));
                 }
             }
 
@@ -189,7 +189,7 @@ namespace Plms.Api.Controllers
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
-                return BadRequest(new { success = false, errors = updateResult.Errors.Select(error => error.Description) });
+                return BadRequest(ApiError.Identity(updateResult.Errors));
             }
 
             var requestedRoleNames = roles.Select(role => role.Name!).ToList();
@@ -201,7 +201,7 @@ namespace Plms.Api.Controllers
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, removeRoles);
                 if (!removeResult.Succeeded)
                 {
-                    return BadRequest(new { success = false, errors = removeResult.Errors.Select(error => error.Description) });
+                    return BadRequest(ApiError.Identity(removeResult.Errors));
                 }
             }
 
@@ -210,7 +210,7 @@ namespace Plms.Api.Controllers
                 var addResult = await _userManager.AddToRolesAsync(user, addRoles);
                 if (!addResult.Succeeded)
                 {
-                    return BadRequest(new { success = false, errors = addResult.Errors.Select(error => error.Description) });
+                    return BadRequest(ApiError.Identity(addResult.Errors));
                 }
             }
 
@@ -246,7 +246,7 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null)
             {
-                return NotFound(new { success = false, error = "User not found." });
+                return NotFound(ApiError.Of("user_not_found", "User not found."));
             }
 
             var mode = request.Mode.Trim().ToLowerInvariant();
@@ -283,14 +283,14 @@ namespace Plms.Api.Controllers
 
             if (mode != "admin-set-temp-password" || string.IsNullOrWhiteSpace(request.Password))
             {
-                return BadRequest(new { success = false, error = "A temporary password is required for admin-set-temp-password mode." });
+                return BadRequest(ApiError.Of("temp_password_required", "A temporary password is required for admin-set-temp-password mode."));
             }
 
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
             var resetResult = await _userManager.ResetPasswordAsync(user, resetToken, request.Password);
             if (!resetResult.Succeeded)
             {
-                return BadRequest(new { success = false, errors = resetResult.Errors.Select(error => error.Description) });
+                return BadRequest(ApiError.Identity(resetResult.Errors));
             }
 
             user.IsActive = true;
@@ -327,7 +327,7 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null)
             {
-                return NotFound(new { success = false, error = "User not found." });
+                return NotFound(ApiError.Of("user_not_found", "User not found."));
             }
 
             var roles = await _userManager.GetRolesAsync(user);
@@ -336,7 +336,7 @@ namespace Plms.Api.Controllers
                 var otherActiveAdmins = await CountOtherActiveAdminsAsync(user.Id);
                 if (otherActiveAdmins == 0)
                 {
-                    return BadRequest(new { success = false, error = "The last active admin cannot be deactivated." });
+                    return BadRequest(ApiError.Of("last_admin_deactivate", "The last active admin cannot be deactivated."));
                 }
             }
 

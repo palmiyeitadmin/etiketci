@@ -45,7 +45,7 @@ namespace Plms.Api.Controllers
 
             if (cat == null)
             {
-                return NotFound(new { success = false, error = "Category not found." });
+                return NotFound(ApiError.Of("category_not_found", "Category not found."));
             }
 
             return Ok(new
@@ -67,7 +67,7 @@ namespace Plms.Api.Controllers
         {
             if (await _context.ProductCategories.AnyAsync(c => c.Code == dto.Code))
             {
-                return BadRequest(new { success = false, error = "Category Code already exists." });
+                return BadRequest(ApiError.Of("category_code_exists", "Category Code already exists."));
             }
 
             var cat = new ProductCategory
@@ -112,7 +112,7 @@ namespace Plms.Api.Controllers
             var cat = await _context.ProductCategories.FindAsync(id);
             if (cat == null)
             {
-                return NotFound(new { success = false, error = "Category not found." });
+                return NotFound(ApiError.Of("category_not_found", "Category not found."));
             }
 
             cat.Name = dto.Name;
@@ -141,14 +141,14 @@ namespace Plms.Api.Controllers
             var cat = await _context.ProductCategories.FindAsync(id);
             if (cat == null)
             {
-                return NotFound(new { success = false, error = "Category not found." });
+                return NotFound(ApiError.Of("category_not_found", "Category not found."));
             }
 
             // Safety Guard: Check for linked products
             var hasProducts = await _context.Products.AnyAsync(p => p.CategoryId == id);
             if (hasProducts)
             {
-                return BadRequest(new { success = false, error = "Cannot delete category because it is referenced by one or more products." });
+                return BadRequest(ApiError.Of("category_in_use", "Cannot delete category because it is referenced by one or more products."));
             }
 
             _context.ProductCategories.Remove(cat);

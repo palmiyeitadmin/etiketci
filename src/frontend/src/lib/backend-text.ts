@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/messages";
+import { messages, type Locale } from "@/lib/i18n/messages";
 import { getText } from "@/lib/i18n/useText";
 
 /**
@@ -89,15 +89,49 @@ export function importErrorTypeLabel(locale: Locale, errorType: string) {
     return getText("errors", locale).importErrorTypes[errorType] ?? errorType;
 }
 
-/** A failed API call's message: translated when the response carried a known `code`. */
+/** One failed ASP.NET Identity rule as the backend sends it under `errors` (code `identity_error`). */
+export type IdentityErrorItem = { code: string; description: string; params?: Record<string, string> };
+
+/** Raw status values in params (e.g. `{ status: "SentToClient" }`) are shown with their label in the user's language. */
+function localizeParams(locale: Locale, params: Record<string, string> | undefined) {
+    const result: Record<string, string> = { ...(params ?? {}) };
+    if (result.status) {
+        result.status = (messages[locale].status.generic as Record<string, string>)[result.status] ?? result.status;
+    }
+    return result;
+}
+
+/** Text for a backend error `code` in the given language, or undefined when the code is unknown. */
+export function apiCodeText(locale: Locale, code: string, params?: Record<string, string>) {
+    const phrase = getText("errors", locale).api[code];
+    return phrase ? phrase(localizeParams(locale, params)) : undefined;
+}
+
+/** Each Identity rule translated by its code; unknown codes keep the backend's description. */
+export function identityErrorsText(locale: Locale, errors: IdentityErrorItem[]) {
+    const phrases = getText("errors", locale).identity;
+    return errors
+        .map((item) => (phrases[item.code]?.(item.params ?? {}) ?? item.description).trim().replace(/\.$/, ""))
+        .filter(Boolean)
+        .join(". ");
+}
+
+/**
+ * A failed call's message in the given language: from `code` (+ `params`), or from the Identity rules,
+ * else the message it carried (English for unknown codes), else `fallback`.
+ */
 export function apiErrorText(locale: Locale, error: unknown, fallback: string) {
-    const code = (error as { code?: unknown } | null)?.code;
-    if (typeof code === "string") {
-        const known = getText("errors", locale).api[code];
+    const record = (error ?? {}) as { code?: unknown; params?: unknown; identityErrors?: unknown; message?: unknown };
+    if (Array.isArray(record.identityErrors) && record.identityErrors.length > 0) {
+        const text = identityErrorsText(locale, record.identityErrors as IdentityErrorItem[]);
+        if (text) return text;
+    }
+    if (typeof record.code === "string") {
+        const params = record.params && typeof record.params === "object" ? record.params as Record<string, string> : undefined;
+        const known = apiCodeText(locale, record.code, params);
         if (known) return known;
     }
-    const message = (error as { message?: unknown } | null)?.message;
-    return typeof message === "string" && message ? message : fallback;
+    return typeof record.message === "string" && record.message ? record.message : fallback;
 }
 
 /** Parses AuditLog.Metadata; empty or invalid JSON gives null. */

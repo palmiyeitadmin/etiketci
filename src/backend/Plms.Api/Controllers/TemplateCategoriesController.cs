@@ -46,7 +46,7 @@ namespace Plms.Api.Controllers
             var category = await _context.TemplateCategories.FindAsync(id);
             if (category == null)
             {
-                return NotFound(new { success = false, error = "Template category not found." });
+                return NotFound(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             return Ok(new
@@ -70,7 +70,7 @@ namespace Plms.Api.Controllers
             var category = await _context.TemplateCategories.FindAsync(id);
             if (category == null)
             {
-                return NotFound(new { success = false, error = "Template category not found." });
+                return NotFound(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             var nextCode = $"PLM-{category.Code}-{category.NextTemplateSequence:D3}";
@@ -93,7 +93,7 @@ namespace Plms.Api.Controllers
             var normalizedCode = dto.Code.Trim().ToUpperInvariant();
             if (await _context.TemplateCategories.AnyAsync(category => category.Code == normalizedCode))
             {
-                return BadRequest(new { success = false, error = "Template category code already exists." });
+                return BadRequest(ApiError.Of("template_category_code_exists", "Template category code already exists."));
             }
 
             var category = new TemplateCategory
@@ -143,7 +143,7 @@ namespace Plms.Api.Controllers
             var category = await _context.TemplateCategories.FindAsync(id);
             if (category == null)
             {
-                return NotFound(new { success = false, error = "Template category not found." });
+                return NotFound(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             category.Name = dto.Name.Trim();
@@ -185,13 +185,13 @@ namespace Plms.Api.Controllers
             var category = await _context.TemplateCategories.FindAsync(id);
             if (category == null)
             {
-                return NotFound(new { success = false, error = "Template category not found." });
+                return NotFound(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             var isInUse = await _context.Templates.AnyAsync(template => template.TemplateCategoryId == id);
             if (isInUse)
             {
-                return BadRequest(new { success = false, error = "Template category cannot be deleted because one or more templates still reference it." });
+                return BadRequest(ApiError.Of("template_category_in_use", "Template category cannot be deleted because one or more templates still reference it."));
             }
 
             _context.TemplateCategories.Remove(category);

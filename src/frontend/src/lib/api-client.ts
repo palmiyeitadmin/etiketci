@@ -1,6 +1,26 @@
 // src/lib/api-client.ts
 import { v4 as uuidv4 } from "uuid";
 import { buildApiUrl } from "@/lib/api-base-url";
+import { apiErrorText, type IdentityErrorItem } from "@/lib/backend-text";
+import { useLanguageStore } from "@/lib/i18n/useLanguageStore";
+
+export type ApiError = {
+  /** Stable backend code (e.g. "print_intent_not_found"), or API_ERROR / HTTP_ERROR / NETWORK_ERROR. */
+  code: string;
+  /** Text to show: in the user's language when the code is known, else the backend's (English) text. */
+  message: string;
+  /** The backend's own English text, kept when `message` was translated. */
+  detail?: string;
+  /** Values the backend sent with the code (e.g. `{ status: "Pending" }`). */
+  params?: Record<string, string>;
+  /** ASP.NET Identity rules that failed (code "identity_error"). */
+  identityErrors?: IdentityErrorItem[];
+  target?: string;
+  validationErrors?: Array<{
+    field: string;
+    message: string;
+  }>;
+};
 
 export type ApiResponse<T> = {
   success: true;
@@ -8,15 +28,7 @@ export type ApiResponse<T> = {
   correlationId?: string;
 } | {
   success: false;
-  error: {
-    code: string;
-    message: string;
-    target?: string;
-    validationErrors?: Array<{
-      field: string;
-      message: string;
-    }>;
-  };
+  error: ApiError;
   correlationId?: string;
 };
 
@@ -42,20 +54,46 @@ function normalizeApiError(error: unknown, status: number) {
   return { code: "HTTP_ERROR", message: `HTTP ${status}` };
 }
 
-function extractErrorFromResponse(json: Record<string, unknown>, status: number) {
-  // Format 1: { success: false, error: "..." } or { success: false, error: { message: "..." } }
+function readParams(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, String(item ?? "")]));
+}
+
+/** Identity rules as `{ code, description, params }` objects; plain strings (older responses) have no code. */
+function readIdentityErrors(value: unknown): IdentityErrorItem[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.flatMap((item): IdentityErrorItem[] => {
+    if (typeof item === "string") return item ? [{ code: "", description: item }] : [];
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    const description = typeof record.description === "string" ? record.description : "";
+    const code = typeof record.code === "string" ? record.code : "";
+    return description || code ? [{ code, description, params: readParams(record.params) }] : [];
+  });
+  return items.length > 0 ? items : undefined;
+}
+
+export function extractErrorFromResponse(json: Record<string, unknown>, status: number): ApiError {
+  // Format 1: { success: false, error: "...", code?: "x", params?: {...}, errors?: [{ code, description }] }
+  // or { success: false, error: { message: "..." } }
   if (json.error !== undefined) {
-    const normalized = normalizeApiError(json.error, status);
-    // Backend errors may carry a stable code next to the English message ({ error: "...", code: "X" }).
-    return typeof json.code === "string" && json.code.trim() ? { ...normalized, code: json.code } : normalized;
+    const normalized: ApiError = normalizeApiError(json.error, status);
+    // Backend errors carry a stable code next to the English message ({ error: "...", code: "x", params: {...} }).
+    const withCode: ApiError = typeof json.code === "string" && json.code.trim() ? { ...normalized, code: json.code } : normalized;
+    const params = readParams(json.params);
+    const identityErrors = readIdentityErrors(json.errors);
+    return {
+      ...withCode,
+      ...(params ? { params } : {}),
+      ...(identityErrors ? { identityErrors } : {}),
+    };
   }
 
-  // Format 2: { success: false, errors: ["desc1", "desc2"] } (Identity errors)
+  // Format 2: { success: false, errors: ["desc1", "desc2"] } or [{ code, description }] (Identity errors)
   if (Array.isArray(json.errors)) {
-    const messages = (json.errors as unknown[])
-      .map((item) => (typeof item === "string" ? item : (item as Record<string, unknown>)?.description ?? String(item)))
-      .filter(Boolean);
-    return { code: "VALIDATION_ERROR", message: messages.join(" ") || `HTTP ${status}` };
+    const identityErrors = readIdentityErrors(json.errors);
+    const messages = (identityErrors ?? []).map((item) => item.description || item.code);
+    return { code: "VALIDATION_ERROR", message: messages.join(" ") || `HTTP ${status}`, ...(identityErrors ? { identityErrors } : {}) };
   }
 
   // Format 3: { title: "...", status: 400, errors: { field: ["msg"] } } (ApiController model validation)
@@ -71,6 +109,26 @@ function extractErrorFromResponse(json: Record<string, unknown>, status: number)
   }
 
   return { code: "HTTP_ERROR", message: `HTTP ${status}` };
+}
+
+/** The user's language on the client; null on the server, where the stored choice is unknown. */
+function currentLocale() {
+  if (typeof window === "undefined") return null;
+  try {
+    return useLanguageStore.getState().locale;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Puts the text for a known backend code (or the Identity rules) in the user's language into `message`
+ * and keeps the English in `detail`. Unknown codes keep the backend's message.
+ */
+export function localizeApiError(error: ApiError, locale = currentLocale()): ApiError {
+  if (!locale) return error;
+  const message = apiErrorText(locale, error, error.message);
+  return message === error.message ? error : { ...error, message, detail: error.message };
 }
 
 export async function apiFetch<T>(
@@ -100,7 +158,7 @@ export async function apiFetch<T>(
     if (!response.ok) {
       return {
         success: false,
-        error: extractErrorFromResponse(json, response.status),
+        error: localizeApiError(extractErrorFromResponse(json, response.status)),
         correlationId: json.correlationId,
       };
     }

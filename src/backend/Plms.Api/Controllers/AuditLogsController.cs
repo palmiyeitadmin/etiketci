@@ -19,6 +19,9 @@ namespace Plms.Api.Controllers
             _context = context;
         }
 
+        /// <summary>Correlation id of audit entries written by startup housekeeping (see Program.cs).</summary>
+        public const string SystemCorrelationId = "seed";
+
         [HttpGet]
         public async Task<IActionResult> GetAuditLogs(
             [FromQuery] string? entityType,
@@ -26,12 +29,20 @@ namespace Plms.Api.Controllers
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 25)
+            [FromQuery] int pageSize = 25,
+            [FromQuery] bool includeSystem = false)
         {
             page = Math.Max(page, 1);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
             var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+            // Entries the application writes for itself at startup (e.g. default role permissions) are
+            // housekeeping, not user activity; they are listed only on request.
+            if (!includeSystem)
+            {
+                query = query.Where(a => a.CorrelationId != SystemCorrelationId);
+            }
 
             if (!string.IsNullOrWhiteSpace(entityType))
             {

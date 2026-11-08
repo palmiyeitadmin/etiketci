@@ -136,7 +136,7 @@ namespace Plms.Api.Services
 
             if (session.Status != ImportSessionStatus.ReadyToImport)
             {
-                throw new InvalidOperationException("Import session is not ready to commit.");
+                throw new ApiErrorException("import_session_not_ready", "Import session is not ready to commit.");
             }
 
             var rows = JsonSerializer.Deserialize<List<ProductImportRow>>(session.RowsJson) ?? new List<ProductImportRow>();
@@ -156,7 +156,7 @@ namespace Plms.Api.Services
                 {
                     if (!session.AllowOverwrite)
                     {
-                        throw new InvalidOperationException($"Duplicate SKU '{row.Sku}' cannot be overwritten without approval.");
+                        throw new ApiErrorException("import_duplicate_not_approved", $"Duplicate SKU '{row.Sku}' cannot be overwritten without approval.", new Dictionary<string, string> { ["sku"] = row.Sku ?? string.Empty });
                     }
 
                     existingProduct.Name = row.Name;

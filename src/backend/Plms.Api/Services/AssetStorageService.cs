@@ -36,17 +36,17 @@ namespace Plms.Api.Services
         {
             if (file.Length <= 0)
             {
-                throw new InvalidOperationException("Empty files are not allowed.");
+                throw new ApiErrorException("asset_empty", "Empty files are not allowed.");
             }
 
             if (!SupportedMimeTypes.Contains(file.ContentType))
             {
-                throw new InvalidOperationException("Only PNG, JPEG and SVG assets are supported.");
+                throw new ApiErrorException("asset_type_unsupported", "Only PNG, JPEG and SVG assets are supported.");
             }
 
             if (file.Length > MaxAssetUploadBytes)
             {
-                throw new InvalidOperationException("Asset must be 5MB or smaller.");
+                throw new ApiErrorException("asset_too_large", "Asset must be 5MB or smaller.");
             }
 
             await using var memoryStream = new MemoryStream();

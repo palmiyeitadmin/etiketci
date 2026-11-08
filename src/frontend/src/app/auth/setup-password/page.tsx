@@ -5,6 +5,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "@phosphor-icons/react";
 import { buildApiUrl } from "@/lib/api-base-url";
+import { extractErrorFromResponse, localizeApiError } from "@/lib/api-client";
 import { useText } from "@/lib/i18n";
 
 function AuthFrame({ children }: { children: React.ReactNode }) {
@@ -60,7 +61,8 @@ function SetupPasswordContent() {
                 setSuccess(true);
                 setTimeout(() => router.push("/auth/login"), 3000);
             } else {
-                setError(result.error || result.errors?.join(", ") || text.failed);
+                const failure = result && typeof result === "object" ? localizeApiError(extractErrorFromResponse(result, res.status)) : null;
+                setError(failure && failure.code !== "HTTP_ERROR" ? failure.message : text.failed);
             }
         } catch (err) {
             setError(text.networkError);

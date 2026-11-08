@@ -45,7 +45,7 @@ namespace Plms.Api.Controllers
 
             if (vendor == null)
             {
-                return NotFound(new { success = false, error = "Vendor not found." });
+                return NotFound(ApiError.Of("vendor_not_found", "Vendor not found."));
             }
 
             return Ok(new
@@ -67,7 +67,7 @@ namespace Plms.Api.Controllers
         {
             if (await _context.Vendors.AnyAsync(v => v.Code == dto.Code))
             {
-                return BadRequest(new { success = false, error = "Vendor Code already exists." });
+                return BadRequest(ApiError.Of("vendor_code_exists", "Vendor Code already exists."));
             }
 
             var vendor = new Vendor
@@ -112,7 +112,7 @@ namespace Plms.Api.Controllers
             var vendor = await _context.Vendors.FindAsync(id);
             if (vendor == null)
             {
-                return NotFound(new { success = false, error = "Vendor not found." });
+                return NotFound(ApiError.Of("vendor_not_found", "Vendor not found."));
             }
 
             vendor.Name = dto.Name;
@@ -141,14 +141,14 @@ namespace Plms.Api.Controllers
             var vendor = await _context.Vendors.FindAsync(id);
             if (vendor == null)
             {
-                return NotFound(new { success = false, error = "Vendor not found." });
+                return NotFound(ApiError.Of("vendor_not_found", "Vendor not found."));
             }
 
             // Safety Guard: Check for linked products
             var hasProducts = await _context.Products.AnyAsync(p => p.VendorId == id);
             if (hasProducts)
             {
-                return BadRequest(new { success = false, error = "Cannot delete vendor because it is referenced by one or more products." });
+                return BadRequest(ApiError.Of("vendor_in_use", "Cannot delete vendor because it is referenced by one or more products."));
             }
 
             _context.Vendors.Remove(vendor);

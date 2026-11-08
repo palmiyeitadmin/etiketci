@@ -84,7 +84,7 @@ namespace Plms.Api.Controllers
                 .Include(x => x.Category)
                 .Include(x => x.Vendor)
                 .FirstOrDefaultAsync(x => x.Sku.ToLower() == normalized);
-            if (p == null) return NotFound(new { success = false, error = "Product not found.", code = "PRODUCT_NOT_FOUND" });
+            if (p == null) return NotFound(ApiError.Of("product_not_found", "Product not found."));
 
             return Ok(new
             {
@@ -117,7 +117,7 @@ namespace Plms.Api.Controllers
 
             if (p == null)
             {
-                return NotFound(new { success = false, error = "Product not found." });
+                return NotFound(ApiError.Of("product_not_found", "Product not found."));
             }
 
             return Ok(new
@@ -146,7 +146,7 @@ namespace Plms.Api.Controllers
         {
             if (await _context.Products.AnyAsync(p => p.Sku == dto.Sku))
             {
-                return BadRequest(new { success = false, error = "Product SKU already exists." });
+                return BadRequest(ApiError.Of("product_sku_exists", "Product SKU already exists."));
             }
 
             var p = new Product
@@ -192,7 +192,7 @@ namespace Plms.Api.Controllers
             var p = await _context.Products.FindAsync(id);
             if (p == null)
             {
-                return NotFound(new { success = false, error = "Product not found." });
+                return NotFound(ApiError.Of("product_not_found", "Product not found."));
             }
 
             p.Name = dto.Name;
@@ -226,12 +226,12 @@ namespace Plms.Api.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                return BadRequest(new { success = false, error = "No file uploaded." });
+                return BadRequest(ApiError.Of("file_required", "No file uploaded."));
             }
 
             if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest(new { success = false, error = "Invalid file type. Only CSV is supported." });
+                return BadRequest(ApiError.Of("import_csv_only", "Invalid file type. Only CSV is supported."));
             }
 
             using var stream = file.OpenReadStream();
@@ -255,7 +255,7 @@ namespace Plms.Api.Controllers
             var session = await _importService.GetImportSessionAsync(sessionId);
             if (session == null)
             {
-                return NotFound(new { success = false, error = "Import session not found." });
+                return NotFound(ApiError.Of("import_session_not_found", "Import session not found."));
             }
 
             return Ok(new { success = true, data = session });
@@ -268,7 +268,7 @@ namespace Plms.Api.Controllers
             var session = await _importService.EnableOverwriteAsync(sessionId);
             if (session == null)
             {
-                return NotFound(new { success = false, error = "Import session not found." });
+                return NotFound(ApiError.Of("import_session_not_found", "Import session not found."));
             }
 
             return Ok(new { success = true, data = session });
@@ -283,14 +283,14 @@ namespace Plms.Api.Controllers
                 var result = await _importService.CommitImportSessionAsync(sessionId, User.Identity?.Name ?? "System", HttpContext.TraceIdentifier);
                 if (result == null)
                 {
-                    return NotFound(new { success = false, error = "Import session not found." });
+                    return NotFound(ApiError.Of("import_session_not_found", "Import session not found."));
                 }
 
                 return Ok(new { success = true, data = result });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { success = false, error = ex.Message });
+                return BadRequest(ApiError.From(ex, "import_commit_failed"));
             }
         }
 
@@ -299,14 +299,14 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var p = await _context.Products.FindAsync(id);
-            if (p == null) return NotFound(new { success = false, error = "Product not found." });
+            if (p == null) return NotFound(ApiError.Of("product_not_found", "Product not found."));
 
             // Safety Guard: Check for non-cancelled print intents
             var openStatuses = PrintIntentStatuses.OpenStatuses;
             var hasActiveIntents = await _context.PrintIntents.AnyAsync(pi => pi.ProductId == id && openStatuses.Contains(pi.Status));
             if (hasActiveIntents)
             {
-                return BadRequest(new { success = false, error = "Product cannot be deleted because it is referenced by active Print Intents." });
+                return BadRequest(ApiError.Of("product_in_use", "Product cannot be deleted because it is referenced by active Print Intents."));
             }
 
             // A product with print history is deactivated instead of deleted, so the history stays intact.

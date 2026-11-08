@@ -38,7 +38,7 @@ namespace Plms.Api.Controllers
             var role = await _context.Roles.FirstOrDefaultAsync(item => item.Id == id);
             if (role == null)
             {
-                return NotFound(new { success = false, error = "Role not found." });
+                return NotFound(ApiError.Of("role_not_found", "Role not found."));
             }
 
             return Ok(new { success = true, data = await MapRoleAsync(role) });
@@ -50,18 +50,18 @@ namespace Plms.Api.Controllers
         {
             if (string.IsNullOrWhiteSpace(request.Name))
             {
-                return BadRequest(new { success = false, error = "Role name is required." });
+                return BadRequest(ApiError.Of("role_name_required", "Role name is required."));
             }
 
             if (await _roleManager.RoleExistsAsync(request.Name.Trim()))
             {
-                return BadRequest(new { success = false, error = "Role name already exists." });
+                return BadRequest(ApiError.Of("role_name_exists", "Role name already exists."));
             }
 
             var invalidPermissions = request.PermissionKeys.Where(permission => !PermissionCatalog.AllPermissionKeys.Contains(permission)).Distinct().ToList();
             if (invalidPermissions.Count > 0)
             {
-                return BadRequest(new { success = false, error = $"Unknown permissions: {string.Join(", ", invalidPermissions)}" });
+                return BadRequest(ApiError.Of("unknown_permissions", $"Unknown permissions: {string.Join(", ", invalidPermissions)}", new { permissions = invalidPermissions }));
             }
 
             var role = new ApplicationRole
@@ -77,7 +77,7 @@ namespace Plms.Api.Controllers
             var result = await _roleManager.CreateAsync(role);
             if (!result.Succeeded)
             {
-                return BadRequest(new { success = false, errors = result.Errors.Select(error => error.Description) });
+                return BadRequest(ApiError.Identity(result.Errors));
             }
 
             await ReplacePermissionsAsync(role.Id, request.PermissionKeys);
@@ -94,35 +94,35 @@ namespace Plms.Api.Controllers
             var role = await _context.Roles.FirstOrDefaultAsync(item => item.Id == id);
             if (role == null)
             {
-                return NotFound(new { success = false, error = "Role not found." });
+                return NotFound(ApiError.Of("role_not_found", "Role not found."));
             }
 
             if (role.IsImmutable)
             {
-                return BadRequest(new { success = false, error = "This role is immutable and cannot be edited." });
+                return BadRequest(ApiError.Of("role_immutable", "This role is immutable and cannot be edited."));
             }
 
             var trimmedName = request.Name.Trim();
             if (string.IsNullOrWhiteSpace(trimmedName))
             {
-                return BadRequest(new { success = false, error = "Role name is required." });
+                return BadRequest(ApiError.Of("role_name_required", "Role name is required."));
             }
 
             if (role.IsSystem && !string.Equals(role.Name, trimmedName, StringComparison.Ordinal))
             {
-                return BadRequest(new { success = false, error = "System role names cannot be changed." });
+                return BadRequest(ApiError.Of("system_role_rename", "System role names cannot be changed."));
             }
 
             var nameConflict = await _context.Roles.AnyAsync(item => item.Id != id && item.NormalizedName == trimmedName.ToUpperInvariant());
             if (nameConflict)
             {
-                return BadRequest(new { success = false, error = "Role name already exists." });
+                return BadRequest(ApiError.Of("role_name_exists", "Role name already exists."));
             }
 
             var invalidPermissions = request.PermissionKeys.Where(permission => !PermissionCatalog.AllPermissionKeys.Contains(permission)).Distinct().ToList();
             if (invalidPermissions.Count > 0)
             {
-                return BadRequest(new { success = false, error = $"Unknown permissions: {string.Join(", ", invalidPermissions)}" });
+                return BadRequest(ApiError.Of("unknown_permissions", $"Unknown permissions: {string.Join(", ", invalidPermissions)}", new { permissions = invalidPermissions }));
             }
 
             var oldPermissions = await _context.RolePermissions.Where(item => item.RoleId == role.Id).Select(item => item.PermissionKey).OrderBy(item => item).ToListAsync();
@@ -154,18 +154,18 @@ namespace Plms.Api.Controllers
             var role = await _context.Roles.FirstOrDefaultAsync(item => item.Id == id);
             if (role == null)
             {
-                return NotFound(new { success = false, error = "Role not found." });
+                return NotFound(ApiError.Of("role_not_found", "Role not found."));
             }
 
             if (role.IsSystem)
             {
-                return BadRequest(new { success = false, error = "System roles cannot be deleted." });
+                return BadRequest(ApiError.Of("system_role_delete", "System roles cannot be deleted."));
             }
 
             var assignedUserCount = await _context.UserRoles.CountAsync(userRole => userRole.RoleId == role.Id);
             if (assignedUserCount > 0)
             {
-                return Conflict(new { success = false, error = "Role cannot be deleted while users are assigned to it." });
+                return Conflict(ApiError.Of("role_in_use", "Role cannot be deleted while users are assigned to it."));
             }
 
             var permissions = await _context.RolePermissions.Where(item => item.RoleId == role.Id).ToListAsync();

@@ -38,18 +38,18 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return Unauthorized(new { success = false, error = "Invalid credentials." });
+                return Unauthorized(ApiError.Of("invalid_credentials", "Invalid credentials."));
             }
 
             if (!user.IsActive)
             {
-                return Unauthorized(new { success = false, error = "Account inactive." });
+                return Unauthorized(ApiError.Of("account_inactive", "Account inactive."));
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
             if (!result.Succeeded)
             {
-                return Unauthorized(new { success = false, error = "Invalid credentials." });
+                return Unauthorized(ApiError.Of("invalid_credentials", "Invalid credentials."));
             }
 
             var roles = await _userManager.GetRolesAsync(user);
@@ -93,13 +93,13 @@ namespace Plms.Api.Controllers
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return BadRequest(new { success = false, error = "User not found." });
+                return BadRequest(ApiError.Of("user_not_found", "User not found."));
             }
 
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
             if (!result.Succeeded)
             {
-                return BadRequest(new { success = false, errors = result.Errors.Select(e => e.Description) });
+                return BadRequest(ApiError.Identity(result.Errors));
             }
 
             user.EmailConfirmed = true;
@@ -117,13 +117,13 @@ namespace Plms.Api.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Unauthorized(new { success = false, error = "User not found." });
+                return Unauthorized(ApiError.Of("user_not_found", "User not found."));
             }
 
             var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
             if (!result.Succeeded)
             {
-                return BadRequest(new { success = false, errors = result.Errors.Select(e => e.Description) });
+                return BadRequest(ApiError.Identity(result.Errors));
             }
 
             user.MustChangePassword = false;
@@ -139,7 +139,7 @@ namespace Plms.Api.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Unauthorized(new { success = false, error = "Unauthorized." });
+                return Unauthorized(ApiError.Of("unauthorized", "Unauthorized."));
             }
 
             var roles = await _userManager.GetRolesAsync(user);

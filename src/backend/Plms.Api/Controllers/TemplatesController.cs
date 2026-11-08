@@ -8,6 +8,7 @@ using Plms.Api.Domain.Enums;
 using Plms.Api.DTOs.Template;
 using Plms.Api.Models.Canonical;
 using Plms.Api.Services;
+using Plms.Api.Models.Operational;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -144,7 +145,7 @@ namespace Plms.Api.Controllers
                 .Include(t => t.Versions.OrderByDescending(v => v.VersionNumber))
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (t == null) return NotFound(new { success = false, error = "Template not found." });
+            if (t == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             var versions = t.Versions.Select(v => new TemplateVersionDto
             {
@@ -275,12 +276,12 @@ namespace Plms.Api.Controllers
 
             if (version == null)
             {
-                return NotFound(new { success = false, error = "Template version not found." });
+                return NotFound(ApiError.Of("template_version_not_found", "Template version not found."));
             }
 
             if (version.Status != TemplateStatus.Archived && version.Status != TemplateStatus.Deprecated)
             {
-                return BadRequest(new { success = false, error = "Only archived or deprecated versions can be restored." });
+                return BadRequest(ApiError.Of("version_not_restorable", "Only archived or deprecated versions can be restored.", new { status = version.Status }));
             }
 
             var existingPendingRequest = await _context.TemplateRestorationRequests.AnyAsync(r =>
@@ -290,7 +291,7 @@ namespace Plms.Api.Controllers
 
             if (existingPendingRequest)
             {
-                return BadRequest(new { success = false, error = "A pending restoration request already exists for this version." });
+                return BadRequest(ApiError.Of("restoration_already_pending", "A pending restoration request already exists for this version."));
             }
 
             var request = new TemplateRestorationRequest
@@ -331,12 +332,12 @@ namespace Plms.Api.Controllers
             var category = await _context.TemplateCategories.FirstOrDefaultAsync(c => c.Id == dto.TemplateCategoryId);
             if (category == null)
             {
-                return BadRequest(new { success = false, error = "Template category not found." });
+                return BadRequest(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             if (!category.IsActive)
             {
-                return BadRequest(new { success = false, error = "Inactive template categories cannot be used for new templates." });
+                return BadRequest(ApiError.Of("template_category_inactive", "Inactive template categories cannot be used for new templates."));
             }
 
             await using var transaction = _context.Database.IsRelational()
@@ -346,7 +347,7 @@ namespace Plms.Api.Controllers
             var generatedCode = FormatTemplateCode(category);
             if (await _context.Templates.AnyAsync(t => t.Code == generatedCode))
             {
-                return BadRequest(new { success = false, error = "Generated template code already exists. Refresh and try again." });
+                return BadRequest(ApiError.Of("template_code_conflict", "Generated template code already exists. Refresh and try again."));
             }
 
             var template = new LabelTemplate
@@ -389,7 +390,7 @@ namespace Plms.Api.Controllers
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
             {
-                return BadRequest(new { success = false, error = "Template name is required." });
+                return BadRequest(ApiError.Of("template_name_required", "Template name is required."));
             }
 
             var sourceTemplate = await _context.Templates
@@ -398,24 +399,24 @@ namespace Plms.Api.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (sourceTemplate == null)
             {
-                return NotFound(new { success = false, error = "Source template not found." });
+                return NotFound(ApiError.Of("source_template_not_found", "Source template not found."));
             }
 
             var sourceVersion = sourceTemplate.Versions.FirstOrDefault(v => v.Id == versionId);
             if (sourceVersion == null)
             {
-                return NotFound(new { success = false, error = "Source version not found." });
+                return NotFound(ApiError.Of("source_version_not_found", "Source version not found."));
             }
 
             var category = await _context.TemplateCategories.FirstOrDefaultAsync(c => c.Id == dto.TemplateCategoryId);
             if (category == null)
             {
-                return BadRequest(new { success = false, error = "Template category not found." });
+                return BadRequest(ApiError.Of("template_category_not_found", "Template category not found."));
             }
 
             if (!category.IsActive)
             {
-                return BadRequest(new { success = false, error = "Inactive template categories cannot be used for cloned templates." });
+                return BadRequest(ApiError.Of("template_category_inactive", "Inactive template categories cannot be used for cloned templates."));
             }
 
             await using var transaction = _context.Database.IsRelational()
@@ -425,7 +426,7 @@ namespace Plms.Api.Controllers
             var generatedCode = FormatTemplateCode(category);
             if (await _context.Templates.AnyAsync(t => t.Code == generatedCode))
             {
-                return BadRequest(new { success = false, error = "Generated template code already exists. Refresh and try again." });
+                return BadRequest(ApiError.Of("template_code_conflict", "Generated template code already exists. Refresh and try again."));
             }
 
             var actor = User.Identity?.Name ?? "System";
@@ -498,13 +499,13 @@ namespace Plms.Api.Controllers
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             var nextName = dto.Name?.Trim();
             if (string.IsNullOrWhiteSpace(nextName))
             {
-                return BadRequest(new { success = false, error = "Template name is required." });
+                return BadRequest(ApiError.Of("template_name_required", "Template name is required."));
             }
 
             var oldName = template.Name;
@@ -538,13 +539,13 @@ namespace Plms.Api.Controllers
             var currentUserId = GetCurrentUserId();
             if (!currentUserId.HasValue)
             {
-                return Unauthorized(new { success = false, error = "Current user could not be resolved." });
+                return Unauthorized(ApiError.Of("current_user_unresolved", "Current user could not be resolved."));
             }
 
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             var exists = await _context.TemplateFavorites.AnyAsync(f => f.TemplateId == id && f.UserId == currentUserId.Value);
@@ -584,13 +585,13 @@ namespace Plms.Api.Controllers
             var currentUserId = GetCurrentUserId();
             if (!currentUserId.HasValue)
             {
-                return Unauthorized(new { success = false, error = "Current user could not be resolved." });
+                return Unauthorized(ApiError.Of("current_user_unresolved", "Current user could not be resolved."));
             }
 
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             var favorite = await _context.TemplateFavorites.FirstOrDefaultAsync(f => f.TemplateId == id && f.UserId == currentUserId.Value);
@@ -625,19 +626,19 @@ namespace Plms.Api.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             if (template.IsArchived)
             {
-                return BadRequest(new { success = false, error = "Template is already archived." });
+                return BadRequest(ApiError.Of("template_already_archived", "Template is already archived."));
             }
 
             var openStatuses = new[] { PrintIntentStatuses.Pending, PrintIntentStatuses.ReadyForPrint, PrintIntentStatuses.SentToClient };
             var hasOpenPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id && openStatuses.Contains(pi.Status));
             if (hasOpenPrintIntents)
             {
-                return BadRequest(new { success = false, error = "Template cannot be archived because open print intents still reference it." });
+                return BadRequest(ApiError.Of("template_has_open_intents", "Template cannot be archived because open print intents still reference it."));
             }
 
             template.IsArchived = true;
@@ -672,23 +673,23 @@ namespace Plms.Api.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             if (template.IsArchived)
             {
-                return BadRequest(new { success = false, error = "Archived template masters cannot archive additional versions." });
+                return BadRequest(ApiError.Of("template_archived_versions_locked", "Archived template masters cannot archive additional versions."));
             }
 
             var version = template.Versions.FirstOrDefault(v => v.Id == versionId);
             if (version == null)
             {
-                return NotFound(new { success = false, error = "Version not found." });
+                return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
             }
 
             if (template.CurrentActiveVersionId == versionId)
             {
-                return BadRequest(new { success = false, error = "The current active version cannot be archived." });
+                return BadRequest(ApiError.Of("active_version_cannot_archive", "The current active version cannot be archived."));
             }
 
             if (version.Status == TemplateStatus.Archived)
@@ -698,7 +699,7 @@ namespace Plms.Api.Controllers
 
             if (version.Status != TemplateStatus.Rejected && version.Status != TemplateStatus.Deprecated)
             {
-                return BadRequest(new { success = false, error = "Only rejected or deprecated versions can be archived." });
+                return BadRequest(ApiError.Of("version_not_archivable", "Only rejected or deprecated versions can be archived.", new { status = version.Status }));
             }
 
             version.Status = TemplateStatus.Archived;
@@ -728,12 +729,12 @@ namespace Plms.Api.Controllers
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             if (!template.IsArchived)
             {
-                return BadRequest(new { success = false, error = "Template is not archived." });
+                return BadRequest(ApiError.Of("template_not_archived", "Template is not archived."));
             }
 
             template.IsArchived = false;
@@ -764,11 +765,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> RequestApproval(Guid id, Guid versionId)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             if (version.Status != TemplateStatus.Draft)
             {
-                return BadRequest(new { success = false, error = "Only Draft versions can be submitted for approval." });
+                return BadRequest(ApiError.Of("version_not_submittable", "Only Draft versions can be submitted for approval.", new { status = version.Status }));
             }
 
             var oldStatus = version.Status;
@@ -802,16 +803,16 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> ReviewVersion(Guid id, Guid versionId, ReviewTemplateVersionDto dto)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             if (version.Status != TemplateStatus.InReview)
             {
-                return BadRequest(new { success = false, error = "Version is not in review." });
+                return BadRequest(ApiError.Of("version_not_in_review", "Version is not in review.", new { status = version.Status }));
             }
 
             if (string.IsNullOrWhiteSpace(dto.Comments))
             {
-                return BadRequest(new { success = false, error = "Reviewer comments are required." });
+                return BadRequest(ApiError.Of("review_comments_required", "Reviewer comments are required."));
             }
 
             // Four-eyes rule: the author or submitter cannot approve their own version.
@@ -821,7 +822,7 @@ namespace Plms.Api.Controllers
             var isAdmin = User.IsInRole(ApplicationRoles.Admin);
             if (dto.Approve && isOwnWork && !isAdmin)
             {
-                return BadRequest(new { success = false, error = "You cannot approve a version you created or submitted. Ask another reviewer." });
+                return BadRequest(ApiError.Of("self_approval_not_allowed", "You cannot approve a version you created or submitted. Ask another reviewer."));
             }
 
             var oldStatus = version.Status;
@@ -856,14 +857,14 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> PublishTemplate(Guid id, Guid versionId)
         {
             var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             var version = template.Versions.FirstOrDefault(v => v.Id == versionId);
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             if (version.Status != TemplateStatus.Approved)
             {
-                return BadRequest(new { success = false, error = "Only Approved versions can be published." });
+                return BadRequest(ApiError.Of("version_not_publishable", "Only Approved versions can be published.", new { status = version.Status }));
             }
 
             // Deprecate old version if exists
@@ -905,11 +906,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> UpdateVersion(Guid id, Guid versionId, UpdateTemplateVersionDto dto)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             if (version.Status != TemplateStatus.Draft)
             {
-                return BadRequest(new { success = false, error = "Only Draft versions can be edited." });
+                return BadRequest(ApiError.Of("version_not_editable", "Only Draft versions can be edited.", new { status = version.Status }));
             }
 
             // TODO: In Phase J we should validate JSON here
@@ -943,10 +944,10 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> CreateRevision(Guid id, [FromQuery] Guid fromVersionId)
         {
             var template = await _context.Templates.Include(t => t.Versions).FirstOrDefaultAsync(t => t.Id == id);
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             var sourceVersion = template.Versions.FirstOrDefault(v => v.Id == fromVersionId);
-            if (sourceVersion == null) return NotFound(new { success = false, error = "Source version not found." });
+            if (sourceVersion == null) return NotFound(ApiError.Of("source_version_not_found", "Source version not found."));
 
             // One open draft per template: return the existing draft instead of creating a second one.
             // This makes the endpoint safe to call twice (double clicks, retried requests, React effects).
@@ -999,10 +1000,10 @@ namespace Plms.Api.Controllers
                 .Include(t => t.Versions.Where(v => v.Id == versionId))
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
             
             var version = template.Versions.FirstOrDefault();
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             Product? product = null;
             if (productId.HasValue)
@@ -1014,6 +1015,7 @@ namespace Plms.Api.Controllers
             }
 
             var warnings = new List<string>();
+            var warningIssues = new List<CheckIssue>();
             var requiredVariables = _variableService.GetRequiredVariables(version.LayoutJson).ToList();
 
             if (productId.HasValue && product == null)
@@ -1034,12 +1036,12 @@ namespace Plms.Api.Controllers
                 previewModel = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (previewModel != null)
                 {
-                    foreach (var el in previewModel.Elements)
+                    foreach (var issue in BarcodeChecks.Check(previewModel.Elements))
                     {
-                        if (el.Type.ToLower() == "barcode" && el.BarcodeType != "CODE_128")
-                        {
-                            warnings.Add($"Barcode type '{el.BarcodeType}' may not render correctly in PDF (only CODE_128 is fully supported).");
-                        }
+                        warningIssues.Add(issue);
+                        warnings.Add(issue.Code == "barcode_unsupported"
+                            ? $"Barcode type '{issue.Params["type"]}' is not supported; it will be left out of the PDF."
+                            : $"Barcode content '{issue.Params["value"]}' cannot be encoded as {issue.Params["type"]}; it will be left out of the PDF.");
                     }
                 }
             }
@@ -1065,6 +1067,7 @@ namespace Plms.Api.Controllers
                 PublishedAt = version.PublishedAt,
                 PublishedBy = version.PublishedBy,
                 Warnings = warnings.Concat(readiness.Warnings).Distinct().ToList(),
+                WarningIssues = warningIssues.Concat(readiness.Issues.Where(issue => issue.Severity == CheckIssue.Warning)).ToList(),
                 RequiredVariables = requiredVariables,
                 HasProductContext = product != null,
                 ProductName = product?.Name,
@@ -1086,7 +1089,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetPreview(Guid id, Guid versionId, [FromQuery] Guid? productId)
         {
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == versionId && v.TemplateId == id);
-            if (version == null) return NotFound(new { success = false, error = "Version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
 
             try
             {
@@ -1105,7 +1108,7 @@ namespace Plms.Api.Controllers
                 }
 
                 var model = JsonSerializer.Deserialize<CanonicalLabelModel>(layoutJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (model == null) return BadRequest(new { success = false, error = "Invalid layout JSON." });
+                if (model == null) return BadRequest(ApiError.Of("invalid_layout_json", "Invalid layout JSON."));
 
                 // Versions that are not approved for production are marked so a proof can never pass as a real label.
                 var isProductionVersion = version.Status is TemplateStatus.Approved or TemplateStatus.Published or TemplateStatus.Deprecated;
@@ -1115,7 +1118,7 @@ namespace Plms.Api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, error = "Failed to render PDF: " + ex.Message });
+                return BadRequest(ApiError.Of("pdf_render_failed", "Failed to render PDF: " + ex.Message, new { reason = ex.Message }));
             }
         }
 
@@ -1133,7 +1136,7 @@ namespace Plms.Api.Controllers
 
             if (left == null || right == null)
             {
-                return NotFound(new { success = false, error = "Version comparison target not found." });
+                return NotFound(ApiError.Of("compare_target_not_found", "Version comparison target not found."));
             }
 
             var leftElements = ParseElements(left.LayoutJson);
@@ -1221,7 +1224,7 @@ namespace Plms.Api.Controllers
 
             if (request == null)
             {
-                return NotFound(new { success = false, error = "Restoration request not found." });
+                return NotFound(ApiError.Of("restoration_request_not_found", "Restoration request not found."));
             }
 
             return Ok(new { success = true, data = MapRestorationRequest(request, request.TemplateVersion!) });
@@ -1238,12 +1241,12 @@ namespace Plms.Api.Controllers
 
             if (request == null)
             {
-                return NotFound(new { success = false, error = "Restoration request not found." });
+                return NotFound(ApiError.Of("restoration_request_not_found", "Restoration request not found."));
             }
 
             if (request.Status != RestorationRequestStatus.Pending)
             {
-                return BadRequest(new { success = false, error = "Only pending restoration requests can be reviewed." });
+                return BadRequest(ApiError.Of("restoration_not_pending", "Only pending restoration requests can be reviewed.", new { status = request.Status }));
             }
 
             request.ReviewComments = dto.Comments;
@@ -1328,24 +1331,24 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> DeleteTemplate(Guid id)
         {
             var t = await _context.Templates.Include(template => template.Versions).FirstOrDefaultAsync(template => template.Id == id);
-            if (t == null) return NotFound(new { success = false, error = "Template not found." });
+            if (t == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             var hasPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.TemplateId == id);
             if (hasPrintIntents)
             {
-                return BadRequest(new { success = false, error = "Template cannot be deleted because one or more print intents reference it. Archive it instead." });
+                return BadRequest(ApiError.Of("template_delete_has_intents", "Template cannot be deleted because one or more print intents reference it. Archive it instead."));
             }
 
             var hasLinkedProducts = await _context.ProductTemplates.AnyAsync(productTemplate => productTemplate.TemplateId == id);
             if (hasLinkedProducts)
             {
-                return BadRequest(new { success = false, error = "Template cannot be deleted because one or more products are linked to it. Archive it instead." });
+                return BadRequest(ApiError.Of("template_delete_has_products", "Template cannot be deleted because one or more products are linked to it. Archive it instead."));
             }
 
             var hasNonDraftHistory = t.Versions.Any(version => version.Status != TemplateStatus.Draft);
             if (hasNonDraftHistory)
             {
-                return BadRequest(new { success = false, error = "Template cannot be deleted because it already has governed version history. Archive it instead." });
+                return BadRequest(ApiError.Of("template_delete_has_history", "Template cannot be deleted because it already has governed version history. Archive it instead."));
             }
 
             _context.Templates.Remove(t);
@@ -1376,47 +1379,47 @@ namespace Plms.Api.Controllers
                 .FirstOrDefaultAsync(item => item.Id == id);
             if (template == null)
             {
-                return NotFound(new { success = false, error = "Template not found." });
+                return NotFound(ApiError.Of("template_not_found", "Template not found."));
             }
 
             var version = template.Versions.FirstOrDefault(item => item.Id == versionId);
             if (version == null)
             {
-                return NotFound(new { success = false, error = "Version not found." });
+                return NotFound(ApiError.Of("template_version_not_found", "Version not found."));
             }
 
             if (template.CurrentActiveVersionId == versionId)
             {
-                return BadRequest(new { success = false, error = "The current active version cannot be deleted." });
+                return BadRequest(ApiError.Of("active_version_cannot_delete", "The current active version cannot be deleted."));
             }
 
             if (version.Status != TemplateStatus.Draft)
             {
-                return BadRequest(new { success = false, error = "Only draft versions can be deleted." });
+                return BadRequest(ApiError.Of("version_not_deletable", "Only draft versions can be deleted.", new { status = version.Status }));
             }
 
             if (template.Versions.Count <= 1)
             {
-                return BadRequest(new { success = false, error = "The last remaining version cannot be deleted." });
+                return BadRequest(ApiError.Of("last_version_cannot_delete", "The last remaining version cannot be deleted."));
             }
 
             var hasPrintIntents = await _context.PrintIntents.AnyAsync(pi => pi.VersionId == versionId);
             if (hasPrintIntents)
             {
-                return BadRequest(new { success = false, error = "This version cannot be deleted because one or more print intents reference it." });
+                return BadRequest(ApiError.Of("version_delete_has_intents", "This version cannot be deleted because one or more print intents reference it."));
             }
 
             var hasDerivedVersions = await _context.TemplateVersions.AnyAsync(item => item.SourceVersionId == versionId);
             if (hasDerivedVersions)
             {
-                return BadRequest(new { success = false, error = "This version cannot be deleted because newer drafts or clones depend on it." });
+                return BadRequest(ApiError.Of("version_delete_has_dependents", "This version cannot be deleted because newer drafts or clones depend on it."));
             }
 
             var hasRestorationReferences = await _context.TemplateRestorationRequests.AnyAsync(request =>
                 request.TemplateVersionId == versionId || request.RestoredVersionId == versionId);
             if (hasRestorationReferences)
             {
-                return BadRequest(new { success = false, error = "This version cannot be deleted because restoration history references it." });
+                return BadRequest(ApiError.Of("version_delete_has_restorations", "This version cannot be deleted because restoration history references it."));
             }
 
             _context.TemplateVersions.Remove(version);

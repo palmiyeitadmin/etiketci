@@ -268,7 +268,7 @@ namespace Plms.Tests
             await f.Controller().ConfirmPrint(printed.Id);
             f.Context.ChangeTracker.Clear();
 
-            var result = Assert.IsType<OkObjectResult>(await f.Controller().GetPrintIntents(status: PrintIntentStatuses.SentToClient, awaitingOlderThanMinutes: null, productId: null, reprintOf: null, search: "zyt", page: 1, pageSize: 2));
+            var result = Assert.IsType<OkObjectResult>(await f.Controller().GetPrintIntents(status: PrintIntentStatuses.SentToClient, awaitingOlderThanMinutes: null, productId: null, reprintOf: null, search: "sky", page: 1, pageSize: 2));
             var data = result.Value!.GetType().GetProperty("data")!.GetValue(result.Value)!;
             var items = (IEnumerable<PrintIntentDto>)data.GetType().GetProperty("items")!.GetValue(data)!;
             var total = (int)data.GetType().GetProperty("total")!.GetValue(data)!;

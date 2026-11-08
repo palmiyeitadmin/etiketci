@@ -107,6 +107,8 @@ namespace Plms.Api.DTOs.Template
         public DateTime? PublishedAt { get; set; }
         public string? PublishedBy { get; set; }
         public List<string> Warnings { get; set; } = new();
+        /// <summary>The same warnings as codes the UI translates (barcode checks and readiness warnings).</summary>
+        public List<Plms.Api.Models.Operational.CheckIssue> WarningIssues { get; set; } = new();
         public List<string> RequiredVariables { get; set; } = new();
         public bool HasProductContext { get; set; }
         public string? ProductName { get; set; }

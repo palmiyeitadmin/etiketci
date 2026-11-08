@@ -154,17 +154,17 @@ namespace Plms.Api.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.Vendor)
                 .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-            if (product == null) return NotFound(new { success = false, error = "Product not found." });
+            if (product == null) return NotFound(ApiError.Of("product_not_found", "Product not found."));
 
             var template = await _context.Templates.FindAsync(dto.TemplateId);
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == dto.VersionId && v.TemplateId == dto.TemplateId);
-            if (version == null) return NotFound(new { success = false, error = "Template version not found." });
+            if (version == null) return NotFound(ApiError.Of("template_version_not_found", "Template version not found."));
 
             if (version.Status != TemplateStatus.Published && version.Status != TemplateStatus.Approved)
             {
-                return BadRequest(new { success = false, error = "Only Approved or Published template versions can be used for print intents." });
+                return BadRequest(ApiError.Of("template_version_not_printable", "Only Approved or Published template versions can be used for print intents.", new { status = version.Status }));
             }
 
             var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
@@ -197,20 +197,20 @@ namespace Plms.Api.Controllers
                 .Include(p => p.Category)
                 .Include(p => p.Vendor)
                 .FirstOrDefaultAsync(p => p.Id == dto.ProductId);
-            if (product == null) return NotFound(new { success = false, error = "Product not found." });
-            if (!product.IsActive) return BadRequest(new { success = false, error = "Product is inactive." });
+            if (product == null) return NotFound(ApiError.Of("product_not_found", "Product not found."));
+            if (!product.IsActive) return BadRequest(ApiError.Of("product_inactive", "Product is inactive."));
 
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == dto.TemplateId);
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
             if (template.IsArchived || template.CurrentActiveVersionId == null)
             {
-                return BadRequest(new { success = false, error = "Template has no published version." });
+                return BadRequest(ApiError.Of("template_not_published", "Template has no published version."));
             }
 
             var version = await _context.TemplateVersions.FirstOrDefaultAsync(v => v.Id == template.CurrentActiveVersionId);
             if (version == null || version.Status != TemplateStatus.Published)
             {
-                return BadRequest(new { success = false, error = "Template has no published version." });
+                return BadRequest(ApiError.Of("template_not_published", "Template has no published version."));
             }
 
             var readiness = await _readinessService.EvaluateReadinessAsync(version, product);
@@ -230,7 +230,7 @@ namespace Plms.Api.Controllers
             var snapshotError = CaptureSnapshot(pi);
             if (snapshotError != null)
             {
-                return BadRequest(new { success = false, error = snapshotError });
+                return BadRequest(snapshotError);
             }
 
             var now = DateTime.UtcNow;
@@ -254,7 +254,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetPrintIntent(Guid id)
         {
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
             return Ok(new { success = true, data = await DetailAsync(pi, safetyCheck) });
@@ -265,11 +265,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> ConfirmHandoff(Guid id)
         {
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.Pending)
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be confirmed because it is in '{pi.Status}' state." });
+                return BadRequest(ApiError.Of("intent_cannot_confirm", $"Intent cannot be confirmed because it is in '{pi.Status}' state.", new { status = pi.Status }));
             }
 
             var safetyCheck = await _safetyService.EvaluateIntentSafetyAsync(pi);
@@ -295,11 +295,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> DispatchPdf(Guid id)
         {
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.ReadyForPrint)
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be dispatched because it is in '{pi.Status}' state." });
+                return BadRequest(ApiError.Of("intent_cannot_dispatch", $"Intent cannot be dispatched because it is in '{pi.Status}' state.", new { status = pi.Status }));
             }
 
             FinalSafetyCheckResult? safetyCheck = null;
@@ -314,12 +314,12 @@ namespace Plms.Api.Controllers
                 var snapshotError = CaptureSnapshot(pi);
                 if (snapshotError != null)
                 {
-                    return BadRequest(new { success = false, error = snapshotError });
+                    return BadRequest(snapshotError);
                 }
             }
             else if (pi.Template?.IsArchived == true || pi.Version?.Status == TemplateStatus.Archived)
             {
-                return BadRequest(new { success = false, error = "The template or version of this reprint has been archived." });
+                return BadRequest(ApiError.Of("template_or_version_archived", "The template or version of this reprint has been archived."));
             }
 
             pi.Status = PrintIntentStatuses.SentToClient;
@@ -341,20 +341,20 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetPrintPdf(Guid id)
         {
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.SentToClient)
             {
-                return Conflict(new { success = false, error = "The print PDF is only available while the request is waiting to be printed." });
+                return Conflict(ApiError.Of("print_pdf_unavailable", "The print PDF is only available while the request is waiting to be printed."));
             }
 
             if (pi.PrintedPayload == null)
             {
-                return Conflict(new { success = false, error = "This request has no stored label. Create a new print request." });
+                return Conflict(ApiError.Of("no_stored_label", "This request has no stored label. Create a new print request."));
             }
 
             var model = JsonSerializer.Deserialize<CanonicalLabelModel>(pi.PrintedPayload, ReadOptions);
-            if (model == null) return Problem("Stored label could not be read.");
+            if (model == null) return StatusCode(StatusCodes.Status500InternalServerError, ApiError.Of("stored_label_unreadable", "Stored label could not be read."));
 
             var pdf = _renderService.GeneratePdf(model, pi.Quantity, null);
             var fileName = $"baski-{Slug(pi.Product?.Sku)}-{pi.Id.ToString()[..8]}.pdf";
@@ -367,11 +367,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> ConfirmPrint(Guid id)
         {
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.SentToClient)
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be confirmed because it is in '{pi.Status}' state." });
+                return BadRequest(ApiError.Of("intent_cannot_mark_printed", $"Intent cannot be confirmed because it is in '{pi.Status}' state.", new { status = pi.Status }));
             }
 
             pi.Status = PrintIntentStatuses.UserPrinted;
@@ -397,26 +397,26 @@ namespace Plms.Api.Controllers
             var category = dto.Category?.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(category) || !PrintFailureCategories.All.Contains(category))
             {
-                return BadRequest(new { success = false, error = "Choose why the print failed.", code = "FAILURE_CATEGORY_REQUIRED" });
+                return BadRequest(ApiError.Of("FAILURE_CATEGORY_REQUIRED", "Choose why the print failed."));
             }
 
             var note = string.IsNullOrWhiteSpace(dto.Reason) ? null : dto.Reason.Trim();
             if (category == PrintFailureCategories.Other && note == null)
             {
-                return BadRequest(new { success = false, error = "Describe what went wrong.", code = "FAILURE_NOTE_REQUIRED" });
+                return BadRequest(ApiError.Of("FAILURE_NOTE_REQUIRED", "Describe what went wrong."));
             }
 
             var pi = await LoadAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.SentToClient)
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be marked failed because it is in '{pi.Status}' state." });
+                return BadRequest(ApiError.Of("intent_cannot_fail", $"Intent cannot be marked failed because it is in '{pi.Status}' state.", new { status = pi.Status }));
             }
 
             if (dto.PrintedQuantity is < 0 || dto.PrintedQuantity > pi.Quantity)
             {
-                return BadRequest(new { success = false, error = $"Printed quantity must be between 0 and {pi.Quantity}." });
+                return BadRequest(ApiError.Of("printed_quantity_out_of_range", $"Printed quantity must be between 0 and {pi.Quantity}.", new { max = pi.Quantity }));
             }
 
             pi.Status = PrintIntentStatuses.Failed;
@@ -445,31 +445,31 @@ namespace Plms.Api.Controllers
             var reason = dto.Reason?.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(reason) || !ReprintReasons.All.Contains(reason))
             {
-                return BadRequest(new { success = false, error = "Choose why the labels are printed again.", code = "REPRINT_REASON_REQUIRED" });
+                return BadRequest(ApiError.Of("REPRINT_REASON_REQUIRED", "Choose why the labels are printed again."));
             }
 
             var note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim();
             if (reason == ReprintReasons.Other && note == null)
             {
-                return BadRequest(new { success = false, error = "Describe why the labels are printed again.", code = "REPRINT_NOTE_REQUIRED" });
+                return BadRequest(ApiError.Of("REPRINT_NOTE_REQUIRED", "Describe why the labels are printed again."));
             }
 
             var original = await LoadAsync(id);
-            if (original == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (original == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (original.Status != PrintIntentStatuses.UserPrinted && original.Status != PrintIntentStatuses.Failed)
             {
-                return BadRequest(new { success = false, error = "Only printed or failed requests can be printed again." });
+                return BadRequest(ApiError.Of("reprint_not_allowed", "Only printed or failed requests can be printed again.", new { status = original.Status }));
             }
 
             if (original.PrintedPayload == null)
             {
-                return Conflict(new { success = false, error = "This request was printed before labels were stored, so it cannot be reproduced exactly. Create a new print request.", code = "NO_PRINTED_PAYLOAD" });
+                return Conflict(ApiError.Of("NO_PRINTED_PAYLOAD", "This request was printed before labels were stored, so it cannot be reproduced exactly. Create a new print request."));
             }
 
             if (original.Template?.IsArchived == true || original.Version?.Status == TemplateStatus.Archived)
             {
-                return BadRequest(new { success = false, error = "The template or version has been archived." });
+                return BadRequest(ApiError.Of("template_or_version_archived", "The template or version has been archived."));
             }
 
             var now = DateTime.UtcNow;
@@ -513,11 +513,11 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> CancelIntent(Guid id)
         {
             var pi = await _context.PrintIntents.FindAsync(id);
-            if (pi == null) return NotFound(new { success = false, error = "Print intent not found." });
+            if (pi == null) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             if (pi.Status != PrintIntentStatuses.Pending && pi.Status != PrintIntentStatuses.ReadyForPrint)
             {
-                return BadRequest(new { success = false, error = $"Intent cannot be cancelled from '{pi.Status}' state." });
+                return BadRequest(ApiError.Of("intent_cannot_cancel", $"Intent cannot be cancelled from '{pi.Status}' state.", new { status = pi.Status }));
             }
 
             pi.Status = PrintIntentStatuses.Cancelled;
@@ -532,7 +532,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> GetIntentAudit(Guid id)
         {
             var piExists = await _context.PrintIntents.AnyAsync(p => p.Id == id);
-            if (!piExists) return NotFound(new { success = false, error = "Print intent not found." });
+            if (!piExists) return NotFound(ApiError.Of("print_intent_not_found", "Print intent not found."));
 
             var logs = await _context.AuditLogs
                 .Where(a => a.EntityId == id.ToString() && a.EntityType == "PrintIntent")
@@ -576,25 +576,25 @@ namespace Plms.Api.Controllers
             Version = version,
         };
 
-        /// <summary>Resolves the version layout against the product and stores it. Returns an error message, or null.</summary>
-        private string? CaptureSnapshot(PrintIntent pi)
+        /// <summary>Resolves the version layout against the product and stores it. Returns the error response body, or null.</summary>
+        private ApiErrorBody? CaptureSnapshot(PrintIntent pi)
         {
             if (pi.Version == null || pi.Product == null)
             {
-                return "Template version or product is missing.";
+                return ApiError.Of("intent_context_missing", "Template version or product is missing.");
             }
 
             var model = JsonSerializer.Deserialize<CanonicalLabelModel>(pi.Version.LayoutJson, ReadOptions);
             if (model == null)
             {
-                return "Template layout could not be read.";
+                return ApiError.Of("template_layout_unreadable", "Template layout could not be read.");
             }
 
             _variableService.ResolveVariables(model, pi.Product);
             var unresolved = model.Elements.Where(element => element.Content?.Contains("{{") == true).Select(element => element.Name ?? element.Id).ToList();
             if (unresolved.Count > 0)
             {
-                return $"Some fields could not be filled from the product: {string.Join(", ", unresolved)}.";
+                return ApiError.Of("fields_unresolved", $"Some fields could not be filled from the product: {string.Join(", ", unresolved)}.", new { fields = unresolved });
             }
 
             pi.PrintedPayload = JsonSerializer.Serialize(model, WriteOptions);
@@ -604,7 +604,7 @@ namespace Plms.Api.Controllers
 
         private static bool IsValidQuantity(int quantity, out object error)
         {
-            error = new { success = false, error = $"Quantity must be between 1 and {LabelRenderService.MaxCopies}.", code = "QUANTITY_OUT_OF_RANGE" };
+            error = ApiError.Of("QUANTITY_OUT_OF_RANGE", $"Quantity must be between 1 and {LabelRenderService.MaxCopies}.", new { max = LabelRenderService.MaxCopies });
             return quantity >= 1 && quantity <= LabelRenderService.MaxCopies;
         }
 

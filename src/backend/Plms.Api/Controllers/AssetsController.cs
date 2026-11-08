@@ -36,7 +36,7 @@ namespace Plms.Api.Controllers
             var asset = await _assetStorageService.GetByIdAsync(id, cancellationToken);
             if (asset == null)
             {
-                return NotFound(new { success = false, error = "Asset not found." });
+                return NotFound(ApiError.Of("asset_not_found", "Asset not found."));
             }
 
             return Ok(new { success = true, data = MapDetail(asset) });
@@ -49,7 +49,7 @@ namespace Plms.Api.Controllers
             var asset = await _assetStorageService.GetByIdAsync(id, cancellationToken);
             if (asset == null)
             {
-                return NotFound(new { success = false, error = "Asset not found." });
+                return NotFound(ApiError.Of("asset_not_found", "Asset not found."));
             }
 
             return File(asset.StorageData, asset.MimeType, enableRangeProcessing: false);
@@ -62,7 +62,7 @@ namespace Plms.Api.Controllers
         {
             if (file == null)
             {
-                return BadRequest(new { success = false, error = "File is required." });
+                return BadRequest(ApiError.Of("file_required", "File is required."));
             }
 
             try
@@ -78,7 +78,7 @@ namespace Plms.Api.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { success = false, error = ex.Message });
+                return BadRequest(ApiError.From(ex, "asset_upload_failed"));
             }
         }
 
@@ -89,7 +89,7 @@ namespace Plms.Api.Controllers
             var deleted = await _assetStorageService.SoftDeleteAsync(id, User.Identity?.Name ?? "System", cancellationToken);
             if (!deleted)
             {
-                return NotFound(new { success = false, error = "Asset not found." });
+                return NotFound(ApiError.Of("asset_not_found", "Asset not found."));
             }
 
             return Ok(new { success = true });

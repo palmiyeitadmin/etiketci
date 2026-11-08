@@ -158,6 +158,7 @@ using (var scope = app.Services.CreateScope())
     await EnsureSeedAdminAsync(userManager, seedAdminEmail, seedAdminPassword, forceResetPassword);
     await EnsureSeedProductCategoriesAsync(dbContext);
     await EnsureSeedTemplateCategoriesAsync(dbContext);
+    await LegacyReadinessIssues.BackfillAsync(dbContext);
 }
 
 app.Run();
@@ -251,7 +252,7 @@ static async Task EnsureRoleAsync(
 
             if (!alreadySeeded.Contains(permission))
             {
-                AuditWriter.Add(dbContext, "RolePermissionSeeded", "Role", role.Id, "System", "seed", permission, new { role = roleName, permission });
+                AuditWriter.Add(dbContext, "RolePermissionSeeded", "Role", role.Id, "System", Plms.Api.Controllers.AuditLogsController.SystemCorrelationId, permission, new { role = roleName, permission });
             }
         }
     }
@@ -398,9 +399,14 @@ static async Task EnsureSeedProductCategoriesAsync(ApplicationDbContext dbContex
     Console.WriteLine("[SEED_DEBUG] Seeding initial Product Categories...");
     dbContext.ProductCategories.AddRange(new List<ProductCategory>
     {
-        new() { Id = Guid.NewGuid(), Code = "LABEL", Name = "Genel etiketler", IsActive = true },
-        new() { Id = Guid.NewGuid(), Code = "PACK", Name = "Ambalaj malzemeleri", IsActive = true },
-        new() { Id = Guid.NewGuid(), Code = "ASSET", Name = "Makine ve demirbaş", IsActive = true }
+        // Palmiye's product lines (palmiyeglobal.com); editable afterwards on the categories page.
+        new() { Id = Guid.NewGuid(), Code = "BIO", Name = "Biyoklimatik pergolalar", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "KUM", Name = "Kumaş pergolalar", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "CRP", Name = "Carport", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "KIS", Name = "Kış bahçeleri", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "TNT", Name = "Tente ve kapamalar", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "CAM", Name = "Cam sistemleri", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "AKS", Name = "Aksesuar ve yedek parça", IsActive = true }
     });
     await dbContext.SaveChangesAsync();
     Console.WriteLine("[SEED_DEBUG] Product Categories seeded.");
@@ -417,7 +423,8 @@ static async Task EnsureSeedTemplateCategoriesAsync(ApplicationDbContext dbConte
     dbContext.TemplateCategories.AddRange(new List<TemplateCategory>
     {
         new() { Id = Guid.NewGuid(), Code = "GEN", Name = "Genel şablonlar", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-        new() { Id = Guid.NewGuid(), Code = "ETK", Name = "Etiketler", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        new() { Id = Guid.NewGuid(), Code = "PRF", Name = "Profil etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        new() { Id = Guid.NewGuid(), Code = "URN", Name = "Ürün kimlik etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
         new() { Id = Guid.NewGuid(), Code = "KOLI", Name = "Koli etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
     });
     await dbContext.SaveChangesAsync();

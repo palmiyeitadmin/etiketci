@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CaretRight, FileCsv } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { buildApiUrl } from "@/lib/api-base-url";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, extractErrorFromResponse, localizeApiError } from "@/lib/api-client";
 import { useI18n, useText } from "@/lib/i18n";
 import { ImportSessionSummary } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -54,7 +54,7 @@ export default function ProductImportPage() {
                 return;
             }
 
-            setError(typeof json.error === "string" ? json.error : json.error?.message || text.uploadFailed);
+            setError(json && typeof json === "object" && json.error !== undefined ? localizeApiError(extractErrorFromResponse(json, res.status)).message : text.uploadFailed);
         } catch {
             setError(text.networkError);
         } finally {

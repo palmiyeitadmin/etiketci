@@ -46,6 +46,9 @@ describe("backend text", () => {
     it("uses API error codes when known", () => {
         expect(apiErrorText("tr", { code: "safety_check_failed", message: "Final safety check failed." }, "?")).toBe("Son güvenlik kontrolü geçilemedi");
         expect(apiErrorText("tr", { message: "Something else" }, "?")).toBe("Something else");
+        expect(apiErrorText("tr", { code: "version_not_editable", params: { status: "InReview" }, message: "Only Draft versions can be edited." }, "?"))
+            .toBe("Sürüm “İncelemede” durumunda. Yalnızca taslaklar düzenlenebilir");
+        expect(apiErrorText("en", { code: "unknown_permissions", params: { permissions: "a.b, c.d" } }, "?")).toBe("Unknown permissions: a.b, c.d");
     });
 
     it("summarizes audit entries from metadata", () => {

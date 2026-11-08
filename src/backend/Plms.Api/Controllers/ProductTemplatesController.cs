@@ -63,14 +63,14 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> LinkTemplate(Guid productId, LinkTemplateDto dto)
         {
             var product = await _context.Products.FindAsync(productId);
-            if (product == null) return NotFound(new { success = false, error = "Product not found." });
+            if (product == null) return NotFound(ApiError.Of("product_not_found", "Product not found."));
 
             var template = await _context.Templates.FindAsync(dto.TemplateId);
-            if (template == null) return NotFound(new { success = false, error = "Template not found." });
+            if (template == null) return NotFound(ApiError.Of("template_not_found", "Template not found."));
 
             if (await _context.ProductTemplates.AnyAsync(pt => pt.ProductId == productId && pt.TemplateId == dto.TemplateId))
             {
-                return BadRequest(new { success = false, error = "Template is already linked to this product." });
+                return BadRequest(ApiError.Of("template_already_linked", "Template is already linked to this product."));
             }
 
             if (dto.IsDefault)
@@ -115,7 +115,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> SetDefault(Guid productId, Guid id)
         {
             var pt = await _context.ProductTemplates.FindAsync(id);
-            if (pt == null || pt.ProductId != productId) return NotFound(new { success = false, error = "Link not found." });
+            if (pt == null || pt.ProductId != productId) return NotFound(ApiError.Of("link_not_found", "Link not found."));
 
             // Reset other defaults for this product
             var currentDefaults = await _context.ProductTemplates.Where(x => x.ProductId == productId && x.IsDefault).ToListAsync();
@@ -132,7 +132,7 @@ namespace Plms.Api.Controllers
         public async Task<IActionResult> UnlinkTemplate(Guid productId, Guid id)
         {
             var pt = await _context.ProductTemplates.FindAsync(id);
-            if (pt == null || pt.ProductId != productId) return NotFound(new { success = false, error = "Link not found." });
+            if (pt == null || pt.ProductId != productId) return NotFound(ApiError.Of("link_not_found", "Link not found."));
 
             var linkedTemplateCode = await _context.Templates.Where(t => t.Id == pt.TemplateId).Select(t => t.Code).FirstOrDefaultAsync();
             var linkedProductSku = await _context.Products.Where(p => p.Id == productId).Select(p => p.Sku).FirstOrDefaultAsync();
