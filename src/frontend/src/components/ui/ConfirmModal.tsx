@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { Portal } from "@/components/ui/Portal";
 
 export function ConfirmModal({
@@ -25,10 +25,7 @@ export function ConfirmModal({
     onCancel: () => void;
     loading?: boolean;
 }) {
-    const { locale } = useI18n();
-    const text = locale === "tr"
-        ? { working: "İşleniyor", cancel: "Vazgeç" }
-        : { working: "Working", cancel: "Cancel" };
+    const text = useText("common").confirm;
 
     useEffect(() => {
         if (!open) return;

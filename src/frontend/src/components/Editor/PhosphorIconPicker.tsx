@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretUp, MagnifyingGlass } from "@phosphor-icons/react";
 import { getFeaturedPhosphorIcons, searchPhosphorIcons, type PhosphorIconCatalogItem, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { PhosphorIconPreview } from "@/components/Editor/PhosphorIconPreview";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 const PAGE_SIZE = 96;
 
@@ -13,7 +13,6 @@ export function PhosphorIconPicker({
 }: {
   onInsert: (payload: { key: PhosphorIconKey; content: string; name: string }) => void | Promise<void>;
 }) {
-  const { locale } = useI18n();
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -27,33 +26,7 @@ export function PhosphorIconPicker({
     [allResults, featuredIcons, shouldShowFullCatalog, visibleCount]
   );
   const canLoadMore = shouldShowFullCatalog && allResults.length > visibleCount;
-  const text = locale === "tr"
-    ? {
-        placeholder: "İkon ara",
-        featured: "Sık kullanılanlar",
-        icons: "ikon",
-        fullCatalog: "Tüm katalog",
-        fullCatalogDescription: "Bütün ikonları göz atarak bulun",
-        results: "sonuç",
-        showAll: "Tümünü göster",
-        showLess: "Daha az göster",
-        empty: "Sonuç bulunamadı",
-        insertFailed: "İkon eklenemedi",
-        loadMore: "Daha fazla göster",
-      }
-    : {
-        placeholder: "Search icons",
-        featured: "Featured",
-        icons: "icons",
-        fullCatalog: "Full catalog",
-        fullCatalogDescription: "Browse every icon in the set",
-        results: "results",
-        showAll: "Show all",
-        showLess: "Show less",
-        empty: "No results found",
-        insertFailed: "Icon could not be inserted",
-        loadMore: "Show more",
-      };
+  const text = useText("editor").iconPicker;
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);

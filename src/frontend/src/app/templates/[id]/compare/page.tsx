@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { LabelTemplate, TemplateComparison } from "@/types/template";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,7 +17,6 @@ import { TemplatePreviewCard } from "@/components/Templates/TemplatePreviewCard"
 export default function TemplateComparePage() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const { locale } = useI18n();
     const templateId = String(params.id);
     const leftVersionId = searchParams.get("leftVersionId") || "";
     const rightVersionId = searchParams.get("rightVersionId") || "";
@@ -26,41 +25,7 @@ export default function TemplateComparePage() {
     const [comparison, setComparison] = useState<TemplateComparison | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const text = locale === "tr"
-        ? {
-            title: "Sürüm karşılaştırması",
-            description: (name: string, left: number, right: number) => `${name}: v${left} ve v${right} öğe öğe karşılaştırılıyor`,
-            descriptionFallback: "İki sürümün etiket öğelerini karşılaştırır",
-            back: "Şablona dön",
-            unavailableTitle: "Karşılaştırma yapılamadı",
-            unavailableDescription: "Karşılaştırmak için iki sürüm seçin.",
-            added: "Eklenen",
-            removed: "Kaldırılan",
-            changed: "Değişen",
-            changes: "Öğe değişiklikleri",
-            noChangesTitle: "Fark yok",
-            noChangesDescription: "Bu iki sürümün öğeleri aynı.",
-            columns: ["Değişiklik", "Öğe", "Kimlik", "Açıklama"],
-            changeType: { Added: "Eklendi", Removed: "Kaldırıldı", Changed: "Değişti", Modified: "Değişti" } as Record<string, string>,
-            elementType: { text: "Metin", barcode: "Barkod", qr: "QR", image: "Görsel", rect: "Dikdörtgen", ellipse: "Elips", line: "Çizgi" } as Record<string, string>,
-        }
-        : {
-            title: "Version comparison",
-            description: (name: string, left: number, right: number) => `${name}: comparing v${left} and v${right} element by element`,
-            descriptionFallback: "Compares the label elements of two versions",
-            back: "Back to template",
-            unavailableTitle: "Comparison unavailable",
-            unavailableDescription: "Select two versions to compare.",
-            added: "Added",
-            removed: "Removed",
-            changed: "Changed",
-            changes: "Element changes",
-            noChangesTitle: "No differences",
-            noChangesDescription: "The elements of these two versions are identical.",
-            columns: ["Change", "Element", "ID", "Summary"],
-            changeType: { Added: "Added", Removed: "Removed", Changed: "Changed", Modified: "Changed" } as Record<string, string>,
-            elementType: { text: "Text", barcode: "Barcode", qr: "QR", image: "Image", rect: "Rectangle", ellipse: "Ellipse", line: "Line" } as Record<string, string>,
-        };
+    const text = useText("templateDetail").compare;
 
     useEffect(() => {
         async function load() {
@@ -140,7 +105,7 @@ export default function TemplateComparePage() {
                             {changes.length === 0 ? (
                                 <EmptyState title={text.noChangesTitle} description={text.noChangesDescription} />
                             ) : (
-                                <DataTable columns={text.columns}>
+                                <DataTable columns={[text.columns.change, text.columns.element, text.columns.id, text.columns.summary]}>
                                     {changes.map((change) => (
                                         <tr key={`${change.changeType}-${change.elementId}`}>
                                             <td className="whitespace-nowrap px-4 py-2.5">

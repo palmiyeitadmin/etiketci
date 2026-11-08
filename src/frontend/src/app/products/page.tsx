@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { Product } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FilterBar } from "@/components/ui/FilterBar";
@@ -13,10 +13,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function ProductsPage() {
-    const { formatDate, t, locale } = useI18n();
-    const searchPlaceholder = locale === "tr" ? "Ara" : "Search";
-    const csvImportLabel = locale === "tr" ? "CSV içe aktar" : "Import CSV";
-    const newProductLabel = locale === "tr" ? "Yeni ürün" : "New product";
+    const { formatDate, t } = useI18n();
+    const text = useText("products").list;
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -49,15 +47,15 @@ export default function ProductsPage() {
             <div className="space-y-6">
                 <PageHeader
                     title={t("products.title")}
-                    description={locale === "tr" ? "Ürünler, kategorileri ve tedarikçileri" : "Products with their categories and vendors"}
+                    description={text.description}
                     actions={
                         <>
                             <Link href="/products/import" className="plms-button-secondary">
-                                {csvImportLabel}
+                                {text.csvImport}
                             </Link>
                             <RoleGuard allowedRoles={["Admin", "Operator"]}>
                                 <Link href="/products/new" className="plms-button-primary">
-                                    {newProductLabel}
+                                    {text.newProduct}
                                 </Link>
                             </RoleGuard>
                         </>
@@ -68,14 +66,14 @@ export default function ProductsPage() {
                     left={
                         <input
                             className="plms-input max-w-sm"
-                            placeholder={searchPlaceholder}
+                            placeholder={text.search}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
                     }
                     right={
                         <div className="tabular text-sm text-ink-3">
-                            {locale === "tr" ? `${filteredProducts.length} ürün` : `${filteredProducts.length} products`}
+                            {text.count(filteredProducts.length)}
                         </div>
                     }
                 />
@@ -90,7 +88,7 @@ export default function ProductsPage() {
                         description={t("products.emptyDescription")}
                         action={
                             <Link href="/products/import" className="plms-button-secondary">
-                                {csvImportLabel}
+                                {text.csvImport}
                             </Link>
                         }
                     />

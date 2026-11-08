@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -23,61 +23,14 @@ const emptyActivity: DashboardActivity = {
 const CHART = { accent: "#0e7490", bar: "#d4d4d8", grid: "#ececee", label: "#6b6b70" };
 
 export default function HomePage() {
-    const { locale, formatDate } = useI18n();
+    const { formatDate, formatNumber } = useI18n();
     const router = useRouter();
     const { data: session, status } = useSession();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [activity, setActivity] = useState<DashboardActivity>(emptyActivity);
     const [loading, setLoading] = useState(true);
-    const numberLocale = locale === "tr" ? "tr-TR" : "en-US";
 
-    const text = locale === "tr" ? {
-        title: "Panel",
-        loading: "Panel yükleniyor",
-        newPrint: "Baskı talebi oluştur",
-        newTemplate: "Yeni şablon",
-        printedToday: "Bugün basılan etiket",
-        vsYesterday: (diff: number) => diff === 0 ? "Dünle aynı" : `Düne göre ${diff > 0 ? "+" : "−"}${Math.abs(diff).toLocaleString("tr-TR")}`,
-        awaitingOutcome: "Sonucu bekleyen baskı",
-        awaitingHint: (count: number) => count > 0 ? "Operatörün sonucu girmesi gerekiyor" : "Bekleyen yok",
-        openRequests: "Açık baskı talebi",
-        openHint: "Henüz PDF'i açılmamış talepler",
-        pendingApprovals: "Onay bekleyen sürüm",
-        approvalsHint: (count: number) => count > 0 ? "Onaylar sayfasında" : "Bekleyen yok",
-        chartTitle: "Basılan etiketler",
-        chartSubtitle: "Son 14 gün, bugün vurgulu",
-        chartTotal: (total: number) => `Toplam ${total.toLocaleString("tr-TR")} etiket`,
-        labels: "etiket",
-        jobs: "baskı",
-        failed: "hatalı",
-        favorites: "Favori şablonlar",
-        noFavorites: "Şablon listesinde yıldızladığınız şablonlar burada görünür.",
-        recentTemplates: "Son değişen şablonlar",
-        recentActivity: "Son işlemler",
-    } : {
-        title: "Dashboard",
-        loading: "Loading dashboard",
-        newPrint: "New print request",
-        newTemplate: "New template",
-        printedToday: "Labels printed today",
-        vsYesterday: (diff: number) => diff === 0 ? "Same as yesterday" : `${diff > 0 ? "+" : "−"}${Math.abs(diff).toLocaleString("en-US")} vs yesterday`,
-        awaitingOutcome: "Prints awaiting outcome",
-        awaitingHint: (count: number) => count > 0 ? "An operator needs to record the result" : "None waiting",
-        openRequests: "Open print requests",
-        openHint: "Requests whose PDF has not been opened yet",
-        pendingApprovals: "Versions awaiting approval",
-        approvalsHint: (count: number) => count > 0 ? "See the approvals page" : "None waiting",
-        chartTitle: "Labels printed",
-        chartSubtitle: "Last 14 days, today highlighted",
-        chartTotal: (total: number) => `${total.toLocaleString("en-US")} labels in total`,
-        labels: "labels",
-        jobs: "prints",
-        failed: "failed",
-        favorites: "Favorite templates",
-        noFavorites: "Templates you star in the template list appear here.",
-        recentTemplates: "Recently changed templates",
-        recentActivity: "Recent activity",
-    };
+    const text = useText("dashboard").home;
 
     useEffect(() => {
         if (!session) {
@@ -123,9 +76,9 @@ export default function HomePage() {
         return days.map((day, index) => ({
             ...day,
             isToday: index === days.length - 1,
-            label: new Date(`${day.date}T00:00:00`).toLocaleDateString(numberLocale, { day: "2-digit", month: "2-digit" }),
+            label: formatDate(`${day.date}T00:00:00`, { day: "2-digit", month: "2-digit" }),
         }));
-    }, [summary, numberLocale]);
+    }, [summary, formatDate]);
     const chartTotal = chartData.reduce((sum, day) => sum + day.labels, 0);
 
     if (status === "loading" || loading) {
@@ -158,26 +111,26 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MetricCard
                     label={text.printedToday}
-                    value={printedToday.toLocaleString(numberLocale)}
+                    value={formatNumber(printedToday)}
                     hint={text.vsYesterday(printedToday - printedYesterday)}
                     href="/print-intents"
                 />
                 <MetricCard
                     label={text.awaitingOutcome}
-                    value={awaiting.toLocaleString(numberLocale)}
+                    value={formatNumber(awaiting)}
                     hint={text.awaitingHint(awaiting)}
                     accent={awaiting > 0 ? "warning" : "neutral"}
                     href="/print-intents"
                 />
                 <MetricCard
                     label={text.openRequests}
-                    value={(summary?.pendingPrintIntents ?? 0).toLocaleString(numberLocale)}
+                    value={formatNumber(summary?.pendingPrintIntents ?? 0)}
                     hint={text.openHint}
                     href="/print-intents"
                 />
                 <MetricCard
                     label={text.pendingApprovals}
-                    value={pendingApprovals.toLocaleString(numberLocale)}
+                    value={formatNumber(pendingApprovals)}
                     hint={text.approvalsHint(pendingApprovals)}
                     accent={pendingApprovals > 0 ? "primary" : "neutral"}
                     href="/approvals"
@@ -211,7 +164,7 @@ export default function HomePage() {
                                     axisLine={false}
                                     width={44}
                                     tick={{ fill: CHART.label, fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}
-                                    tickFormatter={(value: number) => value.toLocaleString(numberLocale)}
+                                    tickFormatter={(value: number) => formatNumber(value)}
                                 />
                                 <Tooltip
                                     cursor={{ fill: "rgba(23,23,23,0.04)" }}
@@ -221,7 +174,7 @@ export default function HomePage() {
                                         return (
                                             <div className="rounded-lg border border-line bg-surface px-3 py-2 text-sm shadow-pop">
                                                 <div className="font-mono text-xs text-ink-3">{day.label}</div>
-                                                <div className="tabular text-ink">{day.labels.toLocaleString(numberLocale)} {text.labels}</div>
+                                                <div className="tabular text-ink">{formatNumber(day.labels)} {text.labels}</div>
                                                 <div className="tabular text-ink-3">{day.jobs} {text.jobs}{day.failed ? ` · ${day.failed} ${text.failed}` : ""}</div>
                                             </div>
                                         );

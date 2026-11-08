@@ -6,14 +6,14 @@ import { useParams, useRouter } from "next/navigation";
 import { CaretRight } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TemplateRestorationRequest } from "@/types/template";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function RestorationApprovalDetailPage() {
-    const { formatDate, formatDateTime, locale } = useI18n();
+    const { formatDate, formatDateTime } = useI18n();
     const params = useParams();
     const router = useRouter();
     const requestId = String(params.requestId);
@@ -22,57 +22,7 @@ export default function RestorationApprovalDetailPage() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const text = locale === "tr"
-        ? {
-            parent: "Onaylar",
-            title: "Geri yükleme talebi",
-            description: "Onaylarsanız arşivdeki sürümden yeni bir taslak oluşturulur.",
-            openTemplate: "Şablonu aç",
-            notFound: "Talep bulunamadı",
-            notFoundDescription: "Bu geri yükleme talebi yüklenemedi.",
-            code: "Kod",
-            version: "Sürüm",
-            status: "Durum",
-            requestedBy: "Talep eden",
-            requestedAt: "Tarih",
-            business: "Gerekçe",
-            target: "Hedef ortam",
-            notSpecified: "Belirtilmedi",
-            until: "Geçerlilik sonu",
-            openEnded: "Süresiz",
-            decision: "Karar",
-            commentsLabel: "Yorum",
-            comments: "İsteğe bağlı",
-            reject: "Reddet",
-            approve: "Onayla ve taslak oluştur",
-            reviewedBy: "İnceleyen: {user}{dateText}",
-            unknown: "Bilinmiyor",
-        }
-        : {
-            parent: "Approvals",
-            title: "Restoration request",
-            description: "Approving creates a new draft from the archived version.",
-            openTemplate: "Open template",
-            notFound: "Request not found",
-            notFoundDescription: "This restoration request could not be loaded.",
-            code: "Code",
-            version: "Version",
-            status: "Status",
-            requestedBy: "Requested by",
-            requestedAt: "Date",
-            business: "Reason",
-            target: "Target environment",
-            notSpecified: "Not specified",
-            until: "Valid until",
-            openEnded: "No end date",
-            decision: "Decision",
-            commentsLabel: "Comment",
-            comments: "Optional",
-            reject: "Reject",
-            approve: "Approve and create draft",
-            reviewedBy: "Reviewed by {user}{dateText}",
-            unknown: "Unknown",
-        };
+    const text = useText("approvals").restoration;
 
     async function load() {
         const res = await apiFetch<TemplateRestorationRequest>(`/api/Templates/restoration-approvals/${requestId}`);
@@ -165,7 +115,7 @@ export default function RestorationApprovalDetailPage() {
                                 </div>
                             ) : (
                                 <p className="text-sm text-ink-3">
-                                    {text.reviewedBy.replace("{user}", request.reviewedBy || text.unknown).replace("{dateText}", request.reviewedAt ? ` · ${formatDateTime(request.reviewedAt)}` : "")}
+                                    {text.reviewedBy(request.reviewedBy || text.unknown, request.reviewedAt ? ` · ${formatDateTime(request.reviewedAt)}` : "")}
                                 </p>
                             )}
                         </section>

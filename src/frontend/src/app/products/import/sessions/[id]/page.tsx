@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { ImportCommitResult, ImportSession } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -15,58 +15,10 @@ import { DataTable } from "@/components/ui/DataTable";
 import { CaretRight } from "@phosphor-icons/react";
 
 export default function ImportSessionDetailPage() {
-    const { formatDateTime, locale } = useI18n();
+    const { formatDateTime } = useI18n();
     const params = useParams();
     const id = String(params.id);
-    const text = locale === "tr"
-        ? {
-            parent: "CSV içe aktar",
-            title: "İçe aktarım",
-            notFound: "İçe aktarım bulunamadı",
-            notFoundDescription: "Bu içe aktarım kaydı yüklenemedi.",
-            totalRows: "Toplam satır",
-            validRows: "Geçerli",
-            issueRows: "Hatalı",
-            status: "Durum",
-            enableOverwrite: "Mevcut ürünlerin üzerine yaz",
-            commitImport: "Ürünleri kaydet",
-            createdByOn: "{user} · {date}",
-            rowIssues: "Satır hataları",
-            noValidation: "Hata yok",
-            noValidationDescription: "Tüm satırlar geçerli, ürünleri kaydedebilirsiniz.",
-            row: "Satır",
-            type: "Tür",
-            sku: "SKU",
-            message: "Açıklama",
-            notAvailable: "–",
-            commitTitle: "Ürünler kaydedilsin mi",
-            commitDescription: "Yeni ürünler eklenir, üzerine yazma onaylı ürünler güncellenir. İşlem tek seferde uygulanır.",
-            importedSummary: "{imported} ürün eklendi, {updated} ürün güncellendi",
-        }
-        : {
-            parent: "Import CSV",
-            title: "Import",
-            notFound: "Import not found",
-            notFoundDescription: "This import could not be loaded.",
-            totalRows: "Total rows",
-            validRows: "Valid",
-            issueRows: "With errors",
-            status: "Status",
-            enableOverwrite: "Overwrite existing products",
-            commitImport: "Save products",
-            createdByOn: "{user} · {date}",
-            rowIssues: "Row errors",
-            noValidation: "No errors",
-            noValidationDescription: "Every row is valid, you can save the products.",
-            row: "Row",
-            type: "Type",
-            sku: "SKU",
-            message: "Details",
-            notAvailable: "–",
-            commitTitle: "Save the products",
-            commitDescription: "New products are added and overwrite-approved products are updated, all in one step.",
-            importedSummary: "{imported} added, {updated} updated",
-        };
+    const text = useText("products").importSession;
     const [session, setSession] = useState<ImportSession | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -111,7 +63,7 @@ export default function ImportSessionDetailPage() {
 
         if (res.success) {
             await load();
-            setNotice({ tone: "good", text: text.importedSummary.replace("{imported}", String(res.data.importedCount)).replace("{updated}", String(res.data.updatedCount)) });
+            setNotice({ tone: "good", text: text.importedSummary(res.data.importedCount, res.data.updatedCount) });
             return;
         }
 
@@ -133,7 +85,7 @@ export default function ImportSessionDetailPage() {
 
                 <PageHeader
                     title={session ? session.fileName : text.title}
-                    description={session ? text.createdByOn.replace("{user}", session.createdBy).replace("{date}", formatDateTime(session.createdAt)) : undefined}
+                    description={session ? text.createdByOn(session.createdBy, formatDateTime(session.createdAt)) : undefined}
                     actions={session && (canOverwrite || canCommit) ? (
                         <>
                             {canOverwrite ? (

@@ -60,47 +60,7 @@ export default function PrintIntentDetailPage() {
   const userPermissions = ((session?.user as { permissions?: string[] } | undefined)?.permissions ?? []) as string[];
   const isAdmin = (((session?.user as { roles?: string[] } | undefined)?.roles) ?? []).includes("Admin");
   const canReprint = isAdmin || hasPermission(userPermissions, permissions.printIntentsReprint);
-  const text = locale === "tr"
-    ? {
-      back: "Baskı geçmişi", proof: "Prova PDF'ini aç", notFound: "Baskı talebi bulunamadı", notFoundDescription: "Baskı talebi yüklenemedi.",
-      loading: "Yükleniyor", version: "Sürüm", pieces: "{n} adet",
-      steps: "Baskı adımları", requested: "Talep oluşturuldu", waiting: "Bekliyor",
-      readyStep: "Baskıya hazır", readyHint: "Güvenlik kontrolünü ve hazırlığı onaylayın.", confirmReadiness: "Hazırlığı onayla",
-      notSafeHint: "Güvenlik kontrolünde sorun var; önce giderilmeli.",
-      sentStep: "PDF açıldı", sentHint: "PDF'i açın ve yazıcıda %100 ölçekle basın.", dispatchPdf: "PDF'i aç",
-      outcomeStep: "Basıldı", outcomeHint: "Baskı bittiğinde sonucu kaydedin.", cancelIntent: "Talebi iptal et",
-      printConfirmed: "Baskı operatör tarafından onaylandı.", failedPrefix: "Baskı hatalı.", noFailureReason: "Neden kaydedilmedi.", cancelled: "Talep, PDF açılmadan iptal edildi.",
-      failureCategory: "Sorun", failureNote: "Not", printedQuantity: "Düzgün basılan",
-      reprintReason: "Neden", reprintNote: "Not", originalPrint: "İlk baskı", reprintCount: (n: number) => `${n} adet`, openReprint: "Aç",
-      details: "Ayrıntılar", product: "Ürün", template: "Şablon", quantity: "Adet", requestedBy: "Talep eden", createdAt: "Oluşturulma",
-      checks: "Kontroller", finalSafety: "Son güvenlik kontrolü", safe: "Güvenli", attention: "Dikkat", noSafetyWarnings: "Güvenlik uyarısı yok",
-      readinessSnapshot: "Talep anındaki hazırlık", noReadinessIssues: "Kayıtlı hata veya uyarı yok", readinessUnavailable: "Hazırlık kaydı yok",
-      auditTrail: "Denetim kaydı", noAudit: "Bu talep için denetim kaydı yok.",
-      popupBlocked: "PDF sekmesi açılamadı. Tarayıcıda açılır pencerelere izin verin veya prova PDF'ini açın.",
-      status: {
-        Pending: "Bekliyor", ReadyForPrint: "Baskıya hazır", SentToClient: "PDF açıldı", UserPrinted: "Basıldı", Failed: "Hatalı", Cancelled: "İptal edildi",
-      } as Record<PrintIntentStatus, string>,
-    }
-    : {
-      back: "Print history", proof: "Open proof PDF", notFound: "Print request not found", notFoundDescription: "The print request could not be loaded.",
-      loading: "Loading", version: "Version", pieces: "{n} pcs",
-      steps: "Print steps", requested: "Request created", waiting: "Waiting",
-      readyStep: "Ready to print", readyHint: "Confirm the safety check and readiness.", confirmReadiness: "Confirm readiness",
-      notSafeHint: "The safety check found a problem; fix it first.",
-      sentStep: "PDF opened", sentHint: "Open the PDF and print it at 100% scale.", dispatchPdf: "Open PDF",
-      outcomeStep: "Printed", outcomeHint: "Record the result when printing is done.", cancelIntent: "Cancel request",
-      printConfirmed: "Print confirmed by the operator.", failedPrefix: "Print failed.", noFailureReason: "No reason recorded.", cancelled: "Request cancelled before the PDF was opened.",
-      failureCategory: "Problem", failureNote: "Note", printedQuantity: "Printed fine",
-      reprintReason: "Reason", reprintNote: "Note", originalPrint: "Original print", reprintCount: (n: number) => `${n} pcs`, openReprint: "Open",
-      details: "Details", product: "Product", template: "Template", quantity: "Quantity", requestedBy: "Requested by", createdAt: "Created",
-      checks: "Checks", finalSafety: "Final safety check", safe: "Safe", attention: "Attention", noSafetyWarnings: "No safety warnings",
-      readinessSnapshot: "Readiness at request time", noReadinessIssues: "No recorded errors or warnings", readinessUnavailable: "No readiness record",
-      auditTrail: "Audit log", noAudit: "No audit records for this request.",
-      popupBlocked: "The PDF tab could not be opened. Allow popups or use the proof PDF action.",
-      status: {
-        Pending: "Pending", ReadyForPrint: "Ready to print", SentToClient: "PDF opened", UserPrinted: "Printed", Failed: "Failed", Cancelled: "Cancelled",
-      } as Record<PrintIntentStatus, string>,
-    };
+  const { detail: text, statuses: statusLabels } = useText("printRequests");
 
   const [intent, setIntent] = useState<PrintIntentDetailDto | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogDto[]>([]);
@@ -312,7 +272,7 @@ export default function PrintIntentDetailPage() {
       ) : undefined,
     },
     {
-      title: intent.status === "UserPrinted" || intent.status === "Failed" || isCancelled ? text.status[intent.status] : text.outcomeStep,
+      title: intent.status === "UserPrinted" || intent.status === "Failed" || isCancelled ? statusLabels[intent.status] : text.outcomeStep,
       meta: who(intent.completedAt, intent.completedBy),
       state: isSentToClient
         ? "current"
@@ -389,8 +349,8 @@ export default function PrintIntentDetailPage() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2">
               <span>{intent.templateName}</span>
               <span className="whitespace-nowrap font-mono text-xs text-ink-3">v{intent.versionNumber}</span>
-              <span className="tabular whitespace-nowrap">{text.pieces.replace("{n}", String(intent.quantity))}</span>
-              <StatusBadge label={text.status[intent.status]} tone={statusTone} />
+              <span className="tabular whitespace-nowrap">{text.pieces(intent.quantity)}</span>
+              <StatusBadge label={statusLabels[intent.status]} tone={statusTone} />
             </div>
             {intent.reprintOfId ? (
               <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2">
@@ -466,7 +426,7 @@ export default function PrintIntentDetailPage() {
                       <li key={reprint.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2.5">
                         <span className="tabular whitespace-nowrap font-mono text-xs text-ink-3">{formatDateTime(reprint.createdAt)}</span>
                         <span className="tabular whitespace-nowrap text-sm text-ink">{text.reprintCount(reprint.quantity)}</span>
-                        <StatusBadge label={text.status[reprintStatus]} tone={reprintStatus === "Cancelled" ? "neutral" : getPrintIntentStatusTone(reprintStatus)} />
+                        <StatusBadge label={statusLabels[reprintStatus]} tone={reprintStatus === "Cancelled" ? "neutral" : getPrintIntentStatusTone(reprintStatus)} />
                         <span className="min-w-0 flex-1 truncate text-sm text-ink-2">
                           {reprint.reprintReason ? printText.reprintReasons[reprint.reprintReason] : null}
                         </span>

@@ -31,9 +31,13 @@ function extractCodes(details?: string) {
     return codes.size > 0 ? Array.from(codes).join(" · ") : undefined;
 }
 
+/** Language the backend writes audit details in; other languages show only the codes. */
+const AUDIT_DETAILS_LOCALE: Locale = "en";
+
 function formatDraftSavedSubtitle(locale: Locale, details?: string) {
+    const text = getText("dashboard", locale).feed;
     if (!details) {
-        return locale === "tr" ? "Taslak değişiklikleri kaydedildi" : "Draft changes were saved";
+        return text.draftSaved;
     }
 
     const match = details.match(/Draft version (\d+) saved\. LayoutChanged=(True|False); ChangeNotesChanged=(True|False)\./i);
@@ -42,24 +46,16 @@ function formatDraftSavedSubtitle(locale: Locale, details?: string) {
     }
 
     const [, version, layoutChanged, notesChanged] = match;
-    const changedParts =
-        locale === "tr"
-            ? [
-                  layoutChanged === "True" ? "yerleşim güncellendi" : null,
-                  notesChanged === "True" ? "notlar güncellendi" : null,
-              ].filter(Boolean)
-            : [
-                  layoutChanged === "True" ? "layout updated" : null,
-                  notesChanged === "True" ? "notes updated" : null,
-              ].filter(Boolean);
+    const changedParts = [
+        layoutChanged === "True" ? text.layoutUpdated : null,
+        notesChanged === "True" ? text.notesUpdated : null,
+    ].filter((part): part is string => part !== null);
 
     if (changedParts.length === 0) {
-        return locale === "tr" ? `Taslak v${version} tekrar kaydedildi` : `Draft v${version} was saved again`;
+        return text.draftSavedAgain(version);
     }
 
-    return locale === "tr"
-        ? `Taslak v${version}: ${changedParts.join(" ve ")}`
-        : `Draft v${version}: ${changedParts.join(" and ")}`;
+    return text.draftChanged(version, changedParts);
 }
 
 function formatAuditSubtitle(locale: Locale, item: DashboardFeedItem) {
@@ -67,7 +63,7 @@ function formatAuditSubtitle(locale: Locale, item: DashboardFeedItem) {
         case "TemplateDraftSaved":
             return formatDraftSavedSubtitle(locale, item.subtitle);
         default:
-            return locale === "tr" ? extractCodes(item.subtitle) : item.subtitle;
+            return locale === AUDIT_DETAILS_LOCALE ? item.subtitle : extractCodes(item.subtitle);
     }
 }
 

@@ -6,7 +6,8 @@ import { PermissionGuard } from "@/components/PermissionGuard";
 import { permissions } from "@/lib/permissions";
 import { PermissionCatalogGroup, RoleSummary } from "@/types/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
+import { permissionDescription, permissionGroupLabel, permissionLabel, roleDisplayName } from "@/lib/backend-text";
 import { LockSimple } from "@phosphor-icons/react";
 
 const emptyRoleForm = {
@@ -17,7 +18,6 @@ const emptyRoleForm = {
 };
 
 export default function RolesPage() {
-  const { locale } = useI18n();
   const [roles, setRoles] = useState<RoleSummary[]>([]);
   const [catalog, setCatalog] = useState<PermissionCatalogGroup[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
@@ -25,43 +25,8 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
 
-  const text = locale === "tr"
-    ? {
-        title: "Roller",
-        description: "Rolleri ve her rolün hangi işlemleri yapabileceğini yönetin.",
-        newRole: "Yeni rol",
-        newRoleTitle: "Yeni rol",
-        permissionsCount: "{count} yetki",
-        usersCount: "{count} kullanıcı",
-        roleName: "Rol adı",
-        descriptionLabel: "Açıklama",
-        immutableWarning: "Bu bir sistem rolü, yetkileri değiştirilemez.",
-        saveRole: "Rolü kaydet",
-        deleteRole: "Rolü sil",
-        updated: "Rol güncellendi",
-        created: "Rol oluşturuldu",
-        deleted: "Rol silindi",
-        permissionsTitle: "Yetkiler",
-        system: "Sistem",
-      }
-    : {
-        title: "Roles",
-        description: "Manage roles and which actions each role can take.",
-        newRole: "New role",
-        newRoleTitle: "New role",
-        permissionsCount: "{count} permissions",
-        usersCount: "{count} users",
-        roleName: "Role name",
-        descriptionLabel: "Description",
-        immutableWarning: "This is a system role, its permissions cannot be changed.",
-        saveRole: "Save role",
-        deleteRole: "Delete role",
-        updated: "Role updated",
-        created: "Role created",
-        deleted: "Role deleted",
-        permissionsTitle: "Permissions",
-        system: "System",
-      };
+  const text = useText("admin").roles;
+  const { locale } = useI18n();
 
   async function load() {
     setLoading(true);
@@ -175,10 +140,10 @@ export default function RolesPage() {
                     className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-raised" : "hover:bg-raised"}`}
                   >
                     <span className="min-w-0">
-                      <span className={`block truncate text-base ${active ? "font-medium text-ink" : "text-ink-2"}`}>{role.name}</span>
-                      <span className="block truncate text-sm text-ink-3">{text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                      <span className={`block truncate text-base ${active ? "font-medium text-ink" : "text-ink-2"}`}>{roleDisplayName(locale, role.name)}</span>
+                      <span className="block truncate text-sm text-ink-3">{text.permissionsCount(role.permissionKeys.length)}</span>
                     </span>
-                    <span className="tabular shrink-0 font-mono text-xs text-ink-3" title={text.usersCount.replace("{count}", String(role.assignedUserCount))}>
+                    <span className="tabular shrink-0 font-mono text-xs text-ink-3" title={text.usersCount(role.assignedUserCount)}>
                       {role.assignedUserCount}
                     </span>
                   </button>
@@ -192,10 +157,10 @@ export default function RolesPage() {
             <section className="plms-card divide-y divide-line">
               <div className="space-y-4 p-5">
                 <div className="flex items-baseline justify-between gap-4">
-                  <h2 className="text-md font-medium text-ink">{selectedRole ? selectedRole.name : text.newRoleTitle}</h2>
+                  <h2 className="text-md font-medium text-ink">{selectedRole ? roleDisplayName(locale, selectedRole.name) : text.newRoleTitle}</h2>
                   {selectedRole ? (
                     <span className="text-sm text-ink-3">
-                      {selectedRole.isSystem ? `${text.system} · ` : ""}{text.usersCount.replace("{count}", String(selectedRole.assignedUserCount))}
+                      {selectedRole.isSystem ? `${text.system} · ` : ""}{text.usersCount(selectedRole.assignedUserCount)}
                     </span>
                   ) : null}
                 </div>
@@ -230,7 +195,7 @@ export default function RolesPage() {
                     return (
                       <fieldset key={group.key} className="min-w-0">
                         <legend className="flex w-full items-baseline justify-between gap-3 border-b border-line pb-2">
-                          <span className="text-sm font-medium text-ink">{group.label}</span>
+                          <span className="text-sm font-medium text-ink">{permissionGroupLabel(locale, group.key, group.label)}</span>
                           <span className="tabular font-mono text-xs text-ink-3">{selectedCount}/{group.items.length}</span>
                         </legend>
                         <div className="mt-1 flex flex-col">
@@ -238,8 +203,8 @@ export default function RolesPage() {
                             <label key={item.key} className={`flex items-start gap-3 rounded-md px-2 py-2 transition-colors ${locked ? "" : "cursor-pointer hover:bg-raised"}`}>
                               <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-accent" checked={form.permissionKeys.includes(item.key)} onChange={() => togglePermission(item.key)} disabled={locked} />
                               <span className="min-w-0">
-                                <span className="block text-sm text-ink">{item.label}</span>
-                                {item.description ? <span className="block text-sm text-ink-3">{item.description}</span> : null}
+                                <span className="block text-sm text-ink">{permissionLabel(locale, item.key, item.label)}</span>
+                                {permissionDescription(locale, item.key, item.description) ? <span className="block text-sm text-ink-3">{permissionDescription(locale, item.key, item.description)}</span> : null}
                               </span>
                             </label>
                           ))}

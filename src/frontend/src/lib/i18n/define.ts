@@ -5,8 +5,8 @@ import type { Locale } from "./messages";
  * nested the same way, and functions with the same parameters. String literals widen to string.
  * A missing, extra or mistyped key is a compile error.
  */
-export type Shape<T> = T extends (...args: infer A) => string
-    ? (...args: A) => string
+export type Shape<T> = T extends (...args: infer A) => infer R
+    ? (...args: A) => R extends string ? string : R
     : T extends string
         ? string
         : T extends readonly (infer U)[]

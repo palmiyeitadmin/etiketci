@@ -64,6 +64,11 @@ function formatValue(locale: Locale, value: string | number | Date, formatter: "
     return date.toLocaleString(formatLocale, options);
 }
 
+/** Locale-aware number, e.g. 1.250 in Turkish and 1,250 in English. */
+export function formatNumber(locale: Locale, value: number, options?: Intl.NumberFormatOptions) {
+    return value.toLocaleString(localeFormatMap[locale], options);
+}
+
 export function useI18n() {
     const locale = useLanguageStore((state) => state.locale);
     const setLocale = useLanguageStore((state) => state.setLocale);
@@ -78,6 +83,7 @@ export function useI18n() {
             formatDate: (value: string | number | Date, options?: Intl.DateTimeFormatOptions) => formatValue(locale, value, "date", options),
             formatTime: (value: string | number | Date, options?: Intl.DateTimeFormatOptions) => formatValue(locale, value, "time", options),
             formatDateTime: (value: string | number | Date, options?: Intl.DateTimeFormatOptions) => formatValue(locale, value, "dateTime", options),
+            formatNumber: (value: number, options?: Intl.NumberFormatOptions) => formatNumber(locale, value, options),
         }),
         [locale, setLocale]
     );

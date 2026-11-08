@@ -11,63 +11,12 @@ import { RoleSummary, UserSummary } from "@/types/authz";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
+import { roleDescription, roleDisplayName } from "@/lib/backend-text";
 
 export default function AdminUserDetailPage() {
+  const text = useText("admin").userDetail;
   const { locale } = useI18n();
-  const text = locale === "tr"
-    ? {
-        parent: "Kullanıcılar",
-        user: "Kullanıcı",
-        notFound: "Kullanıcı bulunamadı",
-        notFoundDescription: "Bu kullanıcı kaydı yüklenemedi.",
-        profile: "Hesap",
-        fullName: "Ad soyad",
-        activeUser: "Hesap aktif",
-        roles: "Roller",
-        permissionsCount: "{count} yetki",
-        save: "Değişiklikleri kaydet",
-        updated: "Kullanıcı güncellendi",
-        password: "Parola",
-        passwordHint: "Kurulum bağlantısıyla kullanıcı parolasını kendisi belirler. Geçici parolada ilk girişte değiştirmesi istenir.",
-        issueSetupLink: "Kurulum bağlantısı oluştur",
-        setupLinkIssued: "Yeni kurulum bağlantısı oluşturuldu",
-        setupLink: "Kurulum bağlantısı",
-        temporaryPassword: "Geçici parola",
-        setTempPassword: "Geçici parolayı ata",
-        tempPasswordIssued: "Geçici parola atandı",
-        or: "veya",
-        effective: "Geçerli yetkiler",
-        more: (n: number) => `+${n} yetki daha`,
-        active: "Aktif",
-        inactive: "Pasif",
-      }
-    : {
-        parent: "Users",
-        user: "User",
-        notFound: "User not found",
-        notFoundDescription: "This user record could not be loaded.",
-        profile: "Account",
-        fullName: "Full name",
-        activeUser: "Account active",
-        roles: "Roles",
-        permissionsCount: "{count} permissions",
-        save: "Save changes",
-        updated: "User updated",
-        password: "Password",
-        passwordHint: "With a setup link the user picks their own password. A temporary password must be changed on first sign-in.",
-        issueSetupLink: "Create setup link",
-        setupLinkIssued: "A new setup link was created",
-        setupLink: "Setup link",
-        temporaryPassword: "Temporary password",
-        setTempPassword: "Set temporary password",
-        tempPasswordIssued: "Temporary password set",
-        or: "or",
-        effective: "Effective permissions",
-        more: (n: number) => `+${n} more`,
-        active: "Active",
-        inactive: "Inactive",
-      };
   const params = useParams();
   const id = String(params.id);
   const [user, setUser] = useState<UserSummary | null>(null);
@@ -213,8 +162,8 @@ export default function AdminUserDetailPage() {
                         }))}
                       />
                       <span className="flex flex-col">
-                        <span className="text-sm text-ink">{role.name}</span>
-                        <span className="text-sm text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                        <span className="text-sm text-ink">{roleDisplayName(locale, role.name)}</span>
+                        <span className="text-sm text-ink-3">{roleDescription(locale, role.name, role.description) || text.permissionsCount(role.permissionKeys.length)}</span>
                       </span>
                     </label>
                   ))}

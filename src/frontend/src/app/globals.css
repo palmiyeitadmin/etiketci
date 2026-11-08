@@ -34,22 +34,46 @@
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Legacy names still used across pages; they now point at the light ramp. */
-  --plms-bg: rgb(var(--canvas));
-  --plms-panel: rgb(var(--surface));
-  --plms-panel-2: rgb(var(--raised));
-  --plms-border: rgb(var(--line));
-  --plms-border-strong: rgb(var(--line-strong));
-  --plms-primary: rgb(var(--accent));
-  --plms-success: rgb(var(--good));
-  --plms-danger: rgb(var(--bad));
-  --plms-warning: rgb(var(--warn));
-  --plms-text: rgb(var(--ink));
-  --plms-text-muted: rgb(var(--ink-2));
-  --plms-text-subtle: rgb(var(--ink-3));
-  --plms-muted-100: rgb(var(--raised));
+  --mat: 238 242 240;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
 
   color-scheme: light;
+}
+
+/*
+ * Dark ramp: graphite surfaces, a lighter cyan accent with dark text on it. Label paper (LabelProof,
+ * the editor's label) stays white in both themes because it is print data, not chrome.
+ */
+:root[data-theme="dark"] {
+  --canvas: 20 20 21;
+  --surface: 25 25 27;
+  --raised: 35 35 37;
+  --sunken: 17 17 18;
+  --line: 46 46 49;
+  --line-strong: 63 63 67;
+
+  --ink: 237 237 237;
+  --ink-2: 161 161 166;
+  --ink-3: 133 133 139;
+
+  --accent: 56 189 216;
+  --accent-hover: 103 205 227;
+  --accent-soft: 29 48 54;
+  --accent-ink: 8 47 56;
+
+  --good: 74 222 128;
+  --good-soft: 27 46 35;
+  --warn: 245 158 11;
+  --warn-soft: 49 38 22;
+  --bad: 248 113 113;
+  --bad-soft: 52 30 31;
+
+  --mat: 33 38 36;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+
+  color-scheme: dark;
 }
 
 html {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { CanonicalLabelModel } from "@/types/canvas";
 import { TemplateCategory } from "@/types/template";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -57,75 +57,8 @@ function createInitialLayout(name: string, widthMm: number, heightMm: number): s
 }
 
 export default function NewTemplatePage() {
-    const { locale } = useI18n();
     const router = useRouter();
-    const text = locale === "tr"
-        ? {
-            title: "Yeni şablon",
-            description: "Kod kategoriye göre otomatik verilir. Şablon, editörde taslak v1 olarak açılır.",
-            loadFailed: "Şablon kategorileri yüklenemedi",
-            invalidDimensions: "Etiket ölçüleri sıfırdan büyük olmalı",
-            createFailed: "Şablon oluşturulamadı",
-            identity: "Şablon bilgileri",
-            category: "Kategori",
-            manageCategories: "Kategoriler",
-            noCategory: "Kategori seçin",
-            noActiveCategoriesTitle: "Aktif kategori yok",
-            noActiveCategoriesDescription: "Yeni şablon oluşturmak için önce en az bir aktif şablon kategorisi tanımlayın.",
-            code: "Şablon kodu",
-            name: "Şablon adı",
-            namePlaceholder: "Raf etiketi 60x40",
-            descriptionLabel: "Açıklama",
-            descriptionPlaceholder: "Kullanım yeri, malzeme, notlar",
-            dimensions: "Etiket ölçüleri",
-            width: "Genişlik (mm)",
-            height: "Yükseklik (mm)",
-            dimensionsHelp: "Boş yerleşim bu ölçülerle oluşturulur. Metin, şekil, QR, barkod ve görselleri sonraki adımda editörde eklersiniz.",
-            preview: "Önizleme",
-            blankLabel: "Boş etiket",
-            governance: "Kod nasıl verilir",
-            governanceDescription: "Seçtiğiniz kategori kodu belirler. Yeni şablon taslak v1 olarak açılır ve yayından önce onaydan geçer.",
-            codeFormat: "Kod biçimi",
-            categoryHint: "PLM-{kategori}-{sıra}",
-            codeHint: "Kod sunucuda kategori sırasıyla üretilir ve sonradan değiştirilemez.",
-            categories: "Kategoriler ve sıradaki kod",
-            cancel: "Vazgeç",
-            creating: "Oluşturuluyor",
-            create: "Şablonu oluştur",
-        }
-        : {
-            title: "New template",
-            description: "The code is assigned from the category. The template opens in the editor as draft v1.",
-            loadFailed: "Template categories could not be loaded",
-            invalidDimensions: "Label size must be greater than zero",
-            createFailed: "Template could not be created",
-            identity: "Template details",
-            category: "Category",
-            manageCategories: "Categories",
-            noCategory: "Select a category",
-            noActiveCategoriesTitle: "No active category",
-            noActiveCategoriesDescription: "Create at least one active template category before creating a template.",
-            code: "Template code",
-            name: "Template name",
-            namePlaceholder: "Shelf label 60x40",
-            descriptionLabel: "Description",
-            descriptionPlaceholder: "Where it is used, material, notes",
-            dimensions: "Label size",
-            width: "Width (mm)",
-            height: "Height (mm)",
-            dimensionsHelp: "A blank layout is created at this size. Add text, shapes, QR codes, barcodes and images in the editor next.",
-            preview: "Preview",
-            blankLabel: "Blank label",
-            governance: "How codes are assigned",
-            governanceDescription: "The category you pick sets the code. New templates open as draft v1 and need approval before they are published.",
-            codeFormat: "Code format",
-            categoryHint: "PLM-{category}-{sequence}",
-            codeHint: "The code is generated on the server from the category sequence and cannot be changed later.",
-            categories: "Categories and next code",
-            cancel: "Cancel",
-            creating: "Creating",
-            create: "Create template",
-        };
+    const text = useText("templates").newTemplate;
     const [form, setForm] = useState<TemplateFormState>(initialFormState);
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
     const [codePreview, setCodePreview] = useState("");

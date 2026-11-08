@@ -8,19 +8,23 @@ import { EditorRulers } from "@/components/Editor/EditorRulers";
 import { computeElementSnap, GuideLine } from "@/components/Editor/editor-guides";
 import { fitViewportToContainer } from "@/components/Editor/editor-actions";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
+import { useTokenColors } from "@/lib/theme/useTokenColor";
 import { EDITOR_SNAP_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { EditorViewport, ImageElement, LabelElement } from "@/types/canvas";
 
 const FIT_PADDING = 48;
 const LABEL_SURFACE_NAME = "label-surface";
-// Chrome colors for the Konva layer, matching the design tokens in globals.css (Konva needs literal colors).
+// Colors drawn on or over the label paper. The paper is white in both themes, so these stay fixed.
 const CHROME = {
-    workspace: "#f4f4f5", // --raised
-    labelEdge: "#d4d4d8", // --line-strong
-    labelShadow: "rgba(23, 23, 23, 0.10)",
-    accent: "#0e7490", // --accent
+    accent: "#0e7490", // light-theme --accent, readable on white paper
     placeholderFill: "#f4f4f5",
     placeholderStroke: "#a1a1aa",
+    labelShadow: "rgba(0, 0, 0, 0.12)",
+};
+// Workspace around the paper follows the theme (Konva needs literal colors, so they are read from the tokens).
+const WORKSPACE_TOKENS = {
+    workspace: { token: "raised" },
+    labelEdge: { token: "line-strong" },
 };
 
 function getBwipBarcodeType(type?: string) {
@@ -317,6 +321,7 @@ function ElementNode({
 }
 
 export function EditorCanvasStage() {
+    const workspaceColors = useTokenColors(WORKSPACE_TOKENS);
     const { ref, size } = useContainerSize<HTMLDivElement>();
     const stageRef = useRef<Konva.Stage | null>(null);
     const transformerRef = useRef<Konva.Transformer | null>(null);
@@ -478,7 +483,7 @@ export function EditorCanvasStage() {
                 onWheel={handleWheel}
             >
                 <Layer>
-                    <Rect width={size.width} height={size.height} fill={CHROME.workspace} />
+                    <Rect width={size.width} height={size.height} fill={workspaceColors.workspace} />
                     <Rect
                         name={LABEL_SURFACE_NAME}
                         x={labelX}
@@ -491,7 +496,7 @@ export function EditorCanvasStage() {
                         shadowOffsetY={1}
                         shadowColor={CHROME.labelShadow}
                     />
-                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke={CHROME.labelEdge} strokeWidth={1} cornerRadius={6} listening={false} />
+                    <Rect x={labelX} y={labelY} width={scaledLabelWidth} height={scaledLabelHeight} stroke={workspaceColors.labelEdge} strokeWidth={1} cornerRadius={6} listening={false} />
 
                     {guides.map((guide, index) => (
                         guide.orientation === "vertical" ? (

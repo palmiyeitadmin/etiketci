@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Portal } from "@/components/ui/Portal";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { CloneTemplateRequest, LabelTemplate, TemplateCategory, TemplateVersion } from "@/types/template";
 
 type TemplateCodePreview = {
@@ -28,47 +28,8 @@ type Props = {
     onCloned: (templateId: string) => void;
 };
 
-function buildDefaultName(templateName: string, locale: "tr" | "en") {
-    return locale === "tr" ? `${templateName} Kopya` : `${templateName} Copy`;
-}
-
 export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClose, onCloned }: Props) {
-    const { locale } = useI18n();
-    const text = locale === "tr"
-        ? {
-            title: "Şablonu klonla",
-            description: "Seçilen sürümün yerleşimiyle yeni bir şablon oluşturulur ve taslak v1 olarak açılır.",
-            sourceVersion: "Kaynak sürüm",
-            generatedCode: "Yeni kod",
-            targetCategory: "Kategori",
-            selectCategory: "Kategori seçin",
-            name: "Şablon adı",
-            namePlaceholder: "Yeni şablonun adı",
-            descriptionLabel: "Açıklama",
-            descriptionPlaceholder: "Kaynaktan farkı ve notlar",
-            noCategories: "Klonlamak için en az bir aktif şablon kategorisi gerekli.",
-            manageCategories: "Kategorilere git",
-            cancel: "Vazgeç",
-            creating: "Oluşturuluyor",
-            create: "Klonu oluştur",
-        }
-        : {
-            title: "Clone template",
-            description: "A new template is created from the layout of the selected version and opens as draft v1.",
-            sourceVersion: "Source version",
-            generatedCode: "New code",
-            targetCategory: "Category",
-            selectCategory: "Select a category",
-            name: "Template name",
-            namePlaceholder: "Name of the new template",
-            descriptionLabel: "Description",
-            descriptionPlaceholder: "How it differs from the source, notes",
-            noCategories: "At least one active template category is needed to clone.",
-            manageCategories: "Go to categories",
-            cancel: "Cancel",
-            creating: "Creating",
-            create: "Create clone",
-        };
+    const text = useText("templates").cloneModal;
     const [categories, setCategories] = useState<TemplateCategory[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -88,11 +49,11 @@ export function TemplateCloneModal({ open, sourceTemplate, sourceVersion, onClos
 
         setError(null);
         setForm({
-            name: buildDefaultName(sourceTemplate.name, locale),
+            name: text.defaultName(sourceTemplate.name),
             templateCategoryId: sourceTemplate.templateCategoryId || "",
             description: sourceTemplate.description || "",
         });
-    }, [locale, open, sourceTemplate, sourceVersion]);
+    }, [text, open, sourceTemplate, sourceVersion]);
 
     useEffect(() => {
         if (!open) {

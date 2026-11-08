@@ -14,10 +14,9 @@ import { ArrowLeft, CheckCircle, CircleNotch, PencilSimpleLine, WarningCircle, X
 import { CanonicalLabelModel } from "@/types/canvas";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import Link from "next/link";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 export default function TemplateEditorPage() {
-    const { locale } = useI18n();
     const { id: routeId } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -42,41 +41,7 @@ export default function TemplateEditorPage() {
         );
     }, [editableVersion, template]);
 
-    const text = locale === "tr"
-        ? {
-            loadError: "Şablon yüklenemedi",
-            loadFailed: "Düzenleme için şablon yüklenemedi",
-            draftUnavailable: "Taslak sürüm kullanılamıyor",
-            saved: "Taslak v{version} kaydedildi",
-            saveFailed: "Taslak v{version} kaydedilemedi: {message}",
-            loading: "Editör yükleniyor",
-            backToDetail: "Şablona dön",
-            notFound: "Şablon bulunamadı",
-            changeNotes: "Editör üzerinden kaydedildi",
-            networkError: "Kayıt sırasında bağlantı hatası oluştu",
-            draftTitle: "Bu sürüm düzenlenemez",
-            draftBody: "Yayınlanmış ve onaylanmış sürümler değişmez. Değişiklik yapmak için bu sürümden yeni bir taslak oluşturun.",
-            draftCreate: "Taslak oluştur ve düzenle",
-            draftCreating: "Taslak oluşturuluyor",
-            dismiss: "Kapat",
-        }
-        : {
-            loadError: "Template could not be loaded",
-            loadFailed: "Template could not be loaded for editing",
-            draftUnavailable: "Draft version is not available",
-            saved: "Draft v{version} saved",
-            saveFailed: "Draft v{version} could not be saved: {message}",
-            loading: "Loading editor",
-            backToDetail: "Back to template",
-            notFound: "Template not found",
-            changeNotes: "Saved from editor",
-            networkError: "Network error while saving",
-            draftTitle: "This version cannot be edited",
-            draftBody: "Published and approved versions do not change. Create a new draft from this version to make changes.",
-            draftCreate: "Create draft and edit",
-            draftCreating: "Creating draft",
-            dismiss: "Dismiss",
-        };
+    const text = useText("templateDetail").edit;
 
     useEffect(() => {
         let cancelled = false;
@@ -171,7 +136,7 @@ export default function TemplateEditorPage() {
             if (res.success) {
                 const serializedModel = JSON.stringify(model);
                 setEditableVersion((current) => current ? { ...current, layoutJson: serializedModel } : current);
-                const message = text.saved.replace("{version}", String(editableVersion.versionNumber));
+                const message = text.saved(editableVersion.versionNumber);
                 showSaveMessage(message, true);
                 return {
                     ok: true,
@@ -179,9 +144,7 @@ export default function TemplateEditorPage() {
                     message,
                 };
             } else {
-                const message = text.saveFailed
-                    .replace("{version}", String(editableVersion.versionNumber))
-                    .replace("{message}", res.error.message);
+                const message = text.saveFailed(editableVersion.versionNumber, res.error.message);
                 showSaveMessage(message, false);
                 return {
                     ok: false,
@@ -190,9 +153,7 @@ export default function TemplateEditorPage() {
                 };
             }
         } catch (err) {
-            const message = text.saveFailed
-                .replace("{version}", String(editableVersion.versionNumber))
-                .replace("{message}", (err as Error).message || text.networkError);
+            const message = text.saveFailed(editableVersion.versionNumber, (err as Error).message || text.networkError);
             showSaveMessage(message, false);
             return {
                 ok: false,

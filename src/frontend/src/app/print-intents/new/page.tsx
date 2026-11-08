@@ -9,10 +9,9 @@ import { LabelTemplate, TemplateVersion } from "@/types/template";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 export default function CreatePrintIntentPage() {
-    const { locale } = useI18n();
     const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
@@ -27,55 +26,7 @@ export default function CreatePrintIntentPage() {
         quantity: 1,
     });
 
-    const text = locale === "tr"
-        ? {
-            title: "Baskı talebi oluştur",
-            description: "Ürün, yayındaki şablon sürümü ve adet seçin. Talep, operatör onayından sonra basılır.",
-            product: "Ürün",
-            selectProduct: "Ürün seçin",
-            template: "Şablon",
-            selectTemplate: "Şablon seçin",
-            publishedVersion: "Yayındaki sürüm",
-            selectVersion: "Sürüm seçin",
-            version: "Sürüm",
-            quantity: "Adet",
-            loading: "Yükleniyor",
-            summary: "Özet",
-            selectedTemplate: "Şablon",
-            selectedProduct: "Ürün",
-            noSelection: "Seçilmedi",
-            versionState: "Sürüm",
-            publishedLabel: "Yayında, sürüm {n}",
-            awaitingSelection: "Seçim bekleniyor",
-            creating: "Oluşturuluyor",
-            createPrintIntent: "Baskı talebi oluştur",
-            cancel: "Vazgeç",
-            createFailed: "Baskı talebi oluşturulamadı.",
-        }
-        : {
-            title: "Create print request",
-            description: "Select a product, a published template version and a quantity. The request is printed after operator approval.",
-            product: "Product",
-            selectProduct: "Select product",
-            template: "Template",
-            selectTemplate: "Select template",
-            publishedVersion: "Published version",
-            selectVersion: "Select version",
-            version: "Version",
-            quantity: "Quantity",
-            loading: "Loading",
-            summary: "Summary",
-            selectedTemplate: "Template",
-            selectedProduct: "Product",
-            noSelection: "Not selected",
-            versionState: "Version",
-            publishedLabel: "Published, version {n}",
-            awaitingSelection: "Waiting for selection",
-            creating: "Creating",
-            createPrintIntent: "Create print request",
-            cancel: "Cancel",
-            createFailed: "Print request could not be created.",
-        };
+    const text = useText("printRequests").create;
 
     useEffect(() => {
         async function load() {
@@ -221,7 +172,7 @@ export default function CreatePrintIntentPage() {
                                     <dt className="text-ink-3">{text.versionState}</dt>
                                     <dd>
                                         {selectedVersion
-                                            ? <StatusBadge label={text.publishedLabel.replace("{n}", String(selectedVersion.versionNumber))} tone="success" />
+                                            ? <StatusBadge label={text.publishedLabel(selectedVersion.versionNumber)} tone="success" />
                                             : <StatusBadge label={text.awaitingSelection} tone="neutral" />}
                                     </dd>
                                 </div>

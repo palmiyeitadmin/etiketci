@@ -3,9 +3,9 @@
 import { useEffect, useState, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { useI18n } from "@/lib/i18n";
 import { LoginShowcasePanel } from "@/components/auth/LoginShowcasePanel";
+import { BrandLogo } from "@/components/BrandLogo";
 
 function mapSignInError(
     errorCode: string | undefined,
@@ -110,7 +110,7 @@ function LoginContent() {
                 </div>
 
                 <div className="order-1 flex flex-col gap-8 lg:order-2">
-                    <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={122} height={40} priority className="h-8 w-auto self-start" />
+                    <BrandLogo width={122} height={40} priority className="h-8 w-auto self-start" />
                     <div className="flex w-full max-w-sm flex-col gap-6 rounded-xl border border-line bg-surface p-6 sm:p-8">
                         <div className="flex flex-col gap-1">
                             <h1 className="text-lg font-medium text-ink">{t("auth.login.title")}</h1>

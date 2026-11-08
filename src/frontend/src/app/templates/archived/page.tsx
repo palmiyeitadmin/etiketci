@@ -13,10 +13,9 @@ import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 export default function ArchivedTemplatesPage() {
-    const { locale } = useI18n();
     const { data: session } = useSession();
     const roles = ((session?.user as any)?.roles || []) as string[];
     const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
@@ -30,51 +29,7 @@ export default function ArchivedTemplatesPage() {
 
     const [notice, setNotice] = useState<{ text: string; tone: "good" | "bad" } | null>(null);
 
-    const text = locale === "tr"
-        ? {
-            title: "Arşivlenmiş şablonlar",
-            description: "Arşive kaldırılan şablonlar ve sürümler. Buradan geri yükleme talebi açabilirsiniz.",
-            emptyTitle: "Arşiv boş",
-            emptyDescription: "Henüz arşivlenmiş veya geçersiz sürüm yok.",
-            columns: ["Şablon", "Kod", "Şablon durumu", "Arşivdeki sürümler", "\u00a0"],
-            noDescription: "Açıklama yok",
-            requestRestore: "Geri yükleme iste",
-            restoreTemplate: "Şablonu geri al",
-            restoring: "Geri alınıyor",
-            archivedTemplate: "Arşivde",
-            notArchived: "Listede",
-            requestRestoration: "Geri yükleme talebi",
-            restoreWarning: "Geri yükleme kayda geçer. Yeni taslak oluşmadan önce bir inceleyicinin onayı gerekir.",
-            businessJustification: "Gerekçe",
-            targetEnvironment: "Hedef ortam",
-            targetEnvironmentPlaceholder: "Üretim veya test",
-            requestedUntil: "Geçerlilik tarihi",
-            submitting: "Gönderiliyor",
-            submitRequest: "Talebi gönder",
-            success: "Geri yükleme talebi gönderildi",
-        }
-        : {
-            title: "Archived templates",
-            description: "Templates and versions moved to the archive. Request a restore from here.",
-            emptyTitle: "Archive is empty",
-            emptyDescription: "There are no archived or deprecated versions yet.",
-            columns: ["Template", "Code", "Template state", "Archived versions", "\u00a0"],
-            noDescription: "No description",
-            requestRestore: "Request restore",
-            restoreTemplate: "Restore template",
-            restoring: "Restoring",
-            archivedTemplate: "Archived",
-            notArchived: "In list",
-            requestRestoration: "Restore request",
-            restoreWarning: "Restores are recorded. A reviewer has to approve before a new draft is created.",
-            businessJustification: "Reason",
-            targetEnvironment: "Target environment",
-            targetEnvironmentPlaceholder: "Production or test",
-            requestedUntil: "Valid until",
-            submitting: "Submitting",
-            submitRequest: "Submit request",
-            success: "Restore request submitted",
-        };
+    const text = useText("templates").archived;
 
     async function load() {
         const res = await apiFetch<LabelTemplate[]>("/api/Templates/archived");
@@ -139,7 +94,7 @@ export default function ArchivedTemplatesPage() {
                 ) : templates.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
-                    <DataTable columns={text.columns}>
+                    <DataTable columns={[text.columns.template, text.columns.code, text.columns.templateState, text.columns.archivedVersions, "\u00a0"]}>
                         {templates.map((template) => (
                             <tr key={template.id} className="align-top transition-colors hover:bg-raised">
                                 <td className="min-w-56 px-4 py-2.5">

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -12,6 +11,8 @@ import {
     ListChecks,
     List,
     MagnifyingGlass,
+    Monitor,
+    Moon,
     Package,
     Printer,
     SealCheck,
@@ -19,6 +20,7 @@ import {
     SidebarSimple,
     SignOut,
     SquaresFour,
+    Sun,
     Tag,
     Truck,
     UsersThree,
@@ -27,6 +29,9 @@ import {
 import { OperationalPulse } from "@/components/Operational/OperationalPulse";
 import { GlobalSearchPalette } from "@/components/Search/GlobalSearchPalette";
 import { PageTransition } from "@/components/PageTransition";
+import { BrandLogo } from "@/components/BrandLogo";
+import { useThemeStore } from "@/lib/theme/useThemeStore";
+import type { ThemePreference } from "@/lib/theme/theme";
 import { apiFetch } from "@/lib/api-client";
 import { buildLoginRedirectPath, isProtectedAppPath } from "@/lib/auth-routing";
 import { localeLabels, type Locale, useI18n } from "@/lib/i18n";
@@ -71,6 +76,12 @@ const navGroups: NavGroup[] = [
 ];
 
 const collapsedStorageKey = "plms.sidebar.collapsed";
+
+const themeOptions: { value: ThemePreference; icon: Icon; label: string }[] = [
+    { value: "light", icon: Sun, label: "shell.themeLight" },
+    { value: "dark", icon: Moon, label: "shell.themeDark" },
+    { value: "system", icon: Monitor, label: "shell.themeSystem" },
+];
 
 function ShellNavLink({
     active,
@@ -143,6 +154,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { data: session, status } = useSession();
     const { locale, setLocale, t } = useI18n();
+    const themePreference = useThemeStore((state) => state.preference);
+    const setThemePreference = useThemeStore((state) => state.setPreference);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopCollapsed, setDesktopCollapsed] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -283,10 +296,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className={`flex h-14 shrink-0 items-center border-b border-line ${collapsed ? "justify-center px-2" : "px-4"}`}>
                     <Link href="/" aria-label="Palmiye Etiket" className="flex min-w-0 items-center gap-2" onClick={() => setMobileOpen(false)}>
                         {collapsed ? (
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-medium text-white">P</span>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-medium text-canvas">P</span>
                         ) : (
                             <>
-                                <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={98} height={32} priority className="h-6 w-auto" />
+                                <BrandLogo width={98} height={32} priority className="h-6 w-auto" />
                                 <span className="text-sm text-ink-3">Etiket</span>
                             </>
                         )}
@@ -391,6 +404,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             expanded={pulseExpanded}
                             onToggle={() => setPulseExpanded((current) => !current)}
                         />
+
+                        <div className="hidden items-center rounded-lg border border-line bg-surface p-0.5 sm:inline-flex" role="group" aria-label={t("shell.theme")}>
+                            {themeOptions.map(({ value, icon: ThemeIcon, label }) => {
+                                const active = themePreference === value;
+                                return (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        aria-pressed={active}
+                                        aria-label={t(label)}
+                                        title={t(label)}
+                                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${active ? "bg-raised text-ink" : "text-ink-3 hover:text-ink"}`}
+                                        onClick={() => setThemePreference(value)}
+                                    >
+                                        <ThemeIcon size={15} />
+                                    </button>
+                                );
+                            })}
+                        </div>
 
                         <div className="hidden items-center rounded-lg border border-line bg-surface p-0.5 sm:inline-flex" role="group" aria-label="Dil / Language">
                             {(Object.keys(localeLabels) as Locale[]).map((option) => {

@@ -12,7 +12,8 @@ import { DataTable } from "@/components/ui/DataTable";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
+import { roleDescription, roleDisplayName } from "@/lib/backend-text";
 
 const initialForm = {
   email: "",
@@ -24,7 +25,6 @@ const initialForm = {
 };
 
 export default function AdminUsersPage() {
-  const { locale } = useI18n();
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [roles, setRoles] = useState<RoleSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,69 +37,8 @@ export default function AdminUsersPage() {
   const [message, setMessage] = useState<{ tone: "good" | "bad"; text: string } | null>(null);
   const [setupLink, setSetupLink] = useState<string | null>(null);
 
-  const text = locale === "tr"
-    ? {
-        title: "Kullanıcılar",
-        description: "Kullanıcı ekleyin, rollerini ve hesap durumlarını yönetin.",
-        newUser: "Yeni kullanıcı",
-        newUserSubtitle: "Davet bağlantısı gönderin veya geçici parola belirleyin",
-        email: "E-posta",
-        fullName: "Ad soyad",
-        mode: "Parola",
-        inviteMode: "Kullanıcı kendi parolasını belirlesin",
-        directMode: "Geçici parola belirle",
-        temporaryPassword: "Geçici parola",
-        mustChangePassword: "İlk girişte parola değiştirilsin",
-        roles: "Roller",
-        permissionsCount: "{count} yetki",
-        creating: "Oluşturuluyor",
-        createUser: "Kullanıcıyı oluştur",
-        userCreated: "Kullanıcı oluşturuldu",
-        setupLink: "Kurulum bağlantısı",
-        searchUsers: "Ara",
-        status: "Durum",
-        allStatuses: "Tüm durumlar",
-        active: "Aktif",
-        inactive: "Pasif",
-        allRoles: "Tüm roller",
-        emptyTitle: "Kullanıcı bulunamadı",
-        emptyDescription: "Filtrelerle eşleşen kullanıcı yok.",
-        mustChangePasswordBadge: "Parola değiştirmeli",
-        noRoles: "Rol yok",
-        open: "Aç",
-        count: (n: number) => `${n} kullanıcı`,
-      }
-    : {
-        title: "Users",
-        description: "Add users and manage their roles and account status.",
-        newUser: "New user",
-        newUserSubtitle: "Send an invite link or set a temporary password",
-        email: "Email",
-        fullName: "Full name",
-        mode: "Password",
-        inviteMode: "User sets their own password",
-        directMode: "Set a temporary password",
-        temporaryPassword: "Temporary password",
-        mustChangePassword: "Must change password on first sign-in",
-        roles: "Roles",
-        permissionsCount: "{count} permissions",
-        creating: "Creating",
-        createUser: "Create user",
-        userCreated: "User created",
-        setupLink: "Setup link",
-        searchUsers: "Search",
-        status: "Status",
-        allStatuses: "All statuses",
-        active: "Active",
-        inactive: "Inactive",
-        allRoles: "All roles",
-        emptyTitle: "No users found",
-        emptyDescription: "No users match the filters.",
-        mustChangePasswordBadge: "Must change password",
-        noRoles: "No roles",
-        open: "Open",
-        count: (n: number) => `${n} ${n === 1 ? "user" : "users"}`,
-      };
+  const text = useText("admin").users;
+  const { locale } = useI18n();
 
   async function load() {
     setLoading(true);
@@ -189,7 +128,7 @@ export default function AdminUsersPage() {
               </select>
               <select className="plms-select" aria-label={text.roles} value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
                 <option value="all">{text.allRoles}</option>
-                {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+                {roles.map((role) => <option key={role.id} value={role.id}>{roleDisplayName(locale, role.name)}</option>)}
               </select>
             </>
           }
@@ -208,7 +147,7 @@ export default function AdminUsersPage() {
                   <Link href={`/admin/users/${user.id}`} className="text-ink transition-colors hover:text-accent">{user.fullName}</Link>
                 </td>
                 <td className="px-4 py-2.5 text-base text-ink-2">{user.email}</td>
-                <td className="px-4 py-2.5 text-base text-ink-2">{user.roles.length > 0 ? user.roles.map((role) => role.name).join(", ") : <span className="text-ink-3">{text.noRoles}</span>}</td>
+                <td className="px-4 py-2.5 text-base text-ink-2">{user.roles.length > 0 ? user.roles.map((role) => roleDisplayName(locale, role.name)).join(", ") : <span className="text-ink-3">{text.noRoles}</span>}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <StatusBadge label={user.isActive ? text.active : text.inactive} tone={user.isActive ? "success" : "neutral"} />
@@ -267,8 +206,8 @@ export default function AdminUsersPage() {
                       }))}
                     />
                     <span className="flex flex-col">
-                      <span className="text-sm text-ink">{role.name}</span>
-                      <span className="text-sm text-ink-3">{role.description || text.permissionsCount.replace("{count}", String(role.permissionKeys.length))}</span>
+                      <span className="text-sm text-ink">{roleDisplayName(locale, role.name)}</span>
+                      <span className="text-sm text-ink-3">{roleDescription(locale, role.name, role.description) || text.permissionsCount(role.permissionKeys.length)}</span>
                     </span>
                   </label>
                 ))}

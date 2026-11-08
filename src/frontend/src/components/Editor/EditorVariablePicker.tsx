@@ -3,16 +3,8 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { ElementType, VariableCatalogItem } from "@/types/canvas";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
-
-/** The backend catalog is in English; Turkish names for the known variables. */
-const TURKISH_VARIABLES: Record<string, { label: string; description: string }> = {
-    "product.sku": { label: "Ürün kodu (SKU)", description: "Ürünün stok kodu" },
-    "product.name": { label: "Ürün adı", description: "Ürün kaydındaki ad" },
-    "product.category": { label: "Ürün kategorisi", description: "Ürünün bağlı olduğu kategori" },
-    "product.vendor": { label: "Tedarikçi", description: "Ürünün tedarikçisi" },
-};
 
 export function EditorVariablePicker({
     supportedTypes,
@@ -21,24 +13,8 @@ export function EditorVariablePicker({
     supportedTypes: ElementType[];
     onInsert: (placeholder: string) => void;
 }) {
-    const { locale } = useI18n();
-    const text = locale === "tr"
-        ? {
-            title: "Değişken ekle",
-            description: "Seçtiğiniz değişken içeriğin sonuna eklenir",
-            search: "Değişken ara",
-            loading: "Değişkenler yükleniyor",
-            empty: "Bu öğe türü için değişken yok",
-            sample: "Örnek",
-        }
-        : {
-            title: "Insert variable",
-            description: "The variable is added to the end of the content",
-            search: "Search variables",
-            loading: "Loading variables",
-            empty: "No variables for this element type",
-            sample: "Sample",
-        };
+    const text = useText("editor").variablePicker;
+    const variableNames = text.variables;
 
     const [items, setItems] = useState<VariableCatalogItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,15 +24,13 @@ export function EditorVariablePicker({
         async function load() {
             const response = await apiFetch<{ items: VariableCatalogItem[] }>("/api/Templates/variables/catalog");
             if (response.success) {
-                setItems(locale === "tr"
-                    ? response.data.items.map((item) => ({ ...item, ...(TURKISH_VARIABLES[item.key] ?? {}) }))
-                    : response.data.items);
+                setItems(response.data.items.map((item) => ({ ...item, ...(variableNames[item.key] ?? {}) })));
             }
             setLoading(false);
         }
 
         load();
-    }, [locale]);
+    }, [variableNames]);
 
     const filtered = items.filter((item) =>
         item.supportedElementTypes.some((type) => supportedTypes.includes(type)) &&

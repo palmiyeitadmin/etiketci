@@ -13,14 +13,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 type CategoryDraft = { id?: string; code: string; name: string; isActive: boolean };
 
 const initialDraft: CategoryDraft = { code: "", name: "", isActive: true };
 
 export default function CategoriesPage() {
-    const { locale } = useI18n();
     const { data: session } = useSession();
     const roles = ((session?.user as any)?.roles || []) as string[];
     const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
@@ -37,51 +36,8 @@ export default function CategoriesPage() {
     const [formError, setFormError] = useState<string | null>(null);
     const [pageError, setPageError] = useState<string | null>(null);
 
-    const text = locale === "tr"
-        ? {
-            title: "Kategoriler",
-            description: "Ürün kategorileri. CSV içe aktarımda kategori kodu buradan eşlenir.",
-            newItem: "Yeni kategori",
-            emptyTitle: "Kategori bulunamadı",
-            emptyDescription: "Aramayı değiştirin veya yeni bir kategori ekleyin.",
-            editItem: "Kategoriyi düzenle",
-            createItem: "Kategori ekle",
-            slideSubtitle: "Kod sonradan değiştirilemez.",
-            deleteTitle: "Kategori silinsin mi",
-            deleteDescription: (name: string) => `${name} silinecek. Bu kategoriye bağlı ürün varsa silme engellenir.`,
-            searchPlaceholder: "Ara",
-            columns: ["Kod", "Ad", "Durum", ""],
-            edit: "Düzenle",
-            delete: "Sil",
-            code: "Kod",
-            name: "Ad",
-            active: "Aktif",
-            saving: "Kaydediliyor",
-            save: "Kaydet",
-            count: (n: number) => `${n} kayıt`,
-        }
-        : {
-            title: "Categories",
-            description: "Product categories. CSV imports match category codes against this list.",
-            newItem: "New category",
-            emptyTitle: "No categories found",
-            emptyDescription: "Change the search or add a new category.",
-            editItem: "Edit category",
-            createItem: "Add category",
-            slideSubtitle: "The code cannot be changed later.",
-            deleteTitle: "Delete this category",
-            deleteDescription: (name: string) => `${name} will be deleted. This is blocked while products still use the category.`,
-            searchPlaceholder: "Search",
-            columns: ["Code", "Name", "Status", ""],
-            edit: "Edit",
-            delete: "Delete",
-            code: "Code",
-            name: "Name",
-            active: "Active",
-            saving: "Saving",
-            save: "Save",
-            count: (n: number) => `${n} ${n === 1 ? "record" : "records"}`,
-        };
+    const { registry, categories } = useText("catalog");
+    const text = { ...registry, ...categories };
 
     async function load() {
         const res = await apiFetch<ProductCategory[]>("/api/categories");
@@ -176,7 +132,7 @@ export default function CategoriesPage() {
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
-                    <DataTable columns={text.columns}>
+                    <DataTable columns={[text.code, text.name, text.status, ""]}>
                         {filtered.map((item) => (
                             <tr key={item.id} className="transition-colors hover:bg-raised">
                                 <td className="w-40 whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-2">{item.code}</td>

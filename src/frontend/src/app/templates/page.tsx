@@ -9,7 +9,7 @@ import { RoleGuard } from "@/components/RoleGuard";
 import { TemplateCloneModal } from "@/components/Templates/TemplateCloneModal";
 import { TemplateRowMenu, type RowMenuItem } from "@/components/Templates/TemplateRowMenu";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { hasAnyPermission, permissions } from "@/lib/permissions";
 import { normalizeLabelTemplate } from "@/lib/template-status";
 import { ensureEditableVersion, resolveTemplateCloneSourceVersion, resolveTemplatePrintVersion } from "@/lib/template-versioning";
@@ -53,7 +53,7 @@ function canDeleteVersion(template: LabelTemplate, version: TemplateVersion) {
 
 export default function TemplatesPage() {
     const { data: session } = useSession();
-    const { formatDate, t, locale } = useI18n();
+    const { formatDate, t } = useI18n();
     const router = useRouter();
     const roles = ((session?.user as any)?.roles || []) as string[];
     const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
@@ -62,125 +62,7 @@ export default function TemplatesPage() {
     const canArchive = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesArchive]);
     const canDelete = roles.includes("Admin") || hasAnyPermission(grantedPermissions, [permissions.templatesDelete]);
 
-    const text = locale === "tr"
-        ? {
-            title: "Şablonlar",
-            description: "Etiket şablonları ve sürümleri",
-            newTemplate: "Yeni şablon",
-            searchPlaceholder: "Şablon ara",
-            category: "Kategori",
-            manageCategories: "Kategoriler",
-            open: "Aç",
-            openDetail: "Detayı aç",
-            openEditor: "Editörü aç",
-            opening: "Açılıyor",
-            previewPdf: "PDF önizleme",
-            preview: "Önizle",
-            print: "Yazdır",
-            clone: "Klonla",
-            archive: "Arşivle",
-            delete: "Sil",
-            more: "Diğer işlemler",
-            showVersions: "Sürümleri göster",
-            hideVersions: "Sürümleri gizle",
-            activeVersionRequired: "Yazdırmak için yayında bir sürüm gerekli",
-            archiveTitle: "Şablonu arşivle",
-            archiveDescription: (name: string) => `${name} ana listeden çıkar. Geçmiş sürümleri korunur ve arşivden geri alınabilir.`,
-            archiveConfirm: "Arşivle",
-            deleteTitle: "Şablonu sil",
-            deleteDescription: (name: string) => `${name} kalıcı olarak silinecek. Bu yalnızca taslak dışında sürümü olmayan şablonlarda yapılabilir.`,
-            deleteConfirm: "Kalıcı olarak sil",
-            uncategorized: "Kategori yok",
-            columns: { template: "Şablon", code: "Kod", category: "Kategori", version: "Sürüm", status: "Durum", updated: "Güncellendi" },
-            createdBy: "Oluşturan",
-            lastEditedBy: "Son düzenleyen",
-            version: "Sürüm",
-            status: "Durum",
-            date: "Tarih",
-            notes: "Notlar",
-            filtersFavorites: "Favoriler",
-            filtersMine: "Benimkiler",
-            filtersReset: "Temizle",
-            allStatuses: "Tüm durumlar",
-            allCategories: "Tüm kategoriler",
-            favorite: "Favoriye ekle",
-            unfavorite: "Favoriden çıkar",
-            favoriteAdded: "Favorilere eklendi",
-            favoriteRemoved: "Favorilerden çıkarıldı",
-            draftOnly: "Sadece taslak",
-            activeVersion: "Yayındaki sürüm",
-            latestVersion: "Son sürüm",
-            linkedProducts: "Bağlı ürün",
-            publishedCount: "Yayın sayısı",
-            drafts: "Taslak",
-            inReview: "İncelemede",
-            noDescription: "Açıklama yok",
-            versionArchiveTitle: "Sürümü arşivle",
-            versionArchiveDescription: (name: string, version: number) => `${name} şablonunun v${version} sürümü arşivlenecek ve listeden çıkacak.`,
-            versionArchiveConfirm: "Sürümü arşivle",
-            versionDeleteTitle: "Sürümü sil",
-            versionDeleteDescription: (name: string, version: number) => `${name} şablonunun v${version} taslağı kalıcı olarak silinecek.`,
-            versionDeleteConfirm: "Sürümü sil",
-        }
-        : {
-            title: "Templates",
-            description: "Label templates and their versions",
-            newTemplate: "New template",
-            searchPlaceholder: "Search templates",
-            category: "Category",
-            manageCategories: "Categories",
-            open: "Open",
-            openDetail: "Open detail",
-            openEditor: "Open editor",
-            opening: "Opening",
-            previewPdf: "PDF preview",
-            preview: "Preview",
-            print: "Print",
-            clone: "Clone",
-            archive: "Archive",
-            delete: "Delete",
-            more: "More actions",
-            showVersions: "Show versions",
-            hideVersions: "Hide versions",
-            activeVersionRequired: "A published version is required to print",
-            archiveTitle: "Archive template",
-            archiveDescription: (name: string) => `${name} leaves the main list. Its versions are kept and it can be restored from the archive.`,
-            archiveConfirm: "Archive",
-            deleteTitle: "Delete template",
-            deleteDescription: (name: string) => `${name} will be permanently deleted. This only works for templates that have nothing but drafts.`,
-            deleteConfirm: "Delete permanently",
-            uncategorized: "No category",
-            columns: { template: "Template", code: "Code", category: "Category", version: "Version", status: "Status", updated: "Updated" },
-            createdBy: "Created by",
-            lastEditedBy: "Last edited by",
-            version: "Version",
-            status: "Status",
-            date: "Date",
-            notes: "Notes",
-            filtersFavorites: "Favorites",
-            filtersMine: "Mine",
-            filtersReset: "Reset",
-            allStatuses: "All statuses",
-            allCategories: "All categories",
-            favorite: "Add to favorites",
-            unfavorite: "Remove from favorites",
-            favoriteAdded: "Added to favorites",
-            favoriteRemoved: "Removed from favorites",
-            draftOnly: "Draft only",
-            activeVersion: "Published version",
-            latestVersion: "Latest version",
-            linkedProducts: "Linked products",
-            publishedCount: "Times published",
-            drafts: "Drafts",
-            inReview: "In review",
-            noDescription: "No description",
-            versionArchiveTitle: "Archive version",
-            versionArchiveDescription: (name: string, version: number) => `Version v${version} of ${name} will be archived and leave the list.`,
-            versionArchiveConfirm: "Archive version",
-            versionDeleteTitle: "Delete version",
-            versionDeleteDescription: (name: string, version: number) => `Draft v${version} of ${name} will be permanently deleted.`,
-            versionDeleteConfirm: "Delete version",
-        };
+    const text = useText("templates").list;
 
     const [templates, setTemplates] = useState<LabelTemplate[]>([]);
     const [loading, setLoading] = useState(true);

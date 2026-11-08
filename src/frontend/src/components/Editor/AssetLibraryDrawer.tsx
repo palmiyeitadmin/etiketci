@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { uploadAsset, listAssets, deleteAsset, buildAssetContentUrl } from "@/lib/assets";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { phosphorIconToDataUri, type PhosphorIconKey } from "@/lib/phosphor-icon-catalog";
 import { hasPermission, permissions } from "@/lib/permissions";
 import { ContentAssetSummary } from "@/types/assets";
@@ -21,57 +21,8 @@ export function AssetLibraryDrawer({
   onClose: () => void;
   onInsertImage: (payload: { name: string; content: string; assetId?: string; assetSource?: "upload" | "phosphor"; assetKey?: string }) => void;
 }) {
-  const { locale } = useI18n();
   const { data: session } = useSession();
-  const text = locale === "tr"
-    ? {
-      title: "Kütüphane",
-      description: "Yüklenmiş görselleri ve ikonları her şablona yeniden yüklemeden kullanın",
-      uploads: "Yüklemeler",
-      phosphor: "İkonlar",
-      search: "Görsel ara",
-      refresh: "Yenile",
-      loading: "Kütüphane yükleniyor",
-      empty: "Kütüphanede görsel yok",
-      uploading: "Yükleniyor",
-      uploadDescription: "Görsel kütüphaneye ekleniyor, aynısı varsa yeniden kullanılacak",
-      uploadCallout: "PNG, JPEG veya SVG yükleyin",
-      uploadHint: "Dosya başına en fazla 5 MB",
-      reused: "Bu görsel kütüphanede zaten vardı, mevcut kayıt kullanıldı",
-      uploaded: "Görsel kütüphaneye yüklendi",
-      removed: "Görsel kütüphaneden kaldırıldı",
-      insertFailed: "Görsel eklenemedi",
-      add: "Ekle",
-      adding: "Ekleniyor",
-      delete: "Sil",
-      phosphorDescription: "Sık kullanılan ikonlardan birini seçin ya da tüm katalogda arayın. İkon tuvale görsel olarak eklenir.",
-      phosphorLoadFailed: "İkon kataloğu yüklenemedi",
-      phosphorInsertFailed: "İkon eklenemedi",
-    }
-    : {
-      title: "Library",
-      description: "Reuse uploaded images and icons without uploading them to every template",
-      uploads: "Uploads",
-      phosphor: "Icons",
-      search: "Search images",
-      refresh: "Refresh",
-      loading: "Loading library",
-      empty: "No images in the library",
-      uploading: "Uploading",
-      uploadDescription: "Adding the image to the library, an existing copy is reused",
-      uploadCallout: "Upload PNG, JPEG or SVG",
-      uploadHint: "Up to 5 MB per file",
-      reused: "This image was already in the library, the existing one is used",
-      uploaded: "Image uploaded to the library",
-      removed: "Image removed from the library",
-      insertFailed: "Image could not be inserted",
-      add: "Add",
-      adding: "Adding",
-      delete: "Delete",
-      phosphorDescription: "Pick a featured icon or search the full catalog. The icon is added to the canvas as an image.",
-      phosphorLoadFailed: "Icon catalog could not be loaded",
-      phosphorInsertFailed: "Icon could not be inserted",
-    };
+  const text = useText("editor").assetLibrary;
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = hasPermission(userPermissions, permissions.assetsUpload) || (session?.user as any)?.roles?.includes?.("Admin");
   const canDelete = hasPermission(userPermissions, permissions.assetsDelete) || (session?.user as any)?.roles?.includes?.("Admin");

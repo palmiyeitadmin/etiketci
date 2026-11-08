@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CaretLeft, CaretRight, Plus, Printer } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
 import { AWAITING_OUTCOME_WARNING_MINUTES, minutesSince } from "@/lib/print-station";
 import { PrintIntentDto, PrintIntentPage, PrintIntentStatus } from "@/types/operational";
@@ -38,7 +38,7 @@ function countFor(counts: PrintIntentPage["counts"] | undefined, filter: StatusF
 }
 
 export default function PrintIntentsPage() {
-    const { formatDateTime, locale } = useI18n();
+    const { formatDateTime } = useI18n();
     const [result, setResult] = useState<PrintIntentPage | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -48,73 +48,7 @@ export default function PrintIntentsPage() {
     const [page, setPage] = useState(1);
     const [now, setNow] = useState(() => Date.now());
 
-    const text = locale === "tr"
-        ? {
-            title: "Baskı geçmişi",
-            description: "Tüm baskı talepleri, PDF'in açılması, baskı sonucu ve yeniden baskılar",
-            createIntent: "Baskı talebi oluştur",
-            station: "Baskı istasyonu",
-            searchPlaceholder: "Ürün, SKU, şablon veya kişi ara",
-            loading: "Yükleniyor",
-            emptyTitle: "Baskı talebi yok",
-            emptyDescription: "Yeni bir baskı talebi oluşturun.",
-            noMatchTitle: "Eşleşen talep yok",
-            noMatchDescription: "Aramayı veya durum filtresini değiştirin.",
-            filters: { all: "Tümü", Pending: "Bekliyor", ReadyForPrint: "Baskıya hazır", SentToClient: "PDF açıldı", done: "Tamamlanan" },
-            statusFilter: "Durum filtresi",
-            columns: ["Ürün", "Şablon", "Adet", "Durum", "Talep eden", "Oluşturulma"],
-            reprintMarker: "Tekrar",
-            reprintMarkerTitle: "Yeniden baskı",
-            openedAgo: (minutes: number) =>
-                minutes < 1 ? "Az önce açıldı"
-                    : minutes < 60 ? `${minutes} dk önce açıldı`
-                        : minutes < 1440 ? `${Math.floor(minutes / 60)} sa önce açıldı`
-                            : `${Math.floor(minutes / 1440)} gün önce açıldı`,
-            previous: "Önceki",
-            next: "Sonraki",
-            pagination: "Sayfalar",
-            status: {
-                Pending: "Bekliyor",
-                ReadyForPrint: "Baskıya hazır",
-                SentToClient: "PDF açıldı",
-                UserPrinted: "Basıldı",
-                Failed: "Hatalı",
-                Cancelled: "İptal edildi",
-            } as Record<PrintIntentStatus, string>,
-        }
-        : {
-            title: "Print history",
-            description: "All print requests, PDF opening, print outcome and reprints",
-            createIntent: "Create print request",
-            station: "Print station",
-            searchPlaceholder: "Search product, SKU, template or person",
-            loading: "Loading",
-            emptyTitle: "No print requests",
-            emptyDescription: "Create a new print request.",
-            noMatchTitle: "No matching requests",
-            noMatchDescription: "Change the search or the status filter.",
-            filters: { all: "All", Pending: "Pending", ReadyForPrint: "Ready to print", SentToClient: "PDF opened", done: "Completed" },
-            statusFilter: "Status filter",
-            columns: ["Product", "Template", "Quantity", "Status", "Requested by", "Created"],
-            reprintMarker: "Reprint",
-            reprintMarkerTitle: "Reprint",
-            openedAgo: (minutes: number) =>
-                minutes < 1 ? "Opened just now"
-                    : minutes < 60 ? `Opened ${minutes} min ago`
-                        : minutes < 1440 ? `Opened ${Math.floor(minutes / 60)} h ago`
-                            : `Opened ${Math.floor(minutes / 1440)} d ago`,
-            previous: "Previous",
-            next: "Next",
-            pagination: "Pages",
-            status: {
-                Pending: "Pending",
-                ReadyForPrint: "Ready to print",
-                SentToClient: "PDF opened",
-                UserPrinted: "Printed",
-                Failed: "Failed",
-                Cancelled: "Cancelled",
-            } as Record<PrintIntentStatus, string>,
-        };
+    const { list: text, statuses: statusLabels } = useText("printRequests");
 
     // Search is sent to the server after typing pauses; a new search starts from the first page.
     useEffect(() => {
@@ -239,7 +173,7 @@ export default function PrintIntentsPage() {
                     )
                 ) : (
                     <div className={`flex flex-col gap-3 transition-opacity ${loading ? "opacity-60" : ""}`} aria-busy={loading}>
-                        <DataTable columns={text.columns}>
+                        <DataTable columns={[text.columns.product, text.columns.template, text.columns.quantity, text.columns.status, text.columns.requestedBy, text.columns.createdAt]}>
                             {items.map((intent) => {
                                 const waited = intent.status === "SentToClient" ? minutesSince(intent.dispatchedAt, now) : 0;
                                 const waitedTooLong = waited >= AWAITING_OUTCOME_WARNING_MINUTES;
@@ -264,7 +198,7 @@ export default function PrintIntentsPage() {
                                         </td>
                                         <td className="tabular px-4 py-2.5 font-mono text-sm text-ink">{intent.quantity}</td>
                                         <td className="px-4 py-2.5">
-                                            <StatusBadge label={text.status[intent.status]} tone={intent.status === "Cancelled" ? "neutral" : getPrintIntentStatusTone(intent.status)} />
+                                            <StatusBadge label={statusLabels[intent.status]} tone={intent.status === "Cancelled" ? "neutral" : getPrintIntentStatusTone(intent.status)} />
                                             {intent.status === "SentToClient" && intent.dispatchedAt ? (
                                                 <div className={`tabular mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-xs ${waitedTooLong ? "text-warn" : "text-ink-3"}`}>
                                                     {waitedTooLong ? <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn" /> : null}

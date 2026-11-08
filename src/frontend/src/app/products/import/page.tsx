@@ -7,7 +7,7 @@ import { CaretRight, FileCsv } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { buildApiUrl } from "@/lib/api-base-url";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { ImportSessionSummary } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -15,55 +15,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export default function ProductImportPage() {
-    const { formatDateTime, locale } = useI18n();
+    const { formatDateTime } = useI18n();
     const router = useRouter();
-    const text = locale === "tr"
-        ? {
-            parent: "Ürünler",
-            title: "CSV içe aktar",
-            description: "Dosya önce kontrol edilir. Ürünler siz onaylayana kadar kaydedilmez.",
-            create: "CSV dosyası",
-            headers: "Sütunlar",
-            choose: "Dosya seçin",
-            chooseHint: "Yalnızca .csv",
-            processing: "Kontrol ediliyor",
-            initialize: "Dosyayı kontrol et",
-            uploadFailed: "Dosya yüklenemedi",
-            networkError: "Sunucuya ulaşılamadı",
-            sessions: "Son içe aktarımlar",
-            noSessions: "Henüz içe aktarım yok",
-            noSessionsDescription: "Bir CSV dosyasını kontrol ettiğinizde burada listelenir.",
-            file: "Dosya",
-            status: "Durum",
-            rows: "Satır",
-            actor: "Yükleyen",
-            created: "Tarih",
-            issues: "hatalı",
-            open: "Aç",
-        }
-        : {
-            parent: "Products",
-            title: "Import CSV",
-            description: "The file is checked first. Nothing is saved until you confirm.",
-            create: "CSV file",
-            headers: "Columns",
-            choose: "Choose a file",
-            chooseHint: ".csv only",
-            processing: "Checking",
-            initialize: "Check file",
-            uploadFailed: "The file could not be uploaded",
-            networkError: "The server could not be reached",
-            sessions: "Recent imports",
-            noSessions: "No imports yet",
-            noSessionsDescription: "Files you check appear here.",
-            file: "File",
-            status: "Status",
-            rows: "Rows",
-            actor: "Uploaded by",
-            created: "Date",
-            issues: "with errors",
-            open: "Open",
-        };
+    const text = useText("products").import;
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

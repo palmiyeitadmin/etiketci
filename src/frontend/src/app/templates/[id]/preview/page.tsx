@@ -10,7 +10,7 @@ import { openPdfDocument } from "@/lib/pdf-print";
 import { normalizeTemplateStatus } from "@/lib/template-status";
 import { buildTemplatePreviewDownloadUrl, buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { Product } from "@/types/product";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { StatusBadge, type StatusTone } from "@/components/ui/StatusBadge";
 import { LabelProof } from "@/components/ui/LabelProof";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -74,7 +74,7 @@ function Dot({ tone }: { tone: "bad" | "warn" | "good" | "neutral" }) {
 }
 
 export default function TemplatePreviewPage() {
-    const { locale, formatDateTime, translateLabel } = useI18n();
+    const { formatDateTime, translateLabel } = useI18n();
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -93,142 +93,12 @@ export default function TemplatePreviewPage() {
     const [pdfObjectUrl, setPdfObjectUrl] = useState<string | null>(null);
     const [pdfReloadKey, setPdfReloadKey] = useState(0);
 
-    const text = locale === "tr"
-        ? {
-            metadataLoadError: "Önizleme bilgileri yüklenemedi.",
-            loadPreviewFailed: "Önizleme bilgileri yüklenemedi.",
-            pdfRenderError: "PDF önizlemesi oluşturulamadı.",
-            selectProduct: "Baskı talebi için bir ürün seçin.",
-            statusNotAllowed: "Baskı talebi yalnızca onaylı veya yayındaki sürümlerden oluşturulabilir.",
-            readinessBlocked: "Baskı talebi oluşturmadan önce hazırlık hatalarını giderin.",
-            quantityInvalid: "Adet sıfırdan büyük olmalı.",
-            createIntentFailed: "Baskı talebi oluşturulamadı: {message}",
-            createIntentError: "Baskı talebi oluşturulurken hata oluştu.",
-            allowPopups: "PDF sekmesi açılamadı. Tarayıcıda açılır pencerelere izin verin.",
-            openInTab: "Yeni sekmede aç",
-            loading: "Önizleme yükleniyor",
-            metadataContextLoss: "Şablon bilgileri yüklenemedi",
-            metadataContextLossDescription: "Sayfayı yenileyin veya şablon listesine dönün.",
-            backToTemplates: "Şablonlara dön",
-            back: "Geri",
-            version: "Sürüm",
-            downloadPdf: "PDF indir",
-            creatingIntent: "Oluşturuluyor",
-            createPrintIntent: "Baskı talebi oluştur",
-            product: "Ürün",
-            selectProductOption: "Ürün seçin",
-            quantity: "Adet",
-            previewWithProduct: "Önizleme bu ürünün verileriyle gösteriliyor",
-            previewWithoutProduct: "Ürün seçilene kadar önizlemede alan adları görünür",
-            readiness: "Hazırlık",
-            readinessIdle: "Ürün bekleniyor",
-            readinessBlockedLabel: "Baskıya engel var",
-            readinessWarningLabel: "Uyarı var",
-            readinessReadyLabel: "Baskıya hazır",
-            selectProductToValidate: "Hazırlık kontrolü için bir ürün seçin",
-            warningsGeneric: "Bazı veriler eksik veya kontrol edilmeli",
-            allResolved: "Tüm alanlar ürün verisiyle dolduruldu",
-            variables: "Değişken alanlar",
-            noVariables: "Bu şablonda değişken alan yok",
-            resolved: "Dolduruldu",
-            missing: "Eksik",
-            unsupported: "Desteklenmiyor",
-            record: "Sürüm kaydı",
-            timestamp: "Tarih",
-            draftOwner: "Taslağı oluşturan",
-            submittedBy: "İncelemeye gönderen",
-            reviewedBy: "Onaylayan",
-            publishedBy: "Yayına alan",
-            preview: "Önizleme",
-            loadingPdfPreview: "PDF hazırlanıyor",
-            pdfCouldNotRender: "PDF önizlemesi oluşturulamadı",
-            retry: "Tekrar dene",
-            unusablePdf: "Önizleme servisi kullanılabilir bir PDF döndürmedi.",
-            iframeTitle: "Etiket PDF önizlemesi",
-            awaitingPdf: "PDF bekleniyor",
-            printSetup: "Baskı ayarları",
-            landscape: "Yatay",
-            portrait: "Dikey",
-            printGuideScale: "Ölçek %100 (gerçek boyut) olmalı",
-            printGuidePaper: "Kağıt boyutu etiket boyutuyla aynı olmalı",
-            printGuideViewer: "Yazdırmayı PDF'in açıldığı sekmeden yapın",
-            missingProductContext: "Ürün seçilmedi. Baskı talebi için bir ürün gerekir.",
-            versionStateBlocked: "Sürüm durumu {status}. Baskı talebi için onaylı veya yayındaki bir sürüm gerekir.",
-            missingVariable: "Ürün verisi eksik: {name}",
-            unsupportedVariable: "Desteklenmeyen değişken: {name}",
-            unlinkedProduct: "Seçilen ürün katalogda bu şablona bağlı değil.",
-            barcodeWarning: "{name} barkod tipi PDF'te doğru basılmayabilir.",
-        }
-        : {
-            metadataLoadError: "Preview details could not be loaded.",
-            loadPreviewFailed: "Preview details could not be loaded.",
-            pdfRenderError: "PDF preview could not be rendered.",
-            selectProduct: "Select a product to create a print request.",
-            statusNotAllowed: "Print requests can only be created from approved or published versions.",
-            readinessBlocked: "Fix the readiness errors before creating a print request.",
-            quantityInvalid: "Quantity must be greater than zero.",
-            createIntentFailed: "Print request could not be created: {message}",
-            createIntentError: "Error creating print request.",
-            allowPopups: "The PDF tab could not be opened. Allow popups in your browser.",
-            openInTab: "Open in new tab",
-            loading: "Loading preview",
-            metadataContextLoss: "Template details could not be loaded",
-            metadataContextLossDescription: "Reload the page or go back to the template list.",
-            backToTemplates: "Back to templates",
-            back: "Back",
-            version: "Version",
-            downloadPdf: "Download PDF",
-            creatingIntent: "Creating",
-            createPrintIntent: "Create print request",
-            product: "Product",
-            selectProductOption: "Select product",
-            quantity: "Quantity",
-            previewWithProduct: "Preview uses this product's data",
-            previewWithoutProduct: "Until a product is selected the preview shows field names",
-            readiness: "Readiness",
-            readinessIdle: "Waiting for product",
-            readinessBlockedLabel: "Blocked",
-            readinessWarningLabel: "Warnings",
-            readinessReadyLabel: "Ready to print",
-            selectProductToValidate: "Select a product to run the readiness check",
-            warningsGeneric: "Some data is missing or should be checked",
-            allResolved: "All fields are filled from product data",
-            variables: "Variable fields",
-            noVariables: "This template has no variable fields",
-            resolved: "Filled",
-            missing: "Missing",
-            unsupported: "Unsupported",
-            record: "Version record",
-            timestamp: "Date",
-            draftOwner: "Draft created by",
-            submittedBy: "Submitted by",
-            reviewedBy: "Approved by",
-            publishedBy: "Published by",
-            preview: "Preview",
-            loadingPdfPreview: "Preparing PDF",
-            pdfCouldNotRender: "PDF preview could not be rendered",
-            retry: "Retry",
-            unusablePdf: "The preview service did not return a usable PDF.",
-            iframeTitle: "Label PDF preview",
-            awaitingPdf: "Waiting for PDF",
-            printSetup: "Print settings",
-            landscape: "Landscape",
-            portrait: "Portrait",
-            printGuideScale: "Scale must be 100% (actual size)",
-            printGuidePaper: "Paper size must match the label size",
-            printGuideViewer: "Print from the tab where the PDF opens",
-            missingProductContext: "No product selected. A print request needs a product.",
-            versionStateBlocked: "Version status is {status}. A print request needs an approved or published version.",
-            missingVariable: "Product data missing: {name}",
-            unsupportedVariable: "Unsupported variable: {name}",
-            unlinkedProduct: "The selected product is not linked to this template in the catalog.",
-            barcodeWarning: "Barcode type {name} may not print correctly in the PDF.",
-        };
+    const text = useText("templateDetail").preview;
 
     function localizeReadinessMessage(message: string) {
         const statusMatch = message.match(/^Template version is in '([^']+)' state\. Only Approved or Published versions can be used for print intents\.$/i);
         if (statusMatch) {
-            return text.versionStateBlocked.replace("{status}", translateLabel(normalizeTemplateStatus(statusMatch[1])));
+            return text.versionStateBlocked(translateLabel(normalizeTemplateStatus(statusMatch[1])));
         }
 
         if (/^Product context is missing\. Print intents require a specific product\.$/i.test(message)) {
@@ -237,12 +107,12 @@ export default function TemplatePreviewPage() {
 
         const missingVariableMatch = message.match(/^Missing required data for variable: (.+)$/i);
         if (missingVariableMatch) {
-            return text.missingVariable.replace("{name}", missingVariableMatch[1]);
+            return text.missingVariable(missingVariableMatch[1]);
         }
 
         const unsupportedVariableMatch = message.match(/^Unsupported variable placeholder: (.+)$/i);
         if (unsupportedVariableMatch) {
-            return text.unsupportedVariable.replace("{name}", unsupportedVariableMatch[1]);
+            return text.unsupportedVariable(unsupportedVariableMatch[1]);
         }
 
         if (/^Product is not explicitly linked to this template in the catalog\.$/i.test(message)) {
@@ -251,7 +121,7 @@ export default function TemplatePreviewPage() {
 
         const barcodeWarningMatch = message.match(/^Barcode type '([^']+)' may not render correctly in PDF \(only CODE_128 is fully supported\)\.$/i);
         if (barcodeWarningMatch) {
-            return text.barcodeWarning.replace("{name}", barcodeWarningMatch[1]);
+            return text.barcodeWarning(barcodeWarningMatch[1]);
         }
 
         return message;
@@ -396,7 +266,7 @@ export default function TemplatePreviewPage() {
             if (res.success) {
                 router.push(`/print-intents/${res.data.id}`);
             } else {
-                setActionMessage(text.createIntentFailed.replace("{message}", res.error.message));
+                setActionMessage(text.createIntentFailed(res.error.message));
             }
         } catch (err) {
             console.error("Error creating print intent", err);

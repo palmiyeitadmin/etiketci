@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { Product } from "@/types/product";
 import { ProductTemplateDto } from "@/types/operational";
 import { LabelTemplate } from "@/types/template";
@@ -18,86 +18,10 @@ import { SlideOver } from "@/components/ui/SlideOver";
 import { Portal } from "@/components/ui/Portal";
 
 export default function ProductDetailPage() {
-  const { formatDateTime, locale } = useI18n();
+  const { formatDateTime } = useI18n();
   const params = useParams();
   const id = String(params.id);
-  const text = locale === "tr"
-    ? {
-      parent: "Ürünler",
-      back: "Ürünlere dön",
-      linkTemplate: "Şablon bağla",
-      notFound: "Ürün bulunamadı",
-      notFoundDescription: "Bu ürün kaydı yüklenemedi.",
-      sku: "SKU",
-      status: "Durum",
-      category: "Kategori",
-      vendor: "Tedarikçi",
-      uncategorized: "Kategorisiz",
-      direct: "Doğrudan",
-      linkedTemplates: "Bağlı şablonlar",
-      linkedDescription: "Bu üründen önizleme ve baskı talebi oluştururken kullanılabilecek şablonlar",
-      noLinked: "Bağlı şablon yok",
-      noLinkedDescription: "Önizleme veya baskı talebi için en az bir şablon bağlayın.",
-      code: "Kod",
-      template: "Şablon",
-      priority: "Öncelik",
-      default: "Varsayılan",
-      secondary: "İkincil",
-      preview: "Önizle",
-      more: "Diğer işlemler",
-      setDefault: "Varsayılan yap",
-      openTemplate: "Şablonu aç",
-      unlink: "Bağlantıyı kaldır",
-      created: "Oluşturuldu",
-      updated: "Güncellendi",
-      guidance: "Nasıl çalışır",
-      guidance1: "Önizleme ve baskı talebinde yalnızca bağlı şablonlar kullanılabilir.",
-      guidance2: "Varsayılan şablon operatörlere ilk seçenek olarak önerilir.",
-      guidance3: "Yayındaki sürümler değişmez; düzenleme yeni bir taslak oluşturur.",
-      modalTitle: "Şablon bağla",
-      modalLabel: "Şablon",
-      selectTemplate: "Şablon seçin",
-      markDefault: "Bu ürün için varsayılan şablon yap",
-      linking: "Bağlanıyor",
-    }
-    : {
-      parent: "Products",
-      back: "Back to products",
-      linkTemplate: "Link template",
-      notFound: "Product not found",
-      notFoundDescription: "This product record could not be loaded.",
-      sku: "SKU",
-      status: "Status",
-      category: "Category",
-      vendor: "Vendor",
-      uncategorized: "Uncategorized",
-      direct: "Direct",
-      linkedTemplates: "Linked templates",
-      linkedDescription: "Templates you can use for previews and print requests of this product",
-      noLinked: "No templates linked",
-      noLinkedDescription: "Link at least one template to preview or print this product.",
-      code: "Code",
-      template: "Template",
-      priority: "Priority",
-      default: "Default",
-      secondary: "Secondary",
-      preview: "Preview",
-      more: "More actions",
-      setDefault: "Make default",
-      openTemplate: "Open template",
-      unlink: "Unlink",
-      created: "Created",
-      updated: "Updated",
-      guidance: "How it works",
-      guidance1: "Only linked templates can be used for previews and print requests.",
-      guidance2: "The default template is suggested to operators first.",
-      guidance3: "Published versions never change; editing creates a new draft.",
-      modalTitle: "Link template",
-      modalLabel: "Template",
-      selectTemplate: "Select a template",
-      markDefault: "Make this the default template for the product",
-      linking: "Linking",
-    };
+  const text = useText("products").detail;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [links, setLinks] = useState<ProductTemplateDto[]>([]);

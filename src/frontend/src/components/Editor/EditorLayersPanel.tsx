@@ -6,7 +6,7 @@ import { EditorCommandButton } from "@/components/Editor/EditorIconButton";
 import { getElementTypeMeta } from "@/components/Editor/EditorToolRail";
 import { useOrderedLayers } from "@/components/Editor/editor-selectors";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { LabelElement } from "@/types/canvas";
 
 function makeGroupId() {
@@ -25,49 +25,7 @@ export function EditorLayersPanel({ className = "", showHeader = true }: { class
     const reorderElement = useEditorStore((state) => state.reorderElement);
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
-    const text = locale === "tr"
-        ? {
-            layers: "Katmanlar",
-            description: "Listede üstteki katman etikette öndedir, PDF de bu sırayla basılır",
-            empty: "Henüz öğe yok",
-            hide: "Gizle",
-            show: "Göster",
-            lock: "Kilitle",
-            unlock: "Kilidi aç",
-            forward: "Bir öne al",
-            back: "Bir arkaya al",
-            front: "En öne al",
-            toBack: "En arkaya al",
-            duplicate: "Çoğalt",
-            delete: "Sil",
-            newGroup: "Yeni grup",
-            ungroup: "Gruptan çıkar",
-            groupLabel: "Grup",
-            ungrouped: "Gruplanmamış",
-            renameGroup: "Grup adı",
-            name: "Ad",
-        }
-        : {
-            layers: "Layers",
-            description: "The top layer is in front on the label and in the PDF",
-            empty: "No elements yet",
-            hide: "Hide",
-            show: "Show",
-            lock: "Lock",
-            unlock: "Unlock",
-            forward: "Bring forward",
-            back: "Send backward",
-            front: "Bring to front",
-            toBack: "Send to back",
-            duplicate: "Duplicate",
-            delete: "Delete",
-            newGroup: "New group",
-            ungroup: "Ungroup",
-            groupLabel: "Group",
-            ungrouped: "Ungrouped",
-            renameGroup: "Group name",
-            name: "Name",
-        };
+    const text = useText("editor").layers;
 
     const existingGroups = useMemo(() => {
         const map = new Map<string, string>();

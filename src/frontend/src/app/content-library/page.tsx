@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { apiFetch } from "@/lib/api-client";
 import { buildAssetContentUrl, deleteAsset, listAssets, uploadAsset } from "@/lib/assets";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { permissions } from "@/lib/permissions";
 import { ContentAssetSummary } from "@/types/assets";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,7 +14,6 @@ import { useSession } from "next-auth/react";
 import { ArrowClockwise, Trash, UploadSimple } from "@phosphor-icons/react";
 
 export default function ContentLibraryPage() {
-  const { locale } = useI18n();
   const { data: session } = useSession();
   const userPermissions = ((session?.user as any)?.permissions || []) as string[];
   const canUpload = userPermissions.includes(permissions.assetsUpload) || ((session?.user as any)?.roles || []).includes("Admin");
@@ -25,39 +24,7 @@ export default function ContentLibraryPage() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"good" | "bad">("good");
-  const text = locale === "tr"
-    ? {
-      title: "Kütüphane",
-      description: "Şablonlarda tekrar kullanılan görseller. Aynı dosya iki kez yüklenirse mevcut kayıt kullanılır.",
-      uploading: "Yükleniyor",
-      uploadAsset: "Görsel yükle",
-      uploadHint: "PNG, JPEG veya SVG, en fazla 5 MB",
-      reused: "Bu görsel zaten kütüphanedeydi, mevcut kayıt kullanıldı",
-      uploaded: "Görsel yüklendi",
-      search: "Ara",
-      refresh: "Yenile",
-      emptyTitle: "Kütüphanede görsel yok",
-      emptyDescription: "Logo ve sembolleri bir kez yükleyin, ardından istediğiniz şablona ekleyin.",
-      removed: "Görsel kaldırıldı",
-      delete: "Sil",
-      count: (n: number) => `${n} görsel`,
-    }
-    : {
-      title: "Library",
-      description: "Images reused across templates. Uploading the same file twice reuses the existing one.",
-      uploading: "Uploading",
-      uploadAsset: "Upload image",
-      uploadHint: "PNG, JPEG or SVG, up to 5 MB",
-      reused: "This image was already in the library, the existing one is used",
-      uploaded: "Image uploaded",
-      search: "Search",
-      refresh: "Refresh",
-      emptyTitle: "No images in the library",
-      emptyDescription: "Upload logos and symbols once, then add them to any template.",
-      removed: "Image removed",
-      delete: "Delete",
-      count: (n: number) => `${n} ${n === 1 ? "image" : "images"}`,
-    };
+  const text = useText("catalog").contentLibrary;
 
   async function load(search = query) {
     setLoading(true);

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { LockSimple } from "@phosphor-icons/react";
 import { hasLegacyRoleAccess } from "@/lib/permissions";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 /**
  * Tells a guard whether it sits inside another guard. Only the outermost guard (the page) shows the
@@ -14,10 +14,7 @@ import { useI18n } from "@/lib/i18n";
 export const GuardDepthContext = createContext(false);
 
 export function AccessDenied() {
-    const { locale } = useI18n();
-    const text = locale === "tr"
-        ? { title: "Bu sayfaya erişim yetkiniz yok", body: "Erişime ihtiyacınız varsa sistem yöneticinize başvurun.", back: "Panele dön" }
-        : { title: "You do not have access to this page", body: "Ask your system administrator if you need access.", back: "Back to dashboard" };
+    const text = useText("common").accessDenied;
 
     return (
         <div role="status" className="flex flex-col items-start gap-3 rounded-xl border border-line bg-surface p-6">

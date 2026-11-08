@@ -6,7 +6,7 @@ import { ArrowClockwise, ArrowCounterClockwise, ArrowLeft, ArrowUUpLeft, ArrowUU
 import { EditorCommandButton, EditorTooltip } from "@/components/Editor/EditorIconButton";
 import { EditorViewportControls } from "@/components/Editor/EditorViewportControls";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 function getStatusTone(status: string): "neutral" | "info" | "success" | "warning" | "danger" {
     switch (status) {
@@ -87,7 +87,6 @@ export function EditorTopBar({
     panelsCollapsed?: boolean;
     onTogglePanels?: () => void;
 }) {
-    const { locale } = useI18n();
     const [editingName, setEditingName] = useState(false);
     const [editingDimensions, setEditingDimensions] = useState(false);
     const [draftName, setDraftName] = useState(name);
@@ -95,61 +94,7 @@ export function EditorTopBar({
     const [draftHeight, setDraftHeight] = useState(String(dimensions.heightMm));
     const [pendingField, setPendingField] = useState<"name" | "dimensions" | null>(null);
     const [inlineError, setInlineError] = useState<string | null>(null);
-    const text = locale === "tr"
-        ? {
-            back: "Şablona dön",
-            undo: "Geri al",
-            redo: "Yinele",
-            rotateLeft: "Sola döndür",
-            rotateRight: "Sağa döndür",
-            duplicate: "Çoğalt",
-            delete: "Sil",
-            preview: "Önizleme",
-            save: "Kaydet",
-            saving: "Kaydediliyor",
-            saved: "Kaydedildi",
-            unsaved: "Kaydedilmemiş değişiklikler",
-            renameHint: "Yeniden adlandırmak için çift tıklayın",
-            resizeHint: "Boyutu değiştirmek için çift tıklayın",
-            nameLabel: "Şablon adı",
-            widthLabel: "Genişlik",
-            heightLabel: "Yükseklik",
-            confirm: "Onayla",
-            cancel: "Vazgeç",
-            hidePanels: "Panelleri gizle",
-            showPanels: "Panelleri göster",
-            invalidName: "Şablon adı boş olamaz",
-            invalidDimensions: "Genişlik ve yükseklik 10 ile 1000 mm arasında olmalı",
-            renameFailed: "Şablon adı kaydedilemedi",
-            resizeFailed: "Şablon boyutu kaydedilemedi",
-        }
-        : {
-            back: "Back to template",
-            undo: "Undo",
-            redo: "Redo",
-            rotateLeft: "Rotate left",
-            rotateRight: "Rotate right",
-            duplicate: "Duplicate",
-            delete: "Delete",
-            preview: "Preview",
-            save: "Save",
-            saving: "Saving",
-            saved: "Saved",
-            unsaved: "Unsaved changes",
-            renameHint: "Double-click to rename",
-            resizeHint: "Double-click to change the size",
-            nameLabel: "Template name",
-            widthLabel: "Width",
-            heightLabel: "Height",
-            confirm: "Confirm",
-            cancel: "Cancel",
-            hidePanels: "Hide panels",
-            showPanels: "Show panels",
-            invalidName: "Template name cannot be empty",
-            invalidDimensions: "Width and height must stay between 10 and 1000 mm",
-            renameFailed: "Template name could not be saved",
-            resizeFailed: "Template size could not be saved",
-        };
+    const text = useText("editor").topBar;
 
     useEffect(() => {
         if (!editingName) {

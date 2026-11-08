@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { LabelProof } from "@/components/ui/LabelProof";
 import { LabelTemplate, TemplateVersion } from "@/types/template";
 
@@ -17,10 +17,7 @@ export function TemplatePreviewCard({
   template: LabelTemplate;
   version?: TemplateVersion | null;
 }) {
-  const { locale } = useI18n();
-  const text = locale === "tr"
-    ? { unavailable: "Önizleme yok", barcode: "Barkod", qr: "QR", image: "Görsel" }
-    : { unavailable: "No preview", barcode: "Barcode", qr: "QR", image: "Image" };
+  const text = useText("templates").previewCard;
 
   const model = useMemo(() => {
     if (!version?.layoutJson) {

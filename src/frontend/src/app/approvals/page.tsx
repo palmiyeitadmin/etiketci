@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -24,50 +24,8 @@ interface ApprovalSummary {
 }
 
 export default function ApprovalQueuePage() {
-    const { formatDateTime, locale } = useI18n();
-    const text = locale === "tr"
-        ? {
-            title: "Onaylar",
-            description: "Onay bekleyen şablon sürümleri ve geri yükleme talepleri.",
-            emptyTitle: "Bekleyen onay yok",
-            emptyDescription: "İncelemeye gönderilen şablon sürümleri ve geri yükleme talepleri burada görünür.",
-            templateReviews: "Şablon sürümleri",
-            noTemplateReviews: "Onay bekleyen sürüm yok",
-            noTemplateReviewsDescription: "İncelemeye gönderilen sürümler burada görünür.",
-            restorationRequests: "Geri yükleme talepleri",
-            noRestorationRequests: "Geri yükleme talebi yok",
-            noRestorationRequestsDescription: "Arşivden geri yükleme talepleri burada görünür.",
-            code: "Kod",
-            template: "Şablon",
-            version: "Sürüm",
-            status: "Durum",
-            requestedBy: "Talep eden",
-            requestedAt: "Tarih",
-            note: "Not",
-            openReview: "İncele",
-            openRequest: "İncele",
-        }
-        : {
-            title: "Approvals",
-            description: "Template versions and restoration requests waiting for review.",
-            emptyTitle: "Nothing waiting for approval",
-            emptyDescription: "Template versions sent for review and restoration requests appear here.",
-            templateReviews: "Template versions",
-            noTemplateReviews: "No versions waiting",
-            noTemplateReviewsDescription: "Versions sent for review appear here.",
-            restorationRequests: "Restoration requests",
-            noRestorationRequests: "No restoration requests",
-            noRestorationRequestsDescription: "Requests to restore archived versions appear here.",
-            code: "Code",
-            template: "Template",
-            version: "Version",
-            status: "Status",
-            requestedBy: "Requested by",
-            requestedAt: "Date",
-            note: "Note",
-            openReview: "Review",
-            openRequest: "Review",
-        };
+    const { formatDateTime } = useI18n();
+    const text = useText("approvals").queue;
     const [approvals, setApprovals] = useState<ApprovalSummary[]>([]);
     const [restorations, setRestorations] = useState<TemplateRestorationRequest[]>([]);
     const [loading, setLoading] = useState(true);

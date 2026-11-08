@@ -5,38 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchEverywhere } from "@/lib/search";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { SearchGroup, SearchItem } from "@/types/search";
-
-// The search API answers in English; these tables give the Turkish UI its own words.
-const groupLabels: Record<string, { tr: string; en: string }> = {
-  pages: { tr: "Sayfalar", en: "Pages" },
-  templates: { tr: "Şablonlar", en: "Templates" },
-  products: { tr: "Ürünler", en: "Products" },
-  printintents: { tr: "Baskı talepleri", en: "Print requests" },
-  users: { tr: "Kullanıcılar", en: "Users" },
-  roles: { tr: "Roller", en: "Roles" },
-};
-
-const typeLabels: Record<string, { tr: string; en: string }> = {
-  page: { tr: "sayfa", en: "page" },
-  template: { tr: "şablon", en: "template" },
-  product: { tr: "ürün", en: "product" },
-  "print-intent": { tr: "baskı", en: "print" },
-  user: { tr: "kullanıcı", en: "user" },
-  role: { tr: "rol", en: "role" },
-};
-
-const pageLabels: Record<string, { tr: [string, string]; en: [string, string] }> = {
-  "/": { tr: ["Panel", "Genel durum"], en: ["Dashboard", "Overview"] },
-  "/products": { tr: ["Ürünler", "Ürün kataloğu"], en: ["Products", "Product catalog"] },
-  "/templates": { tr: ["Şablonlar", "Etiket şablonları ve sürümleri"], en: ["Templates", "Label templates and versions"] },
-  "/print-intents": { tr: ["Baskı talepleri", "Baskı kuyruğu"], en: ["Print requests", "Print queue"] },
-  "/approvals": { tr: ["Onaylar", "Onay bekleyen sürümler"], en: ["Approvals", "Versions waiting for review"] },
-  "/admin/users": { tr: ["Kullanıcılar", "Kullanıcı yönetimi"], en: ["Users", "User management"] },
-  "/admin/roles": { tr: ["Roller", "Rol ve yetki yönetimi"], en: ["Roles", "Roles and permissions"] },
-  "/content-library": { tr: ["Kütüphane", "Şablon görselleri"], en: ["Library", "Template images"] },
-};
 
 export function GlobalSearchPalette({
   open,
@@ -45,7 +15,7 @@ export function GlobalSearchPalette({
   open: boolean;
   onClose: () => void;
 }) {
-  const { locale, translateLabel } = useI18n();
+  const { translateLabel } = useI18n();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [groups, setGroups] = useState<SearchGroup[]>([]);
@@ -53,9 +23,7 @@ export function GlobalSearchPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const text = locale === "tr"
-    ? { label: "Ara", placeholder: "Ara", searching: "Aranıyor", results: (n: number) => `${n} sonuç`, noResults: "Sonuç bulunamadı", move: "gezin", open: "aç", close: "kapat" }
-    : { label: "Search", placeholder: "Search", searching: "Searching", results: (n: number) => `${n} ${n === 1 ? "result" : "results"}`, noResults: "No results", move: "move", open: "open", close: "close" };
+  const text = useText("common").search;
 
   useEffect(() => {
     if (!open) {
@@ -123,10 +91,14 @@ export function GlobalSearchPalette({
     return null;
   }
 
-  const groupLabel = (group: SearchGroup) => groupLabels[group.key]?.[locale] ?? group.label;
-  const typeLabel = (type: string) => typeLabels[type]?.[locale] ?? type;
+  const groupLabels: Record<string, string> = text.groups;
+  const typeLabels: Record<string, string> = text.types;
+  const pageLabels: Record<string, { label: string; description: string }> = text.pages;
+  const groupLabel = (group: SearchGroup) => groupLabels[group.key] ?? group.label;
+  const typeLabel = (type: string) => typeLabels[type] ?? type;
   const itemText = (item: SearchItem): [string, string | undefined] => {
-    if (item.type === "page" && pageLabels[item.href]) return pageLabels[item.href][locale];
+    const page = item.type === "page" ? pageLabels[item.href] : undefined;
+    if (page) return [page.label, page.description];
     return [item.label, item.description];
   };
 

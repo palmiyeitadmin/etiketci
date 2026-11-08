@@ -10,6 +10,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { AppShell } from "@/components/AppShell";
 import { localeCookieName, normalizeLocale } from "@/lib/i18n/messages";
+import { normalizeThemePreference, themeBootScript, themeCookieName } from "@/lib/theme/theme";
 
 export const metadata: Metadata = {
     title: "Palmiye Etiket",
@@ -22,9 +23,14 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     const locale = normalizeLocale(cookies().get(localeCookieName)?.value);
+    const theme = normalizeThemePreference(cookies().get(themeCookieName)?.value);
 
+    // Light and dark are known on the server; "system" is settled by the boot script before paint.
     return (
-        <html lang={locale}>
+        <html lang={locale} data-theme={theme === "system" ? undefined : theme} suppressHydrationWarning>
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+            </head>
             <body className="font-sans">
                 <Providers>
                     <AppShell>{children}</AppShell>

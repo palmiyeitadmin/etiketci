@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { TemplateRowMenu } from "@/components/Templates/TemplateRowMenu";
 
 type TemplateCategoryDraft = { id?: string; code: string; name: string; isActive: boolean };
@@ -21,7 +21,6 @@ type TemplateCategoryDraft = { id?: string; code: string; name: string; isActive
 const initialDraft: TemplateCategoryDraft = { code: "", name: "", isActive: true };
 
 export default function TemplateCategoriesPage() {
-    const { locale } = useI18n();
     const { data: session } = useSession();
     const roles = ((session?.user as any)?.roles || []) as string[];
     const grantedPermissions = ((session?.user as any)?.permissions || []) as string[];
@@ -37,53 +36,7 @@ export default function TemplateCategoriesPage() {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
 
-    const text = locale === "tr"
-        ? {
-            title: "Şablon kategorileri",
-            description: "Her kategori, şablon kodlarının ön ekini ve sırasını belirler",
-            newCategory: "Yeni kategori",
-            searchPlaceholder: "Kategori ara",
-            emptyTitle: "Kategori bulunamadı",
-            emptyDescription: "Yeni şablonlara kod verilebilmesi için bir kategori tanımlayın.",
-            columns: ["Kod", "Ad", "Sıradaki şablon kodu", "Durum", "\u00a0"],
-            edit: "Düzenle",
-            delete: "Sil",
-            more: "Diğer işlemler",
-            editCategory: "Kategoriyi düzenle",
-            createCategory: "Kategori oluştur",
-            slideSubtitle: "Kod, şablon kodlarında kullanılır ve kayıttan sonra değiştirilemez",
-            code: "Kod",
-            name: "Ad",
-            active: "Aktif",
-            saving: "Kaydediliyor",
-            updateCategory: "Kaydet",
-            deleteTitle: "Kategoriyi sil",
-            deleteDescription: `${deleteTarget?.name ?? ""} silinecek. Bu kategoriye bağlı şablon varsa silinemez.`,
-            deleteConfirm: "Kategoriyi sil",
-        }
-        : {
-            title: "Template categories",
-            description: "Each category sets the prefix and sequence of template codes",
-            newCategory: "New category",
-            searchPlaceholder: "Search categories",
-            emptyTitle: "No categories found",
-            emptyDescription: "Create a category so new templates can get a code.",
-            columns: ["Code", "Name", "Next template code", "Status", "\u00a0"],
-            edit: "Edit",
-            delete: "Delete",
-            more: "More actions",
-            editCategory: "Edit category",
-            createCategory: "Create category",
-            slideSubtitle: "The code is used in template codes and cannot be changed after saving",
-            code: "Code",
-            name: "Name",
-            active: "Active",
-            saving: "Saving",
-            updateCategory: "Save",
-            deleteTitle: "Delete category",
-            deleteDescription: `${deleteTarget?.name ?? ""} will be deleted. This is blocked while templates still use it.`,
-            deleteConfirm: "Delete category",
-        };
+    const text = useText("templates").categories;
 
     async function load() {
         const res = await apiFetch<TemplateCategory[]>("/api/template-categories");
@@ -176,7 +129,7 @@ export default function TemplateCategoriesPage() {
                 ) : filtered.length === 0 ? (
                     <EmptyState title={text.emptyTitle} description={text.emptyDescription} />
                 ) : (
-                    <DataTable columns={text.columns}>
+                    <DataTable columns={[text.columns.code, text.columns.name, text.columns.nextCode, text.columns.status, "\u00a0"]}>
                         {filtered.map((category) => (
                             <tr key={category.id} className="transition-colors hover:bg-raised">
                                 <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink">{category.code}</td>
@@ -222,7 +175,7 @@ export default function TemplateCategoriesPage() {
                 <ConfirmModal
                     open={Boolean(deleteTarget)}
                     title={text.deleteTitle}
-                    description={text.deleteDescription.trim()}
+                    description={text.deleteDescription(deleteTarget?.name ?? "").trim()}
                     confirmLabel={text.deleteConfirm}
                     onCancel={() => setDeleteTarget(null)}
                     onConfirm={() => void deleteCategory()}

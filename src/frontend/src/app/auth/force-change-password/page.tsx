@@ -3,40 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import Image from "next/image";
+import { BrandLogo } from "@/components/BrandLogo";
 import { CheckCircle } from "@phosphor-icons/react";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 
 export default function ForceChangePasswordPage() {
-  const { locale } = useI18n();
-  const text = locale === "tr"
-    ? {
-        title: "Parolanızı değiştirin",
-        description: "Hesabınız geçici bir parolayla açıldı. Devam etmek için yeni bir parola belirleyin.",
-        currentPassword: "Geçici parola",
-        newPassword: "Yeni parola",
-        newPasswordHint: "En az 8 karakter",
-        confirmPassword: "Yeni parola tekrar",
-        updating: "Değiştiriliyor",
-        submit: "Parolayı değiştir",
-        loading: "Yükleniyor",
-        mismatch: "Yeni parolalar eşleşmiyor",
-        success: "Parolanız değiştirildi. Yeni parolanızla tekrar giriş yapın.",
-      }
-    : {
-        title: "Change your password",
-        description: "Your account was opened with a temporary password. Set a new one to continue.",
-        currentPassword: "Temporary password",
-        newPassword: "New password",
-        newPasswordHint: "At least 8 characters",
-        confirmPassword: "Repeat new password",
-        updating: "Changing",
-        submit: "Change password",
-        loading: "Loading",
-        mismatch: "The new passwords do not match",
-        success: "Your password was changed. Sign in again with the new one.",
-      };
+  const text = useText("auth").forceChange;
   const router = useRouter();
   const { data: session, status } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
@@ -94,7 +67,7 @@ export default function ForceChangePasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
       <div className="flex w-full max-w-sm flex-col gap-8">
-        <Image src="/assets/palmiye_logo_dark.png" alt="Palmiye" width={122} height={40} priority className="h-8 w-auto self-start" />
+        <BrandLogo width={122} height={40} priority className="h-8 w-auto self-start" />
         <div className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6 sm:p-8">
           <div className="flex flex-col gap-1">
             <h1 className="text-lg font-medium text-ink">{text.title}</h1>

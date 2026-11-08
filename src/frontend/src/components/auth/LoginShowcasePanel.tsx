@@ -64,7 +64,7 @@ export function LoginShowcasePanel() {
                 <p className="text-base text-ink-2">{t("auth.login.showcaseDescription")}</p>
             </div>
 
-            <div className="rounded-2xl bg-[#eef2f0] px-10 py-14 sm:px-16">
+            <div className="rounded-2xl bg-mat px-10 py-14 sm:px-16">
                 <LabelProof widthMm={60} heightMm={40} caption={t("auth.login.showcaseCaption")} className="mx-auto max-w-[360px]">
                     <div className="grid h-full grid-rows-[22%_1fr] font-sans text-[#111111]">
                         <div className="flex items-center bg-[#1f5d3a] px-[5%] text-[clamp(11px,2.4vw,15px)] font-semibold text-white">PALMİYE</div>

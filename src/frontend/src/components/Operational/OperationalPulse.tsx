@@ -23,7 +23,7 @@ export function OperationalPulse({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const { formatTime, t, locale } = useI18n();
+  const { formatTime, formatNumber, t, locale } = useI18n();
   const awaitingOutcome = summary?.awaitingOutcome ?? 0;
   const pendingApprovals = summary?.pendingApprovals ?? 0;
   const latest = (activity?.recentAuditItems ?? []).slice(0, 4).map((item) => localizeDashboardFeedItem(locale, item));
@@ -87,7 +87,7 @@ export function OperationalPulse({
               {stats.map((stat) => (
                 <Link key={stat.label} href={stat.href} onClick={onToggle} className="flex flex-col gap-0.5 bg-surface px-4 py-3 transition-colors hover:bg-raised">
                   <dt className="text-sm text-ink-2">{stat.label}</dt>
-                  <dd className="tabular text-lg font-medium text-ink">{stat.value.toLocaleString(locale === "tr" ? "tr-TR" : "en-US")}</dd>
+                  <dd className="tabular text-lg font-medium text-ink">{formatNumber(stat.value)}</dd>
                 </Link>
               ))}
             </dl>

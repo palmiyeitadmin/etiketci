@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useText } from "@/lib/i18n";
 import { ProductCategory, Vendor } from "@/types/product";
 import { CaretRight } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -40,23 +40,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function NewProductPage() {
-    const { locale } = useI18n();
     const router = useRouter();
-    const text = locale === "tr"
-        ? {
-            parent: "Ürünler", title: "Yeni ürün", description: "Ürünü kaydedin, ardından ürün sayfasından etiket şablonlarını bağlayın.",
-            referenceLoadFailed: "Kategori ve tedarikçi listesi yüklenemedi", createFailed: "Ürün oluşturulamadı", loading: "Yükleniyor", sku: "SKU", name: "Ad", descriptionLabel: "Açıklama",
-            namePlaceholder: "Sızma zeytinyağı 500 ml", descriptionPlaceholder: "Ambalaj veya mevzuat notları",
-            category: "Kategori", vendor: "Tedarikçi", noCategory: "Kategori yok", noVendor: "Tedarikçi yok", activeRecord: "Aktif", activeRecordDescription: "Pasif ürünler katalogda kalır ama baskıda kullanılmaz.",
-            cancel: "Vazgeç", creating: "Oluşturuluyor", create: "Ürünü oluştur",
-        }
-        : {
-            parent: "Products", title: "New product", description: "Save the product, then attach label templates from its product page.",
-            referenceLoadFailed: "Categories and vendors could not be loaded", createFailed: "Product could not be created", loading: "Loading", sku: "SKU", name: "Name", descriptionLabel: "Description",
-            namePlaceholder: "Extra virgin olive oil 500 ml", descriptionPlaceholder: "Packaging or regulatory notes",
-            category: "Category", vendor: "Vendor", noCategory: "No category", noVendor: "No vendor", activeRecord: "Active", activeRecordDescription: "Inactive products stay in the catalog but are not used for printing.",
-            cancel: "Cancel", creating: "Creating", create: "Create product",
-        };
+    const text = useText("products").create;
     const [form, setForm] = useState<ProductFormState>(initialFormState);
     const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [vendors, setVendors] = useState<Vendor[]>([]);

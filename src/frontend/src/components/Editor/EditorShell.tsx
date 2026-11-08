@@ -14,7 +14,7 @@ import { createDefaultElement } from "@/lib/editor-canonical";
 import { normalizeCanonicalLabelModel } from "@/lib/editor-canonical";
 import { EDITOR_NUDGE_MM, EDITOR_NUDGE_SHIFT_MM, ScreenPreviewProfile, UnitConverter } from "@/lib/unit-converter";
 import { CanonicalLabelModel, ImageElement } from "@/types/canvas";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 
 const CanvasStage = dynamic(
   () => import("@/components/Editor/EditorCanvasStage").then((module) => module.EditorCanvasStage),
@@ -255,21 +255,7 @@ export function EditorShell({ initialModel, onSave, previewHref, backHref, versi
     ? "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[3rem_minmax(0,1fr)]"
     : "grid min-h-0 flex-1 overflow-hidden overscroll-none grid-cols-[3rem_minmax(0,1fr)] xl:grid-cols-[3rem_minmax(0,1fr)_20rem] 2xl:grid-cols-[3rem_minmax(0,1fr)_18rem_20rem]";
 
-  const text = locale === "tr"
-    ? {
-      layers: "Katmanlar",
-      properties: "Özellikler",
-      panTool: "Tuvali sürükleyerek kaydırın",
-      selectTool: "Seçmek için bir öğeye tıklayın, oklarla 0,1 mm, Shift ile 1 mm kaydırın",
-      placeTool: (label: string) => `${label} eklemek için etikete tıklayın`,
-    }
-    : {
-      layers: "Layers",
-      properties: "Properties",
-      panTool: "Drag to pan the canvas",
-      selectTool: "Click an element to select it, arrows nudge 0.1 mm, Shift 1 mm",
-      placeTool: (label: string) => `Click the label to add ${label.toLowerCase()}`,
-    };
+  const text = useText("editor").shell;
 
   const modeHint = ui.isSpacePanning || ui.activeTool === "pan"
     ? text.panTool

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { CaretRight } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -24,36 +24,10 @@ interface ApprovalSummary {
 }
 
 export default function ApprovalReviewDetailPage() {
-    const { formatDateTime, locale } = useI18n();
+    const { formatDateTime } = useI18n();
     const params = useParams();
     const versionId = String(params.versionId);
-    const text = locale === "tr"
-        ? {
-            parent: "Onaylar",
-            title: "Şablon onayı",
-            open: "Şablonda incele",
-            notFound: "Onay kaydı bulunamadı",
-            notFoundDescription: "Bu sürüm artık onay beklemiyor.",
-            code: "Kod",
-            version: "Sürüm",
-            requestedBy: "Talep eden",
-            requestedAt: "Tarih",
-            changeNotes: "Değişiklik notu",
-            noNotes: "Not girilmemiş",
-        }
-        : {
-            parent: "Approvals",
-            title: "Template approval",
-            open: "Review in template",
-            notFound: "Approval not found",
-            notFoundDescription: "This version is no longer waiting for approval.",
-            code: "Code",
-            version: "Version",
-            requestedBy: "Requested by",
-            requestedAt: "Date",
-            changeNotes: "Change note",
-            noNotes: "No note given",
-        };
+    const text = useText("approvals").templateReview;
     const [item, setItem] = useState<ApprovalSummary | null>(null);
     const [loading, setLoading] = useState(true);
 

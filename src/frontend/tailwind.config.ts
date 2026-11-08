@@ -4,6 +4,8 @@ import type { Config } from "tailwindcss";
 const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
 
 const config: Config = {
+    // `dark:` variants follow <html data-theme="dark"> (set from the user's theme choice).
+    darkMode: ["selector", '[data-theme="dark"]'],
     content: [
         "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -31,6 +33,7 @@ const config: Config = {
                 good: { DEFAULT: token("good"), soft: token("good-soft") },
                 warn: { DEFAULT: token("warn"), soft: token("warn-soft") },
                 bad: { DEFAULT: token("bad"), soft: token("bad-soft") },
+                mat: token("mat"),
             },
             fontFamily: {
                 sans: ['"IBM Plex Sans"', "Segoe UI", "system-ui", "sans-serif"],
@@ -52,8 +55,8 @@ const config: Config = {
                 DEFAULT: "rgb(var(--line))",
             },
             boxShadow: {
-                xs: "0 1px 2px rgb(0 0 0 / 0.05)",
-                pop: "0 8px 24px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06)",
+                xs: "var(--shadow-xs)",
+                pop: "var(--shadow-pop)",
             },
             transitionTimingFunction: {
                 DEFAULT: "cubic-bezier(0.22, 1, 0.36, 1)",

@@ -8,7 +8,7 @@ import { useSelectedElement } from "@/components/Editor/editor-selectors";
 import { useEditorStore } from "@/components/Editor/useEditorStore";
 import { buildAssetContentUrl, uploadAsset } from "@/lib/assets";
 import { ElementType } from "@/types/canvas";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, useText } from "@/lib/i18n";
 
 const FONT_OPTIONS = ["Arial", "Verdana", "Courier New", "Times New Roman"];
 const BARCODE_OPTIONS = ["CODE_128", "CODE_39", "EAN_13"];
@@ -21,118 +21,7 @@ function isValidHexColor(value: string) {
 }
 
 function useEditorText() {
-    const { locale } = useI18n();
-    return locale === "tr"
-        ? {
-            properties: "Özellikler",
-            selectElement: "Düzenlemek için tuvalde ya da katmanlarda bir öğe seçin",
-            name: "Ad",
-            geometry: "Konum ve boyut",
-            xMm: "X",
-            yMm: "Y",
-            widthMm: "Genişlik",
-            heightMm: "Yükseklik",
-            rotation: "Döndürme",
-            content: "İçerik",
-            textStyle: "Metin",
-            fontFamily: "Yazı tipi",
-            fontSizePt: "Boyut",
-            fontWeight: "Kalınlık",
-            textAlign: "Hizalama",
-            color: "Renk",
-            barcodeSettings: "Barkod",
-            barcodeType: "Barkod türü",
-            barcodeNotice: "CODE_128 dışındaki türler PDF'te farklı görünebilir",
-            barcodeMvp: "Bu barkod türü PDF çıktısında desteklenir",
-            qrSettings: "QR kod",
-            qrWarning: "İçerik uzun, QR kodun okunması zorlaşabilir",
-            qrOk: "İçerik uzunluğu QR kod için uygun",
-            imageSource: "Görsel",
-            uploadImage: "Dosya yükle",
-            fitMode: "Sığdırma",
-            clearImage: "Görseli temizle",
-            imageAddress: "Görsel adresi",
-            imageDataPlaceholder: "Görsel adresi veya data URI",
-            imageFormatError: "Yalnızca PNG, JPEG ve SVG görseller desteklenir",
-            imageSizeError: "Görseller en fazla 500 KB olabilir. Daha büyük dosyalar için kütüphaneyi kullanın.",
-            linkedIcon: "Bağlı ikon",
-            linkedAsset: "Bağlı kütüphane görseli",
-            strokeAndFill: "Kenar ve dolgu",
-            fillEnabled: "Dolgu",
-            fillColor: "Dolgu rengi",
-            strokeEnabled: "Kenar çizgisi",
-            strokeColor: "Kenar rengi",
-            strokeWidthMm: "Kenar kalınlığı",
-            lineDirection: "Çizgi yönü",
-            colorInvalid: "Renk #RRGGBB biçiminde olmalı",
-            options: {
-                normal: "Normal",
-                bold: "Kalın",
-                left: "Sola",
-                center: "Ortaya",
-                right: "Sağa",
-                contain: "Sığdır",
-                cover: "Doldur",
-                stretch: "Uzat",
-                horizontal: "Yatay",
-                vertical: "Dikey",
-            } as Record<string, string>,
-        }
-        : {
-            properties: "Properties",
-            selectElement: "Select an element on the canvas or in the layers to edit it",
-            name: "Name",
-            geometry: "Position and size",
-            xMm: "X",
-            yMm: "Y",
-            widthMm: "Width",
-            heightMm: "Height",
-            rotation: "Rotation",
-            content: "Content",
-            textStyle: "Text",
-            fontFamily: "Font",
-            fontSizePt: "Size",
-            fontWeight: "Weight",
-            textAlign: "Alignment",
-            color: "Color",
-            barcodeSettings: "Barcode",
-            barcodeType: "Barcode type",
-            barcodeNotice: "Types other than CODE_128 may look different in the PDF",
-            barcodeMvp: "This barcode type is supported in PDF output",
-            qrSettings: "QR code",
-            qrWarning: "Long content can make the QR code harder to scan",
-            qrOk: "Content length is fine for a QR code",
-            imageSource: "Image",
-            uploadImage: "Upload file",
-            fitMode: "Fit",
-            clearImage: "Clear image",
-            imageAddress: "Image address",
-            imageDataPlaceholder: "Image address or data URI",
-            imageFormatError: "Only PNG, JPEG and SVG images are supported",
-            imageSizeError: "Embedded images must be 500 KB or smaller. Use the library for larger files.",
-            linkedIcon: "Linked icon",
-            linkedAsset: "Linked library image",
-            strokeAndFill: "Stroke and fill",
-            fillEnabled: "Fill",
-            fillColor: "Fill color",
-            strokeEnabled: "Stroke",
-            strokeColor: "Stroke color",
-            strokeWidthMm: "Stroke width",
-            lineDirection: "Line direction",
-            colorInvalid: "Color must be a #RRGGBB value",
-            options: {
-                normal: "Normal",
-                bold: "Bold",
-                left: "Left",
-                center: "Center",
-                right: "Right",
-                contain: "Contain",
-                cover: "Cover",
-                stretch: "Stretch",
-                horizontal: "Horizontal",
-                vertical: "Vertical",
-            } as Record<string, string>,
-        };
+    return useText("editor").inspector;
 }
 
 export function EditorInspector({ className = "", showHeader = true }: { className?: string; showHeader?: boolean }) {

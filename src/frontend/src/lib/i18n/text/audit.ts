@@ -1,4 +1,23 @@
 import { defineMessages } from "../define";
+import print from "./print";
+import permissions from "./permissions";
+
+/** Parameters an audit entry stores in Metadata (camelCase JSON written by AuditWriter). */
+export type AuditParams = Record<string, unknown>;
+type Sentence = (p: AuditParams) => string | null;
+
+const str = (value: unknown) => (value === null || value === undefined || value === "" ? null : String(value));
+const list = (value: unknown) => (Array.isArray(value) ? value.map(String) : []);
+const join = (...parts: (string | null | false | undefined)[]) => parts.filter(Boolean).join(" · ") || null;
+const named = (p: AuditParams) => join(str(p.name) && `“${p.name}”`, str(p.code));
+const version = (p: AuditParams) => (str(p.version) ? `v${p.version}` : null);
+const codeVersion = (p: AuditParams) => join(str(p.code), version(p));
+const printLine = (p: AuditParams, labels: (n: number) => string) =>
+    join(str(p.sku), str(p.templateCode) && `${p.templateCode}${str(p.version) ? ` v${p.version}` : ""}`, typeof p.quantity === "number" && labels(p.quantity));
+
+const trLabels = (n: number) => `${n.toLocaleString("tr-TR")} etiket`;
+const enCount = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const enLabels = (n: number) => `${n.toLocaleString("en-US")} ${n === 1 ? "label" : "labels"}`;
 
 /**
  * Names for the audit actions and record types the backend writes. Single source for the dashboard feed,
@@ -77,6 +96,63 @@ export default defineMessages(
                 User: "Kullanıcı",
                 Vendor: "Tedarikçi",
             },
+            /** One-line summary built from Metadata; null falls back to the stored Details text. */
+            sentences: {
+                CategoryCreated: named, CategoryUpdated: (p) => join(named(p), p.active === false && "Pasif"), CategoryDeleted: named,
+                VendorCreated: named, VendorUpdated: (p) => join(named(p), p.active === false && "Pasif"), VendorDeleted: named,
+                TemplateCategoryCreated: named, TemplateCategoryUpdated: (p) => join(named(p), p.active === false && "Pasif"), TemplateCategoryDeleted: named,
+                ImportSessionCreated: (p) => join(str(p.fileName) && `“${p.fileName}”`, typeof p.rows === "number" && `${p.rows} satır`),
+                ImportSessionCommitted: (p) => `${Number(p.imported ?? 0)} ürün eklendi, ${Number(p.updated ?? 0)} güncellendi`,
+                PrintIntentCreated: (p) => printLine(p, trLabels),
+                PrintIntentPdfDispatched: (p) => printLine(p, trLabels),
+                PrintIntentUserPrinted: (p) => printLine(p, trLabels),
+                PrintIntentFailed: (p) => join(
+                    str(p.category) && (print.tr.failureCategories[p.category as keyof typeof print.tr.failureCategories] ?? String(p.category)),
+                    typeof p.printedQuantity === "number" && typeof p.quantity === "number" && `${p.printedQuantity} / ${p.quantity} düzgün`,
+                    str(p.note) && `“${p.note}”`),
+                PrintIntentReprinted: (p) => join(
+                    str(p.reason) && (print.tr.reprintReasons[p.reason as keyof typeof print.tr.reprintReasons] ?? String(p.reason)),
+                    typeof p.quantity === "number" && trLabels(p.quantity),
+                    str(p.note) && `“${p.note}”`),
+                PrintIntentHandoffConfirmed: (p) => (p.channel === "station" ? "Baskı istasyonundan" : null),
+                ProductCreated: (p) => join(str(p.sku), str(p.name)),
+                ProductUpdated: (p) => join(str(p.sku), str(p.name)),
+                ProductDeleted: (p) => join(str(p.sku), str(p.name)),
+                ProductDeactivated: (p) => join(str(p.sku), "Baskı geçmişi olduğu için silinmedi, pasife alındı"),
+                ProductTemplateLinked: (p) => join(str(p.code) && str(p.sku) && `${p.code} → ${p.sku}`, p.isDefault === true && "Varsayılan"),
+                ProductTemplateUnlinked: (p) => (str(p.code) && str(p.sku) ? `${p.code} ↛ ${p.sku}` : null),
+                RoleCreated: (p) => join(str(p.name), `${list(p.permissions).length} yetki`),
+                RoleUpdated: (p) => join(str(p.name), list(p.added).length > 0 && `${list(p.added).length} yetki eklendi`, list(p.removed).length > 0 && `${list(p.removed).length} yetki kaldırıldı`),
+                RoleDeleted: (p) => str(p.name),
+                RolePermissionSeeded: (p) => join(
+                    str(p.permission) && (permissions.tr.items[String(p.permission)]?.label ?? String(p.permission)),
+                    str(p.role) && (permissions.tr.roles[String(p.role)]?.name ?? String(p.role))),
+                TemplateApprovalRequested: version,
+                TemplateApproved: (p) => join(version(p), str(p.comments) && `“${p.comments}”`, p.selfApproval === true && "Yönetici kendi çalışmasını onayladı"),
+                TemplateRejected: (p) => join(version(p), str(p.comments) && `“${p.comments}”`),
+                TemplatePublished: version,
+                TemplateArchived: (p) => str(p.code),
+                TemplateVersionArchived: codeVersion,
+                TemplateCloned: (p) => (str(p.sourceCode) ? `${p.sourceCode} v${p.sourceVersion} → ${p.code}` : null),
+                TemplateDeleted: (p) => str(p.code),
+                TemplateVersionDeleted: codeVersion,
+                TemplateDraftSaved: (p) => join(version(p), p.layoutChanged === true && "tasarım değişti", p.notesChanged === true && "notlar değişti"),
+                TemplateRevisionCreated: (p) => (str(p.sourceVersion) ? `v${p.sourceVersion} → v${p.version}` : null),
+                TemplateFavorited: (p) => str(p.code),
+                TemplateUnfavorited: (p) => str(p.code),
+                TemplateUpdated: (p) => join(str(p.oldName) && p.oldName !== p.name && `“${p.oldName}” → “${p.name}”`, p.descriptionChanged === true && "açıklama değişti"),
+                TemplateRestorationRequested: codeVersion,
+                TemplateRestorationApproved: (p) => join(codeVersion(p), str(p.comments) && `“${p.comments}”`),
+                TemplateRestorationRejected: (p) => join(codeVersion(p), str(p.comments) && `“${p.comments}”`),
+                TemplateRestored: (p) => str(p.code),
+                UserCreated: (p) => join(str(p.email), list(p.roles).length > 0 && `Roller: ${list(p.roles).join(", ")}`),
+                UserUpdated: (p) => join(str(p.email), list(p.fromRoles).join(",") !== list(p.toRoles).join(",") && `Roller: ${list(p.fromRoles).join(", ") || "—"} → ${list(p.toRoles).join(", ") || "—"}`, p.active === false && "Pasif"),
+                UserActivated: (p) => str(p.email),
+                UserDeactivated: (p) => str(p.email),
+                UserPasswordResetIssued: (p) => str(p.email),
+                UserTemporaryPasswordIssued: (p) => str(p.email),
+            } as Record<string, Sentence>,
+            technicalDetails: "Teknik ayrıntı",
         },
     },
     {
@@ -150,6 +226,62 @@ export default defineMessages(
             User: "User",
             Vendor: "Vendor",
         },
+                    sentences: {
+            CategoryCreated: named, CategoryUpdated: (p) => join(named(p), p.active === false && "Inactive"), CategoryDeleted: named,
+            VendorCreated: named, VendorUpdated: (p) => join(named(p), p.active === false && "Inactive"), VendorDeleted: named,
+            TemplateCategoryCreated: named, TemplateCategoryUpdated: (p) => join(named(p), p.active === false && "Inactive"), TemplateCategoryDeleted: named,
+            ImportSessionCreated: (p) => join(str(p.fileName) && `“${p.fileName}”`, typeof p.rows === "number" && `${p.rows} ${p.rows === 1 ? "row" : "rows"}`),
+            ImportSessionCommitted: (p) => `${Number(p.imported ?? 0)} added, ${Number(p.updated ?? 0)} updated`,
+            PrintIntentCreated: (p) => printLine(p, enLabels),
+            PrintIntentPdfDispatched: (p) => printLine(p, enLabels),
+            PrintIntentUserPrinted: (p) => printLine(p, enLabels),
+            PrintIntentFailed: (p) => join(
+                str(p.category) && (print.en.failureCategories[p.category as keyof typeof print.en.failureCategories] ?? String(p.category)),
+                typeof p.printedQuantity === "number" && typeof p.quantity === "number" && `${p.printedQuantity} / ${p.quantity} fine`,
+                str(p.note) && `“${p.note}”`),
+            PrintIntentReprinted: (p) => join(
+                str(p.reason) && (print.en.reprintReasons[p.reason as keyof typeof print.en.reprintReasons] ?? String(p.reason)),
+                typeof p.quantity === "number" && enLabels(p.quantity),
+                str(p.note) && `“${p.note}”`),
+            PrintIntentHandoffConfirmed: (p) => (p.channel === "station" ? "From the print station" : null),
+            ProductCreated: (p) => join(str(p.sku), str(p.name)),
+            ProductUpdated: (p) => join(str(p.sku), str(p.name)),
+            ProductDeleted: (p) => join(str(p.sku), str(p.name)),
+            ProductDeactivated: (p) => join(str(p.sku), "Has print history, so it was deactivated instead of deleted"),
+            ProductTemplateLinked: (p) => join(str(p.code) && str(p.sku) && `${p.code} → ${p.sku}`, p.isDefault === true && "Default"),
+            ProductTemplateUnlinked: (p) => (str(p.code) && str(p.sku) ? `${p.code} ↛ ${p.sku}` : null),
+            RoleCreated: (p) => join(str(p.name), enCount(list(p.permissions).length, "permission", "permissions")),
+            RoleUpdated: (p) => join(str(p.name), list(p.added).length > 0 && `${enCount(list(p.added).length, "permission", "permissions")} added`, list(p.removed).length > 0 && `${enCount(list(p.removed).length, "permission", "permissions")} removed`),
+            RoleDeleted: (p) => str(p.name),
+            RolePermissionSeeded: (p) => join(
+                str(p.permission) && (permissions.en.items[String(p.permission)]?.label ?? String(p.permission)),
+                str(p.role) && (permissions.en.roles[String(p.role)]?.name ?? String(p.role))),
+            TemplateApprovalRequested: version,
+            TemplateApproved: (p) => join(version(p), str(p.comments) && `“${p.comments}”`, p.selfApproval === true && "Administrator approved their own work"),
+            TemplateRejected: (p) => join(version(p), str(p.comments) && `“${p.comments}”`),
+            TemplatePublished: version,
+            TemplateArchived: (p) => str(p.code),
+            TemplateVersionArchived: codeVersion,
+            TemplateCloned: (p) => (str(p.sourceCode) ? `${p.sourceCode} v${p.sourceVersion} → ${p.code}` : null),
+            TemplateDeleted: (p) => str(p.code),
+            TemplateVersionDeleted: codeVersion,
+            TemplateDraftSaved: (p) => join(version(p), p.layoutChanged === true && "layout changed", p.notesChanged === true && "notes changed"),
+            TemplateRevisionCreated: (p) => (str(p.sourceVersion) ? `v${p.sourceVersion} → v${p.version}` : null),
+            TemplateFavorited: (p) => str(p.code),
+            TemplateUnfavorited: (p) => str(p.code),
+            TemplateUpdated: (p) => join(str(p.oldName) && p.oldName !== p.name && `“${p.oldName}” → “${p.name}”`, p.descriptionChanged === true && "description changed"),
+            TemplateRestorationRequested: codeVersion,
+            TemplateRestorationApproved: (p) => join(codeVersion(p), str(p.comments) && `“${p.comments}”`),
+            TemplateRestorationRejected: (p) => join(codeVersion(p), str(p.comments) && `“${p.comments}”`),
+            TemplateRestored: (p) => str(p.code),
+            UserCreated: (p) => join(str(p.email), list(p.roles).length > 0 && `Roles: ${list(p.roles).join(", ")}`),
+            UserUpdated: (p) => join(str(p.email), list(p.fromRoles).join(",") !== list(p.toRoles).join(",") && `Roles: ${list(p.fromRoles).join(", ") || "—"} → ${list(p.toRoles).join(", ") || "—"}`, p.active === false && "Inactive"),
+            UserActivated: (p) => str(p.email),
+            UserDeactivated: (p) => str(p.email),
+            UserPasswordResetIssued: (p) => str(p.email),
+            UserTemporaryPasswordIssued: (p) => str(p.email),
+        } as Record<string, Sentence>,
+        technicalDetails: "Technical details",
     },
 );
 
