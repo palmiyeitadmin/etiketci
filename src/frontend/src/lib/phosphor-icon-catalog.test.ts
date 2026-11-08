@@ -1,3 +1,4 @@
+import { turkishIconAliases } from "@/lib/phosphor-icon-aliases-tr";
 import { describe, expect, it } from "vitest";
 import {
   getFeaturedPhosphorIcons,
@@ -40,5 +41,30 @@ describe("phosphor-icon-catalog", () => {
 
     expect(featuredUri.startsWith("data:image/svg+xml;utf8,")).toBe(true);
     expect(fullUri.startsWith("data:image/svg+xml;utf8,")).toBe(true);
+  });
+});
+
+describe("Turkish icon search", () => {
+  it("finds icons by Turkish words, first", () => {
+    const keys = searchPhosphorIcons("yıldız").map((item) => item.key);
+    expect(keys[0]).toBe("Star");
+    expect(searchPhosphorIcons("koli").map((item) => item.key)).toContain("Package");
+    expect(searchPhosphorIcons("barkod").map((item) => item.key)).toContain("Barcode");
+  });
+
+  it("ignores Turkish case and missing diacritics", () => {
+    expect(searchPhosphorIcons("YILDIZ").map((item) => item.key)).toContain("Star");
+    expect(searchPhosphorIcons("uyari").map((item) => item.key)).toContain("Warning");
+    expect(searchPhosphorIcons("SOĞUK").map((item) => item.key)).toContain("Snowflake");
+  });
+
+  it("still finds English names", () => {
+    expect(searchPhosphorIcons("printer").map((item) => item.key)).toContain("Printer");
+  });
+
+  it("only points at icons that exist", () => {
+    const known = new Set<string>(searchPhosphorIcons("").map((item) => item.key));
+    const missing = Object.values(turkishIconAliases).flat().filter((key) => !known.has(key));
+    expect(missing).toEqual([]);
   });
 });

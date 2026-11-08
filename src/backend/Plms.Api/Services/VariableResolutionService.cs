@@ -60,7 +60,7 @@ namespace Plms.Api.Services
                         Key = "product.sku",
                         Label = "Product SKU",
                         Description = "Resolved from the linked product SKU.",
-                        SampleValue = "SKU-10001",
+                        SampleValue = "ZYT-0500-SZM",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -68,7 +68,7 @@ namespace Plms.Api.Services
                         Key = "product.name",
                         Label = "Product Name",
                         Description = "Resolved from the linked product name.",
-                        SampleValue = "Cold Brew Coffee",
+                        SampleValue = "Sızma zeytinyağı 500 ml",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -76,7 +76,7 @@ namespace Plms.Api.Services
                         Key = "product.category",
                         Label = "Product Category",
                         Description = "Resolved from the linked product category.",
-                        SampleValue = "Beverages",
+                        SampleValue = "Zeytinyağı",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -84,7 +84,7 @@ namespace Plms.Api.Services
                         Key = "product.vendor",
                         Label = "Product Vendor",
                         Description = "Resolved from the linked product vendor.",
-                        SampleValue = "Palmiye Foods",
+                        SampleValue = "Palmiye Gıda",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     }
                 ]

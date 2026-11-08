@@ -3,6 +3,7 @@ import { Barcode, Circle, FilePdf, GearSix, ImageSquare, MagnifyingGlass, Packag
 import { renderToStaticMarkup } from "react-dom/server";
 import { phosphorIconLoaders } from "@/lib/phosphor-icon-loaders";
 import { phosphorIconManifest } from "@/lib/phosphor-icon-manifest";
+import { turkishIconAliases } from "@/lib/phosphor-icon-aliases-tr";
 
 export type PhosphorIconKey = keyof typeof phosphorIconLoaders;
 
@@ -71,17 +72,49 @@ export function getFeaturedPhosphorIcons() {
   return phosphorIconCatalog;
 }
 
+/** Lowercase with Turkish rules (İ → i, I → ı), then without diacritics, so "seker" also finds "şeker". */
+function foldTurkish(value: string) {
+  return value
+    .toLocaleLowerCase("tr")
+    .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u")
+    .trim();
+}
+
+const foldedAliases = Object.entries(turkishIconAliases).map(([word, keys]) => ({ word: foldTurkish(word), keys }));
+
+/** Icon keys whose Turkish search words contain the query. */
+function turkishAliasMatches(folded: string) {
+  // Ordered: the first key listed for the matching word comes first in the results.
+  const keys = new Set<string>();
+  for (const alias of foldedAliases) {
+    if (alias.word.includes(folded) || (folded.length >= 3 && folded.includes(alias.word))) {
+      alias.keys.forEach((key) => keys.add(key));
+    }
+  }
+  return keys;
+}
+
 export function searchPhosphorIcons(query: string) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
     return phosphorIconManifestItems;
   }
 
-  return phosphorIconManifestItems.filter((item) =>
-    item.label.toLowerCase().includes(normalized) ||
-    item.key.toLowerCase().includes(normalized) ||
-    item.keywords.some((keyword) => keyword.includes(normalized))
+  const folded = foldTurkish(query);
+  const aliasKeys = turkishAliasMatches(folded);
+  const aliasHits = Array.from(aliasKeys)
+    .map((key) => manifestByKey.get(key as PhosphorIconKey))
+    .filter((item): item is PhosphorIconCatalogItem => Boolean(item));
+  const englishHits = phosphorIconManifestItems.filter((item) =>
+    !aliasKeys.has(item.key) && (
+      item.label.toLowerCase().includes(normalized) ||
+      item.key.toLowerCase().includes(normalized) ||
+      item.keywords.some((keyword) => keyword.includes(normalized))
+    )
   );
+
+  // Turkish matches first: they are what a Turkish user meant.
+  return [...aliasHits, ...englishHits];
 }
 
 export async function loadPhosphorIconComponent(key: PhosphorIconKey): Promise<Icon> {

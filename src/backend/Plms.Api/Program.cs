@@ -207,7 +207,11 @@ static async Task EnsureRoleAsync(
     }
     else
     {
-        role.Description = description;
+        // Keep descriptions edited in the UI; only fill an empty one.
+        if (string.IsNullOrWhiteSpace(role.Description))
+        {
+            role.Description = description;
+        }
         role.IsSystem = isSystem;
         role.IsImmutable = isImmutable;
         await roleManager.UpdateAsync(role);
@@ -215,27 +219,56 @@ static async Task EnsureRoleAsync(
 
     var expectedPermissions = permissions.Distinct(StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
     var existingPermissions = await dbContext.RolePermissions.Where(rp => rp.RoleId == role.Id).ToListAsync();
-
-    var toRemove = existingPermissions.Where(existing => !expectedPermissions.Contains(existing.PermissionKey)).ToList();
-    if (toRemove.Count > 0)
-    {
-        dbContext.RolePermissions.RemoveRange(toRemove);
-    }
-
     var existingKeys = existingPermissions.Select(existing => existing.PermissionKey).ToHashSet(StringComparer.OrdinalIgnoreCase);
-    foreach (var permission in expectedPermissions.Where(permission => !existingKeys.Contains(permission)))
+
+    if (isImmutable)
     {
-        dbContext.RolePermissions.Add(new RolePermission
+        // Immutable roles (Admin) always match the catalog exactly.
+        var toRemove = existingPermissions.Where(existing => !expectedPermissions.Contains(existing.PermissionKey)).ToList();
+        dbContext.RolePermissions.RemoveRange(toRemove);
+        foreach (var permission in expectedPermissions.Where(permission => !existingKeys.Contains(permission)))
         {
-            Id = Guid.NewGuid(),
-            RoleId = role.Id,
-            PermissionKey = permission,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "System"
-        });
+            AddRolePermission(dbContext, role.Id, permission);
+        }
+    }
+    else
+    {
+        // Editable roles keep what administrators changed. A default permission is granted once (for example a
+        // permission added in a new release); if an administrator later removes it, it stays removed.
+        var roleIdText = role.Id.ToString();
+        var alreadySeeded = (await dbContext.AuditLogs
+                .Where(log => log.Action == "RolePermissionSeeded" && log.EntityId == roleIdText)
+                .Select(log => log.Details)
+                .ToListAsync())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var permission in expectedPermissions)
+        {
+            if (!existingKeys.Contains(permission) && !alreadySeeded.Contains(permission))
+            {
+                AddRolePermission(dbContext, role.Id, permission);
+            }
+
+            if (!alreadySeeded.Contains(permission))
+            {
+                AuditWriter.Add(dbContext, "RolePermissionSeeded", "Role", role.Id, "System", "seed", permission, new { role = roleName, permission });
+            }
+        }
     }
 
     await dbContext.SaveChangesAsync();
+}
+
+static void AddRolePermission(ApplicationDbContext dbContext, Guid roleId, string permission)
+{
+    dbContext.RolePermissions.Add(new RolePermission
+    {
+        Id = Guid.NewGuid(),
+        RoleId = roleId,
+        PermissionKey = permission,
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = "System"
+    });
 }
 
 static async Task MigrateLegacyRolesAsync(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext)
@@ -365,9 +398,9 @@ static async Task EnsureSeedProductCategoriesAsync(ApplicationDbContext dbContex
     Console.WriteLine("[SEED_DEBUG] Seeding initial Product Categories...");
     dbContext.ProductCategories.AddRange(new List<ProductCategory>
     {
-        new() { Id = Guid.NewGuid(), Code = "LABEL", Name = "Common Labels", IsActive = true },
-        new() { Id = Guid.NewGuid(), Code = "PACK", Name = "Packaging Materials", IsActive = true },
-        new() { Id = Guid.NewGuid(), Code = "ASSET", Name = "Machinery Assets", IsActive = true }
+        new() { Id = Guid.NewGuid(), Code = "LABEL", Name = "Genel etiketler", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "PACK", Name = "Ambalaj malzemeleri", IsActive = true },
+        new() { Id = Guid.NewGuid(), Code = "ASSET", Name = "Makine ve demirbaş", IsActive = true }
     });
     await dbContext.SaveChangesAsync();
     Console.WriteLine("[SEED_DEBUG] Product Categories seeded.");
@@ -383,9 +416,9 @@ static async Task EnsureSeedTemplateCategoriesAsync(ApplicationDbContext dbConte
     Console.WriteLine("[SEED_DEBUG] Seeding initial Template Categories...");
     dbContext.TemplateCategories.AddRange(new List<TemplateCategory>
     {
-        new() { Id = Guid.NewGuid(), Code = "GEN", Name = "General Templates", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        new() { Id = Guid.NewGuid(), Code = "GEN", Name = "Genel şablonlar", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
         new() { Id = Guid.NewGuid(), Code = "ETK", Name = "Etiketler", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-        new() { Id = Guid.NewGuid(), Code = "KOLI", Name = "Koli Etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+        new() { Id = Guid.NewGuid(), Code = "KOLI", Name = "Koli etiketleri", IsActive = true, NextTemplateSequence = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
     });
     await dbContext.SaveChangesAsync();
     Console.WriteLine("[SEED_DEBUG] Template Categories seeded.");

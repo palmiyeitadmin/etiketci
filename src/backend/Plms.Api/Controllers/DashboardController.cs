@@ -44,7 +44,7 @@ namespace Plms.Api.Controllers
                 TotalAssets = await _context.ContentAssets.CountAsync(),
                 TotalTemplateCategories = await _context.TemplateCategories.CountAsync(),
                 TotalRoles = await _context.Roles.CountAsync(),
-                TodayAuditLogsCount = await _context.AuditLogs.CountAsync(a => a.Timestamp >= today)
+                TodayAuditLogsCount = await _context.AuditLogs.CountAsync(a => a.Timestamp >= today && a.Action != "RolePermissionSeeded")
             };
 
             var recentAuditsDates = await _context.AuditLogs
@@ -142,6 +142,7 @@ namespace Plms.Api.Controllers
                 .ToList();
 
             var recentAuditLogs = await _context.AuditLogs
+                .Where(a => a.Action != "RolePermissionSeeded") // startup bookkeeping, not user activity
                 .OrderByDescending(a => a.Timestamp)
                 .Take(8)
                 .ToListAsync();
