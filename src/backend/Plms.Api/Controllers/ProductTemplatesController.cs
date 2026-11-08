@@ -24,22 +24,35 @@ namespace Plms.Api.Controllers
         [HasPermission(Permissions.ProductsView)]
         public async Task<IActionResult> GetProductTemplates(Guid productId)
         {
-            var items = await _context.ProductTemplates
-                .Include(pt => pt.Template)
+            var rows = await _context.ProductTemplates.AsNoTracking()
+                .Include(pt => pt.Template).ThenInclude(t => t!.CurrentActiveVersion)
                 .Include(pt => pt.Product)
                 .Where(pt => pt.ProductId == productId)
-                .Select(pt => new ProductTemplateDto
+                .OrderByDescending(pt => pt.IsDefault)
+                .ThenBy(pt => pt.Template!.Name)
+                .ToListAsync();
+
+            var items = rows.Select(pt =>
+            {
+                var published = pt.Template?.CurrentActiveVersion;
+                var isPublished = published != null && published.Status == TemplateStatus.Published && pt.Template?.IsArchived != true;
+                var size = isPublished ? ReadLabelSize(published!.LayoutJson) : null;
+                return new ProductTemplateDto
                 {
                     Id = pt.Id,
                     ProductId = pt.ProductId,
-                    ProductName = pt.Product!.Name,
+                    ProductName = pt.Product?.Name ?? string.Empty,
                     TemplateId = pt.TemplateId,
-                    TemplateName = pt.Template!.Name,
-                    TemplateCode = pt.Template.Code,
+                    TemplateName = pt.Template?.Name ?? string.Empty,
+                    TemplateCode = pt.Template?.Code ?? string.Empty,
                     IsDefault = pt.IsDefault,
-                    IsActive = pt.IsActive
-                })
-                .ToListAsync();
+                    IsActive = pt.IsActive,
+                    PublishedVersionId = isPublished ? published!.Id : null,
+                    PublishedVersionNumber = isPublished ? published!.VersionNumber : null,
+                    WidthMm = size?.WidthMm,
+                    HeightMm = size?.HeightMm,
+                };
+            }).ToList();
 
             return Ok(new { success = true, data = items });
         }
@@ -135,6 +148,19 @@ namespace Plms.Api.Controllers
 
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
+        }
+
+        private static Models.Canonical.LabelDimensions? ReadLabelSize(string layoutJson)
+        {
+            try
+            {
+                var model = System.Text.Json.JsonSerializer.Deserialize<Models.Canonical.CanonicalLabelModel>(layoutJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return model?.Dimensions;
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return null;
+            }
         }
     }
 }

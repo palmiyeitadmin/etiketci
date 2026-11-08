@@ -96,6 +96,7 @@ namespace Plms.Api.Controllers
             summary.LabelsPrintedYesterday = summary.DailyPrints[^2].Labels;
             summary.FailedPrintsToday = summary.DailyPrints[^1].Failed;
             summary.AwaitingOutcome = await _context.PrintIntents.CountAsync(pi => pi.Status == PrintIntentStatuses.SentToClient);
+            summary.ReprintsToday = await _context.PrintIntents.CountAsync(pi => pi.ReprintOfId != null && pi.CreatedAt >= today);
             summary.PendingPrintIntents = await _context.PrintIntents.CountAsync(pi => pi.Status == PrintIntentStatuses.Pending || pi.Status == PrintIntentStatuses.ReadyForPrint);
 
             return Ok(new { success = true, data = summary });

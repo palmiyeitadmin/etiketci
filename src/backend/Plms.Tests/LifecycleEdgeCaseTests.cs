@@ -40,7 +40,7 @@ namespace Plms.Tests
                     Messages = isSafe ? new() : new() { "Test failure" }
                 });
 
-            var controller = new PrintIntentsController(context, readinessMock.Object, safetyMock.Object);
+            var controller = new PrintIntentsController(context, readinessMock.Object, safetyMock.Object, new LabelRenderService(), new VariableResolutionService());
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "testuser") }, "mock")) }

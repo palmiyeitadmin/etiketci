@@ -51,5 +51,37 @@ namespace Plms.Api.Domain.Entities
         public string? FailureReason { get; set; }
 
         public TemplateStatus? SourceVersionStatus { get; set; }
+
+        // Phase 2: what was printed, and reprints.
+
+        /// <summary>
+        /// The label exactly as printed: the version layout with every variable resolved from the product
+        /// at dispatch time (CanonicalLabelModel JSON). The print PDF is always rendered from this, so a later
+        /// change to the product does not change what this request prints.
+        /// </summary>
+        public string? PrintedPayload { get; set; }
+
+        /// <summary>SHA-256 of <see cref="PrintedPayload"/>; equal hashes mean identical labels.</summary>
+        [MaxLength(64)]
+        public string? PayloadSha256 { get; set; }
+
+        public Guid? ReprintOfId { get; set; }
+        public PrintIntent? ReprintOf { get; set; }
+
+        [MaxLength(30)]
+        public string? ReprintReason { get; set; }
+
+        [MaxLength(500)]
+        public string? ReprintNote { get; set; }
+
+        [MaxLength(30)]
+        public string? FailureCategory { get; set; }
+
+        /// <summary>How many labels actually came out (all on success; reported by the operator on failure).</summary>
+        public int? PrintedQuantity { get; set; }
+
+        /// <summary>Where the request came from: "station" (print station) or null (request queue).</summary>
+        [MaxLength(20)]
+        public string? Channel { get; set; }
     }
 }

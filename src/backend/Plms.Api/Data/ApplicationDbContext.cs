@@ -204,6 +204,9 @@ namespace Plms.Api.Data
                 entity.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(pi => pi.Template).WithMany().HasForeignKey(pi => pi.TemplateId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(pi => pi.Version).WithMany().HasForeignKey(pi => pi.VersionId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(pi => pi.ReprintOf).WithMany().HasForeignKey(pi => pi.ReprintOfId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(pi => pi.ReprintOfId);
+                entity.HasIndex(pi => new { pi.Status, pi.DispatchedAt });
             });
         }
     }

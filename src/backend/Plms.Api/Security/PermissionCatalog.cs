@@ -126,7 +126,8 @@ namespace Plms.Api.Security
                     new PermissionCatalogItemDto { Key = Permissions.PrintIntentsDispatch, Label = "Dispatch PDF", Description = "Dispatch print PDFs to the client print flow." },
                     new PermissionCatalogItemDto { Key = Permissions.PrintIntentsConfirm, Label = "Confirm print", Description = "Confirm successful print completion." },
                     new PermissionCatalogItemDto { Key = Permissions.PrintIntentsFail, Label = "Mark failed", Description = "Record failed print attempts." },
-                    new PermissionCatalogItemDto { Key = Permissions.PrintIntentsCancel, Label = "Cancel print intent", Description = "Cancel pending or ready print intents." }
+                    new PermissionCatalogItemDto { Key = Permissions.PrintIntentsCancel, Label = "Cancel print intent", Description = "Cancel pending or ready print intents." },
+                    new PermissionCatalogItemDto { Key = Permissions.PrintIntentsReprint, Label = "Reprint", Description = "Print the stored label of a finished request again, with a reason." }
                 }
             }
         };
@@ -161,7 +162,8 @@ namespace Plms.Api.Security
             Permissions.PrintIntentsDispatch,
             Permissions.PrintIntentsConfirm,
             Permissions.PrintIntentsFail,
-            Permissions.PrintIntentsCancel
+            Permissions.PrintIntentsCancel,
+            Permissions.PrintIntentsReprint
         };
 
         public static IReadOnlyCollection<string> UserPermissions { get; } = new[]

@@ -575,6 +575,10 @@ namespace Plms.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Channel")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -592,6 +596,10 @@ namespace Plms.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("FailureCategory")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("FailureReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -603,6 +611,16 @@ namespace Plms.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("PayloadSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PrintedPayload")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PrintedQuantity")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -611,6 +629,17 @@ namespace Plms.Api.Migrations
 
                     b.Property<string>("ReadinessSnapshot")
                         .HasColumnType("text");
+
+                    b.Property<string>("ReprintNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("ReprintOfId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReprintReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("RequestedBy")
                         .IsRequired()
@@ -635,9 +664,13 @@ namespace Plms.Api.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("ReprintOfId");
+
                     b.HasIndex("TemplateId");
 
                     b.HasIndex("VersionId");
+
+                    b.HasIndex("Status", "DispatchedAt");
 
                     b.ToTable("PrintIntents");
                 });
@@ -1016,6 +1049,11 @@ namespace Plms.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Plms.Api.Domain.Entities.PrintIntent", "ReprintOf")
+                        .WithMany()
+                        .HasForeignKey("ReprintOfId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Plms.Api.Domain.Entities.LabelTemplate", "Template")
                         .WithMany()
                         .HasForeignKey("TemplateId")
@@ -1029,6 +1067,8 @@ namespace Plms.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+
+                    b.Navigation("ReprintOf");
 
                     b.Navigation("Template");
 

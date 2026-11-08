@@ -53,5 +53,6 @@ namespace Plms.Api.Security
         public const string PrintIntentsConfirm = "printintents.confirm";
         public const string PrintIntentsFail = "printintents.fail";
         public const string PrintIntentsCancel = "printintents.cancel";
+        public const string PrintIntentsReprint = "printintents.reprint";
     }
 }

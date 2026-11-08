@@ -36,7 +36,7 @@ namespace Plms.Tests
             safetyMock.Setup(x => x.EvaluateIntentSafetyAsync(It.IsAny<PrintIntent>()))
                 .ReturnsAsync(new FinalSafetyCheckResult { IsSafe = true, Status = ReadinessStatus.Ready });
 
-            var controller = new PrintIntentsController(context, readinessMock.Object, safetyMock.Object);
+            var controller = new PrintIntentsController(context, readinessMock.Object, safetyMock.Object, new LabelRenderService(), new VariableResolutionService());
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {
                 new Claim(ClaimTypes.Name, "testuser")

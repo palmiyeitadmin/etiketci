@@ -76,7 +76,7 @@ namespace Plms.Tests
 
             var readiness = new PreviewReadinessService(new VariableResolutionService(), context);
             var safety = new Mock<IFinalSafetyCheckService>();
-            var controller = new PrintIntentsController(context, readiness, safety.Object) { ControllerContext = ContextFor("operator") };
+            var controller = new PrintIntentsController(context, readiness, safety.Object, new LabelRenderService(), new VariableResolutionService()) { ControllerContext = ContextFor("operator") };
 
             var result = await controller.CreatePrintIntent(new CreatePrintIntentDto
             {

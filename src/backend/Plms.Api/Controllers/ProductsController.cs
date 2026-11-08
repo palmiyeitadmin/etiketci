@@ -2,6 +2,7 @@ using Plms.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Plms.Api.DTOs.Operational;
 using Plms.Api.Data;
 using Plms.Api.Domain.Entities;
 using Plms.Api.Domain.Enums;
@@ -24,13 +25,28 @@ namespace Plms.Api.Controllers
             _importService = importService;
         }
 
+        /// <summary>
+        /// Products, optionally filtered by name/SKU and active state. Pass <c>page</c> to get a paged result
+        /// ({ items, total, page, pageSize }); without it the full list is returned as before.
+        /// </summary>
         [HttpGet]
         [HasPermission(Permissions.ProductsView)]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts([FromQuery] string? search, [FromQuery] bool? active, [FromQuery] int? page = null, [FromQuery] int pageSize = 50)
         {
-            var items = await _context.Products
-                .Include(p => p.Category)
-                .Include(p => p.Vendor)
+            var query = _context.Products.AsNoTracking().AsQueryable();
+
+            if (active.HasValue) query = query.Where(p => p.IsActive == active.Value);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(p => p.Name.ToLower().Contains(term) || p.Sku.ToLower().Contains(term));
+            }
+
+            // Exact SKU matches first (a scanner sends the full SKU), then by name.
+            var exact = search?.Trim().ToLower() ?? string.Empty;
+            var projected = query
+                .OrderByDescending(p => p.Sku.ToLower() == exact)
+                .ThenBy(p => p.Name)
                 .Select(p => new ProductDto
                 {
                     Id = p.Id,
@@ -44,10 +60,50 @@ namespace Plms.Api.Controllers
                     UpdatedAt = p.UpdatedAt,
                     CategoryName = p.Category != null ? p.Category.Name : null,
                     VendorName = p.Vendor != null ? p.Vendor.Name : null
-                })
-                .ToListAsync();
+                });
 
-            return Ok(new { success = true, data = items });
+            if (!page.HasValue)
+            {
+                return Ok(new { success = true, data = await projected.ToListAsync() });
+            }
+
+            var size = Math.Clamp(pageSize, 1, 200);
+            var current = Math.Max(1, page.Value);
+            var total = await query.CountAsync();
+            var items = await projected.Skip((current - 1) * size).Take(size).ToListAsync();
+            return Ok(new { success = true, data = new PagedResult<ProductDto> { Items = items, Total = total, Page = current, PageSize = size } });
+        }
+
+        /// <summary>Exact, case-insensitive SKU lookup for barcode scanners.</summary>
+        [HttpGet("by-sku/{sku}")]
+        [HasPermission(Permissions.ProductsView)]
+        public async Task<IActionResult> GetProductBySku(string sku)
+        {
+            var normalized = sku.Trim().ToLower();
+            var p = await _context.Products.AsNoTracking()
+                .Include(x => x.Category)
+                .Include(x => x.Vendor)
+                .FirstOrDefaultAsync(x => x.Sku.ToLower() == normalized);
+            if (p == null) return NotFound(new { success = false, error = "Product not found.", code = "PRODUCT_NOT_FOUND" });
+
+            return Ok(new
+            {
+                success = true,
+                data = new ProductDto
+                {
+                    Id = p.Id,
+                    Sku = p.Sku,
+                    Name = p.Name,
+                    Description = p.Description,
+                    CategoryId = p.CategoryId,
+                    VendorId = p.VendorId,
+                    IsActive = p.IsActive,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    CategoryName = p.Category?.Name,
+                    VendorName = p.Vendor?.Name
+                }
+            });
         }
 
         [HttpGet("{id}")]

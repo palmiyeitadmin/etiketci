@@ -23,6 +23,7 @@ namespace Plms.Api.DTOs.Dashboard
         public int LabelsPrintedYesterday { get; set; }
         public int FailedPrintsToday { get; set; }
         public int AwaitingOutcome { get; set; }
+        public int ReprintsToday { get; set; }
         public List<DailyPrintItemDto> DailyPrints { get; set; } = new();
     }
 
