@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { auditActionLabel } from "@/lib/dashboard-feed";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowSquareOut, Check, X } from "@phosphor-icons/react";
+import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { ArrowCounterClockwise, ArrowLeft, ArrowSquareOut, Check, X } from "@phosphor-icons/react";
 import { RoleGuard } from "@/components/RoleGuard";
+import { PrintOutcomeDialog, type OutcomeTarget } from "@/components/Print/PrintOutcomeDialog";
+import { ReprintDialog, type ReprintSource } from "@/components/Print/ReprintDialog";
 import { apiFetch } from "@/lib/api-client";
-import { useI18n } from "@/lib/i18n";
-import { openPdfDocument } from "@/lib/pdf-print";
+import { useI18n, useText } from "@/lib/i18n";
+import { openPdfDocument, openPendingTab } from "@/lib/pdf-print";
+import { hasPermission, permissions } from "@/lib/permissions";
+import { buildPrintIntentPdfUrl } from "@/lib/print-station";
 import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
-import { PrintIntentDetailDto, PrintIntentStatus } from "@/types/operational";
+import { PrintIntentDetailDto, PrintIntentDto, PrintIntentStatus } from "@/types/operational";
 import { AuditLogDto } from "@/types/audit";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -47,19 +52,26 @@ function Dot({ tone }: { tone: "bad" | "warn" | "good" | "neutral" }) {
 
 export default function PrintIntentDetailPage() {
   const { formatDateTime, locale } = useI18n();
+  const printText = useText("print");
   const params = useParams();
+  const router = useRouter();
   const id = String(params.id);
+  const { data: session } = useSession();
+  const userPermissions = ((session?.user as { permissions?: string[] } | undefined)?.permissions ?? []) as string[];
+  const isAdmin = (((session?.user as { roles?: string[] } | undefined)?.roles) ?? []).includes("Admin");
+  const canReprint = isAdmin || hasPermission(userPermissions, permissions.printIntentsReprint);
   const text = locale === "tr"
     ? {
-      back: "Baskı talepleri", proof: "Prova PDF'ini aç", notFound: "Baskı talebi bulunamadı", notFoundDescription: "Baskı talebi yüklenemedi.",
+      back: "Baskı geçmişi", proof: "Prova PDF'ini aç", notFound: "Baskı talebi bulunamadı", notFoundDescription: "Baskı talebi yüklenemedi.",
       loading: "Yükleniyor", version: "Sürüm", pieces: "{n} adet",
       steps: "Baskı adımları", requested: "Talep oluşturuldu", waiting: "Bekliyor",
       readyStep: "Baskıya hazır", readyHint: "Güvenlik kontrolünü ve hazırlığı onaylayın.", confirmReadiness: "Hazırlığı onayla",
       notSafeHint: "Güvenlik kontrolünde sorun var; önce giderilmeli.",
       sentStep: "PDF açıldı", sentHint: "PDF'i açın ve yazıcıda %100 ölçekle basın.", dispatchPdf: "PDF'i aç",
-      outcomeStep: "Basıldı", outcomeHint: "Baskı bittiğinde sonucu kaydedin.", failureReasonLabel: "Hata nedeni (isteğe bağlı)",
-      failureReason: "Örneğin: etiket kaydı, renk hatası", markFailed: "Hatalı olarak işaretle", confirmPrinted: "Basıldı olarak onayla", cancelIntent: "Talebi iptal et",
+      outcomeStep: "Basıldı", outcomeHint: "Baskı bittiğinde sonucu kaydedin.", cancelIntent: "Talebi iptal et",
       printConfirmed: "Baskı operatör tarafından onaylandı.", failedPrefix: "Baskı hatalı.", noFailureReason: "Neden kaydedilmedi.", cancelled: "Talep, PDF açılmadan iptal edildi.",
+      failureCategory: "Sorun", failureNote: "Not", printedQuantity: "Düzgün basılan",
+      reprintReason: "Neden", reprintNote: "Not", originalPrint: "İlk baskı", reprintCount: (n: number) => `${n} adet`, openReprint: "Aç",
       details: "Ayrıntılar", product: "Ürün", template: "Şablon", quantity: "Adet", requestedBy: "Talep eden", createdAt: "Oluşturulma",
       checks: "Kontroller", finalSafety: "Son güvenlik kontrolü", safe: "Güvenli", attention: "Dikkat", noSafetyWarnings: "Güvenlik uyarısı yok",
       readinessSnapshot: "Talep anındaki hazırlık", noReadinessIssues: "Kayıtlı hata veya uyarı yok", readinessUnavailable: "Hazırlık kaydı yok",
@@ -70,15 +82,16 @@ export default function PrintIntentDetailPage() {
       } as Record<PrintIntentStatus, string>,
     }
     : {
-      back: "Print requests", proof: "Open proof PDF", notFound: "Print request not found", notFoundDescription: "The print request could not be loaded.",
+      back: "Print history", proof: "Open proof PDF", notFound: "Print request not found", notFoundDescription: "The print request could not be loaded.",
       loading: "Loading", version: "Version", pieces: "{n} pcs",
       steps: "Print steps", requested: "Request created", waiting: "Waiting",
       readyStep: "Ready to print", readyHint: "Confirm the safety check and readiness.", confirmReadiness: "Confirm readiness",
       notSafeHint: "The safety check found a problem; fix it first.",
       sentStep: "PDF opened", sentHint: "Open the PDF and print it at 100% scale.", dispatchPdf: "Open PDF",
-      outcomeStep: "Printed", outcomeHint: "Record the result when printing is done.", failureReasonLabel: "Failure reason (optional)",
-      failureReason: "For example: label misregistration, color error", markFailed: "Mark as failed", confirmPrinted: "Confirm printed", cancelIntent: "Cancel request",
+      outcomeStep: "Printed", outcomeHint: "Record the result when printing is done.", cancelIntent: "Cancel request",
       printConfirmed: "Print confirmed by the operator.", failedPrefix: "Print failed.", noFailureReason: "No reason recorded.", cancelled: "Request cancelled before the PDF was opened.",
+      failureCategory: "Problem", failureNote: "Note", printedQuantity: "Printed fine",
+      reprintReason: "Reason", reprintNote: "Note", originalPrint: "Original print", reprintCount: (n: number) => `${n} pcs`, openReprint: "Open",
       details: "Details", product: "Product", template: "Template", quantity: "Quantity", requestedBy: "Requested by", createdAt: "Created",
       checks: "Checks", finalSafety: "Final safety check", safe: "Safe", attention: "Attention", noSafetyWarnings: "No safety warnings",
       readinessSnapshot: "Readiness at request time", noReadinessIssues: "No recorded errors or warnings", readinessUnavailable: "No readiness record",
@@ -93,8 +106,10 @@ export default function PrintIntentDetailPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const [failureReason, setFailureReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [original, setOriginal] = useState<PrintIntentDto | null>(null);
+  const [outcomeTarget, setOutcomeTarget] = useState<OutcomeTarget | null>(null);
+  const [reprintSource, setReprintSource] = useState<ReprintSource | null>(null);
 
   async function loadIntent() {
     setLoading(true);
@@ -106,7 +121,6 @@ export default function PrintIntentDetailPage() {
     if (intentRes.success) {
       const normalized = { ...intentRes.data, status: normalizePrintIntentStatus(intentRes.data.status) };
       setIntent(normalized);
-      setFailureReason(normalized.failureReason || "");
       setMessage(null);
     } else {
       setMessage(intentRes.error.message);
@@ -124,6 +138,22 @@ export default function PrintIntentDetailPage() {
     loadIntent();
   }, [id]);
 
+  // For a reprint, load the original request so the link can say which print it repeats.
+  const reprintOfId = intent?.reprintOfId ?? null;
+  useEffect(() => {
+    if (!reprintOfId) {
+      setOriginal(null);
+      return;
+    }
+    let cancelled = false;
+    apiFetch<PrintIntentDetailDto>(`/api/PrintIntents/${reprintOfId}`).then((res) => {
+      if (!cancelled) setOriginal(res.success ? res.data : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reprintOfId]);
+
   const readiness = useMemo<ReadinessSnapshot | null>(() => {
     if (!intent?.readinessSnapshot) return null;
     try {
@@ -133,16 +163,11 @@ export default function PrintIntentDetailPage() {
     }
   }, [intent]);
 
-  async function runAction(action: "handoff" | "dispatch-pdf" | "confirm-print" | "mark-failed" | "cancel") {
+  async function runAction(action: "handoff" | "cancel") {
     if (!intent) return false;
 
     setSubmitting(true);
-    const body = action === "mark-failed" ? JSON.stringify({ reason: failureReason }) : undefined;
-    const response = await apiFetch<PrintIntentDetailDto>(`/api/PrintIntents/${intent.id}/${action}`, {
-      method: "POST",
-      body,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-    });
+    const response = await apiFetch<PrintIntentDetailDto>(`/api/PrintIntents/${intent.id}/${action}`, { method: "POST" });
     setSubmitting(false);
 
     if (!response.success) {
@@ -159,12 +184,37 @@ export default function PrintIntentDetailPage() {
   }
 
   async function dispatchPdf() {
-    if (!intent) return;
+    if (!intent || submitting) return;
 
-    const dispatched = await runAction("dispatch-pdf");
-    if (dispatched && !openPdfDocument(buildTemplatePreviewFileUrl(intent.templateId, intent.versionId, intent.productId))) {
+    // The tab must open inside the click; the print PDF exists only once dispatch-pdf has returned.
+    const tab = openPendingTab();
+    setSubmitting(true);
+    const response = await apiFetch<PrintIntentDetailDto>(`/api/PrintIntents/${intent.id}/dispatch-pdf`, { method: "POST" });
+    setSubmitting(false);
+
+    if (!response.success) {
+      tab?.close();
+      setMessage(response.error.message);
+      return;
+    }
+
+    const opened = tab?.navigate(buildPrintIntentPdfUrl(intent.id)) ?? false;
+    setIntent({ ...response.data, status: normalizePrintIntentStatus(response.data.status) });
+    setOutcomeTarget({ id: intent.id, quantity: response.data.quantity, productName: intent.productName });
+    await loadIntent();
+    if (!opened) setMessage(text.popupBlocked);
+  }
+
+  function reopenPdf() {
+    if (!intent) return;
+    if (!openPdfDocument(buildPrintIntentPdfUrl(intent.id))) {
       setMessage(text.popupBlocked);
     }
+  }
+
+  function onOutcomeRecorded() {
+    setOutcomeTarget(null);
+    void loadIntent();
   }
 
   function openProof() {
@@ -197,6 +247,8 @@ export default function PrintIntentDetailPage() {
   const isReadyForPrint = intent.status === "ReadyForPrint";
   const isSentToClient = intent.status === "SentToClient";
   const isCancelled = intent.status === "Cancelled";
+  const isFinished = intent.status === "UserPrinted" || intent.status === "Failed";
+  const reprints = intent.reprints ?? [];
   const safetyMessages = intent.safetyCheck?.messages || [];
   const isSafe = intent.safetyCheck?.isSafe ?? false;
   const statusTone = isCancelled ? "neutral" : getPrintIntentStatusTone(intent.status);
@@ -274,29 +326,50 @@ export default function PrintIntentDetailPage() {
       body: isSentToClient ? (
         <>
           <p className="text-sm text-ink-2">{text.outcomeHint}</p>
-          <div className="flex flex-col gap-1.5 pt-2">
-            <label htmlFor="failure-reason" className="plms-label">{text.failureReasonLabel}</label>
-            <textarea
-              id="failure-reason"
-              className="plms-input min-h-20"
-              placeholder={text.failureReason}
-              value={failureReason}
-              onChange={(event) => setFailureReason(event.target.value)}
-            />
-          </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            <button type="button" className="plms-button-primary" onClick={() => runAction("confirm-print")} disabled={submitting}>
-              {text.confirmPrinted}
+            <button
+              type="button"
+              className="plms-button-primary"
+              onClick={() => setOutcomeTarget({ id: intent.id, quantity: intent.quantity, productName: intent.productName })}
+              disabled={submitting}
+            >
+              {printText.station.enterOutcome}
             </button>
-            <button type="button" className="plms-button-danger" onClick={() => runAction("mark-failed")} disabled={submitting}>
-              {text.markFailed}
+            <button type="button" className="plms-button-secondary" onClick={reopenPdf}>
+              <ArrowSquareOut size={16} />
+              {printText.outcome.openPdfAgain}
             </button>
           </div>
         </>
       ) : intent.status === "UserPrinted" ? (
         <p className="text-sm text-ink-2">{text.printConfirmed}</p>
       ) : intent.status === "Failed" ? (
-        <p className="text-sm text-bad">{text.failedPrefix} {intent.failureReason || text.noFailureReason}</p>
+        <>
+          <p className="text-sm text-bad">
+            {text.failedPrefix}
+            {!intent.failureCategory && !intent.failureReason ? <span className="text-ink-3"> {text.noFailureReason}</span> : null}
+          </p>
+          <dl className="flex flex-col gap-1 text-sm">
+            {intent.failureCategory ? (
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <dt className="text-ink-3">{text.failureCategory}</dt>
+                <dd className="text-ink">{printText.failureCategories[intent.failureCategory]}</dd>
+              </div>
+            ) : null}
+            {intent.failureReason ? (
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <dt className="text-ink-3">{text.failureNote}</dt>
+                <dd className="text-ink">{intent.failureReason}</dd>
+              </div>
+            ) : null}
+            {intent.printedQuantity != null ? (
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <dt className="text-ink-3">{text.printedQuantity}</dt>
+                <dd className="tabular font-mono text-xs text-ink">{intent.printedQuantity} / {intent.quantity}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </>
       ) : isCancelled ? (
         <p className="text-sm text-ink-2">{text.cancelled}</p>
       ) : undefined,
@@ -319,12 +392,34 @@ export default function PrintIntentDetailPage() {
               <span className="tabular whitespace-nowrap">{text.pieces.replace("{n}", String(intent.quantity))}</span>
               <StatusBadge label={text.status[intent.status]} tone={statusTone} />
             </div>
+            {intent.reprintOfId ? (
+              <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2">
+                <span className="text-ink-3">{printText.reprint.reprintOf}</span>
+                <Link href={`/print-intents/${intent.reprintOfId}`} className="text-accent hover:underline">
+                  {original ? (
+                    <span className="tabular font-mono text-xs">{formatDateTime(original.createdAt)} · {text.reprintCount(original.quantity)}</span>
+                  ) : text.originalPrint}
+                </Link>
+                {intent.reprintReason ? <span>· {printText.reprintReasons[intent.reprintReason]}</span> : null}
+                {intent.reprintNote ? <span className="text-ink-3">· {intent.reprintNote}</span> : null}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="plms-button-secondary" onClick={openProof}>
               <ArrowSquareOut size={16} />
               {text.proof}
             </button>
+            {isFinished && canReprint ? (
+              <button
+                type="button"
+                className="plms-button-secondary"
+                onClick={() => setReprintSource({ id: intent.id, quantity: intent.quantity, productName: intent.productName, hasPrintedPayload: intent.hasPrintedPayload })}
+              >
+                <ArrowCounterClockwise size={16} />
+                {printText.station.reprint}
+              </button>
+            ) : null}
           </div>
         </header>
 
@@ -357,6 +452,31 @@ export default function PrintIntentDetailPage() {
                 })}
               </ol>
             </section>
+
+            {reprints.length > 0 ? (
+              <section className="rounded-xl border border-line bg-surface">
+                <div className="flex items-baseline justify-between gap-3 px-5 py-4">
+                  <h2 className="text-base font-medium text-ink">{printText.reprint.reprintsTitle}</h2>
+                  <span className="tabular font-mono text-xs text-ink-3">{reprints.length}</span>
+                </div>
+                <ul className="divide-y divide-line border-t border-line">
+                  {reprints.map((reprint) => {
+                    const reprintStatus = normalizePrintIntentStatus(reprint.status);
+                    return (
+                      <li key={reprint.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2.5">
+                        <span className="tabular whitespace-nowrap font-mono text-xs text-ink-3">{formatDateTime(reprint.createdAt)}</span>
+                        <span className="tabular whitespace-nowrap text-sm text-ink">{text.reprintCount(reprint.quantity)}</span>
+                        <StatusBadge label={text.status[reprintStatus]} tone={reprintStatus === "Cancelled" ? "neutral" : getPrintIntentStatusTone(reprintStatus)} />
+                        <span className="min-w-0 flex-1 truncate text-sm text-ink-2">
+                          {reprint.reprintReason ? printText.reprintReasons[reprint.reprintReason] : null}
+                        </span>
+                        <Link href={`/print-intents/${reprint.id}`} className="plms-button-compact">{text.openReprint}</Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ) : null}
 
             <section className="rounded-xl border border-line bg-surface">
               <div className="flex items-baseline justify-between gap-3 px-5 py-4">
@@ -423,6 +543,16 @@ export default function PrintIntentDetailPage() {
             </section>
           </div>
         </div>
+
+        <PrintOutcomeDialog target={outcomeTarget} onClose={() => setOutcomeTarget(null)} onRecorded={onOutcomeRecorded} />
+        <ReprintDialog
+          source={reprintSource}
+          onClose={() => setReprintSource(null)}
+          onStarted={(reprint) => {
+            setReprintSource(null);
+            router.push(`/print-intents/${reprint.id}`);
+          }}
+        />
       </div>
     </RoleGuard>
   );

@@ -32,3 +32,43 @@ export function openPdfDocument(
 
   return true;
 }
+
+export type PendingTab = {
+  /** Points the tab at the PDF. Returns false if the tab is gone (blocked or closed). */
+  navigate: (url: string) => boolean;
+  close: () => void;
+};
+
+/**
+ * Opens an empty tab right away, inside the click handler, so popup blockers allow it; the PDF URL is set
+ * after the request that creates it returns. Returns null when the browser blocked the tab.
+ */
+export function openPendingTab(
+  opener: PdfWindowOpener = (nextUrl, target, features) => window.open(nextUrl, target, features),
+): PendingTab | null {
+  const tab = opener("about:blank", "_blank");
+  if (!tab) {
+    return null;
+  }
+
+  try {
+    tab.opener = null;
+  } catch {
+    // Not critical; the tab will load our own PDF.
+  }
+
+  return {
+    navigate: (url: string) => {
+      if (tab.closed) {
+        return false;
+      }
+      tab.location.href = url;
+      return true;
+    },
+    close: () => {
+      if (!tab.closed) {
+        tab.close();
+      }
+    },
+  };
+}

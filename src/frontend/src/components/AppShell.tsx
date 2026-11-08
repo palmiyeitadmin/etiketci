@@ -9,6 +9,7 @@ import {
     ClockCounterClockwise,
     FolderOpen,
     House,
+    ListChecks,
     List,
     MagnifyingGlass,
     Package,
@@ -49,7 +50,8 @@ const navGroups: NavGroup[] = [
         labelKey: "nav.operations",
         items: [
             { labelKey: "nav.dashboard", href: "/", icon: House, permissions: [permissions.dashboardView] },
-            { labelKey: "nav.printIntents", href: "/print-intents", icon: Printer, permissions: [permissions.printIntentsView] },
+            { labelKey: "nav.printStation", href: "/print", icon: Printer, permissions: [permissions.printIntentsCreate] },
+            { labelKey: "nav.printIntents", href: "/print-intents", icon: ListChecks, permissions: [permissions.printIntentsView] },
             { labelKey: "nav.products", href: "/products", icon: Package, permissions: [permissions.productsView] },
             { labelKey: "nav.templates", href: "/templates", icon: SquaresFour, permissions: [permissions.templatesView] },
             { labelKey: "nav.approvals", href: "/approvals", icon: SealCheck, permissions: [permissions.templatesReview, permissions.templatesPublish] },
@@ -109,6 +111,7 @@ function getPageTitleKey(pathname: string) {
     if (pathname.startsWith("/templates")) return "pageTitle.templates";
     if (pathname.startsWith("/content-library")) return "pageTitle.library";
     if (pathname.startsWith("/print-intents")) return "pageTitle.printIntents";
+    if (pathname === "/print") return "pageTitle.printStation";
     if (pathname.startsWith("/approvals")) return "pageTitle.approvals";
     if (pathname.startsWith("/vendors")) return "pageTitle.vendors";
     if (pathname.startsWith("/categories")) return "pageTitle.categories";
@@ -300,7 +303,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             )}
                             <div className="flex flex-col gap-0.5">
                                 {group.items.map((item) => {
-                                    const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                                    // Match whole path segments, so "/print" is not active on "/print-intents".
+                                    const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
                                     return (
                                         <ShellNavLink
                                             key={item.href}

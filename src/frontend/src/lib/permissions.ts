@@ -44,6 +44,7 @@ export const permissions = {
   printIntentsConfirm: "printintents.confirm",
   printIntentsFail: "printintents.fail",
   printIntentsCancel: "printintents.cancel",
+  printIntentsReprint: "printintents.reprint",
 } as const;
 
 const legacyRolePermissionMap: Record<string, PermissionKey[]> = {
@@ -66,6 +67,7 @@ const legacyRolePermissionMap: Record<string, PermissionKey[]> = {
     permissions.printIntentsConfirm,
     permissions.printIntentsFail,
     permissions.printIntentsCancel,
+    permissions.printIntentsReprint,
   ],
   Reviewer: [
     permissions.templatesReview,

@@ -45,7 +45,9 @@ function normalizeApiError(error: unknown, status: number) {
 function extractErrorFromResponse(json: Record<string, unknown>, status: number) {
   // Format 1: { success: false, error: "..." } or { success: false, error: { message: "..." } }
   if (json.error !== undefined) {
-    return normalizeApiError(json.error, status);
+    const normalized = normalizeApiError(json.error, status);
+    // Backend errors may carry a stable code next to the English message ({ error: "...", code: "X" }).
+    return typeof json.code === "string" && json.code.trim() ? { ...normalized, code: json.code } : normalized;
   }
 
   // Format 2: { success: false, errors: ["desc1", "desc2"] } (Identity errors)
