@@ -27,6 +27,14 @@ export default defineMessages(
                 UnknownCategory: (value: string) => `“${value}” kodlu kategori bulunamadı`,
                 UnknownVendor: (value: string) => `“${value}” kodlu tedarikçi bulunamadı`,
             } as Record<string, (value: string) => string>,
+            importErrorTypes: {
+                Malformed: "Eksik bilgi",
+                DuplicateInFile: "Dosyada tekrar",
+                DuplicateInDb: "Zaten var",
+                UnknownCategory: "Kategori yok",
+                UnknownVendor: "Tedarikçi yok",
+                InvalidReference: "Geçersiz kod",
+            } as Record<string, string>,
             api: {
                 readiness_blocked: "Baskı talebi oluşturulamadı: hazırlık kontrolü engelledi",
                 safety_check_failed: "Son güvenlik kontrolü geçilemedi",
@@ -53,6 +61,14 @@ export default defineMessages(
             UnknownCategory: (value: string) => `No category with code “${value}”`,
             UnknownVendor: (value: string) => `No vendor with code “${value}”`,
         } as Record<string, (value: string) => string>,
+        importErrorTypes: {
+            Malformed: "Missing data",
+            DuplicateInFile: "Repeated in file",
+            DuplicateInDb: "Already exists",
+            UnknownCategory: "Unknown category",
+            UnknownVendor: "Unknown vendor",
+            InvalidReference: "Invalid code",
+        } as Record<string, string>,
         api: {
             readiness_blocked: "The print request could not be created: the readiness check blocked it",
             safety_check_failed: "The final safety check did not pass",

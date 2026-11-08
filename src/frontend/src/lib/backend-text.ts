@@ -85,6 +85,10 @@ export function importErrorText(locale: Locale, error: { errorType?: string; val
     return phrase ? phrase(error.value ?? "") : error.message ?? error.errorType ?? "";
 }
 
+export function importErrorTypeLabel(locale: Locale, errorType: string) {
+    return getText("errors", locale).importErrorTypes[errorType] ?? errorType;
+}
+
 /** A failed API call's message: translated when the response carried a known `code`. */
 export function apiErrorText(locale: Locale, error: unknown, fallback: string) {
     const code = (error as { code?: unknown } | null)?.code;

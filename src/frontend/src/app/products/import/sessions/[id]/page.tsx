@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { RoleGuard } from "@/components/RoleGuard";
 import { apiFetch } from "@/lib/api-client";
 import { useI18n, useText } from "@/lib/i18n";
+import { importErrorText, importErrorTypeLabel } from "@/lib/backend-text";
 import { ImportCommitResult, ImportSession } from "@/types/product";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -15,7 +16,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { CaretRight } from "@phosphor-icons/react";
 
 export default function ImportSessionDetailPage() {
-    const { formatDateTime } = useI18n();
+    const { formatDateTime, locale } = useI18n();
     const params = useParams();
     const id = String(params.id);
     const text = useText("products").importSession;
@@ -137,8 +138,8 @@ export default function ImportSessionDetailPage() {
                                         <tr key={`${issue.rowNumber}-${issue.sku}-${issue.errorType}`}>
                                             <td className="tabular whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink-3">{issue.rowNumber}</td>
                                             <td className="whitespace-nowrap px-4 py-2.5 font-mono text-sm text-ink">{issue.sku || text.notAvailable}</td>
-                                            <td className="px-4 py-2.5"><StatusBadge label={issue.errorType} tone={issue.errorType === "DuplicateInDb" ? "warning" : "danger"} /></td>
-                                            <td className="px-4 py-2.5 text-base text-ink-2">{issue.message}</td>
+                                            <td className="px-4 py-2.5"><StatusBadge label={importErrorTypeLabel(locale, issue.errorType)} tone={issue.errorType === "DuplicateInDb" ? "warning" : "danger"} /></td>
+                                            <td className="px-4 py-2.5 text-base text-ink-2">{importErrorText(locale, issue)}</td>
                                         </tr>
                                     ))}
                                 </DataTable>

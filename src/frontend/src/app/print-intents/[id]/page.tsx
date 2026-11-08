@@ -14,6 +14,7 @@ import { useI18n, useText } from "@/lib/i18n";
 import { openPdfDocument, openPendingTab } from "@/lib/pdf-print";
 import { hasPermission, permissions } from "@/lib/permissions";
 import { buildPrintIntentPdfUrl } from "@/lib/print-station";
+import { checkMessages, readIssues, snapshotIssues } from "@/lib/backend-text";
 import { buildTemplatePreviewFileUrl } from "@/lib/template-preview-url";
 import { getPrintIntentStatusTone, normalizePrintIntentStatus } from "@/lib/print-intent-status";
 import { PrintIntentDetailDto, PrintIntentDto, PrintIntentStatus } from "@/types/operational";
@@ -21,10 +22,13 @@ import { AuditLogDto } from "@/types/audit";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
+/** Stored by the backend with default (PascalCase) JSON names; older code read camelCase. */
 interface ReadinessSnapshot {
   status?: number;
   errors?: string[];
   warnings?: string[];
+  Errors?: string[];
+  Warnings?: string[];
 }
 
 type StepState = "done" | "current" | "upcoming" | "failed" | "cancelled" | "skipped";
@@ -209,11 +213,16 @@ export default function PrintIntentDetailPage() {
   const isCancelled = intent.status === "Cancelled";
   const isFinished = intent.status === "UserPrinted" || intent.status === "Failed";
   const reprints = intent.reprints ?? [];
-  const safetyMessages = intent.safetyCheck?.messages || [];
+  const safetyMessages = checkMessages(locale, readIssues(intent.safetyCheck), intent.safetyCheck?.messages || []);
   const isSafe = intent.safetyCheck?.isSafe ?? false;
   const statusTone = isCancelled ? "neutral" : getPrintIntentStatusTone(intent.status);
-  const readinessErrors = readiness?.errors || [];
-  const readinessWarnings = readiness?.warnings || [];
+  const readinessIssues = snapshotIssues(intent.readinessSnapshot);
+  const readinessErrors = readinessIssues.length > 0
+    ? checkMessages(locale, readinessIssues.filter((issue) => issue.severity !== "warning"))
+    : readiness?.errors ?? readiness?.Errors ?? [];
+  const readinessWarnings = readinessIssues.length > 0
+    ? checkMessages(locale, readinessIssues.filter((issue) => issue.severity === "warning"))
+    : readiness?.warnings ?? readiness?.Warnings ?? [];
 
   const who = (date?: string, user?: string): ReactNode =>
     date ? (

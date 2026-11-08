@@ -14,6 +14,7 @@ import { useI18n, useText } from "@/lib/i18n";
 import { StatusBadge, type StatusTone } from "@/components/ui/StatusBadge";
 import { LabelProof } from "@/components/ui/LabelProof";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { checkIssueText, type CheckIssue } from "@/lib/backend-text";
 
 interface VariableResolutionDetail {
     name: string;
@@ -46,6 +47,8 @@ interface TemplatePreviewMetadata {
     orientation: "portrait" | "landscape";
     readinessStatus: number; // 0=Ready, 1=Warning, 2=Blocked
     readinessErrors: string[];
+    /** The same findings as codes; translated here instead of matching the English text. */
+    readinessIssues?: CheckIssue[];
     variableDetails: VariableResolutionDetail[];
 }
 
@@ -59,7 +62,10 @@ const templateStatusTone: Record<string, StatusTone> = {
     Deprecated: "neutral",
 };
 
-/** Messages the server sends while no product is chosen; that is the normal start state, not an error. */
+/** Findings the server reports while no product is chosen; that is the normal start state, not an error. */
+const productDependentCodes = ["product_missing", "variable_missing"];
+
+/** Same as productDependentCodes, for responses without codes. */
 const productDependentMessage = [
     /^Product context is missing\. Print intents require a specific product\.$/i,
     /^Missing required data for variable: (.+)$/i,
@@ -74,7 +80,7 @@ function Dot({ tone }: { tone: "bad" | "warn" | "good" | "neutral" }) {
 }
 
 export default function TemplatePreviewPage() {
-    const { formatDateTime, translateLabel } = useI18n();
+    const { formatDateTime, translateLabel, locale } = useI18n();
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -95,6 +101,14 @@ export default function TemplatePreviewPage() {
 
     const text = useText("templateDetail").preview;
 
+    function localizeReadinessIssue(issue: CheckIssue) {
+        if (issue.code === "version_not_printable") {
+            return text.versionStateBlocked(translateLabel(normalizeTemplateStatus(issue.params.status ?? "")));
+        }
+        return checkIssueText(locale, issue);
+    }
+
+    /** Fallback for responses without codes, and for the editor's barcode warnings. */
     function localizeReadinessMessage(message: string) {
         const statusMatch = message.match(/^Template version is in '([^']+)' state\. Only Approved or Published versions can be used for print intents\.$/i);
         if (statusMatch) {
@@ -311,9 +325,14 @@ export default function TemplatePreviewPage() {
     const canCreateIntent = (metadata.status === "Published" || metadata.status === "Approved") && !!selectedProductId && !isBlocked && quantity > 0;
     const hasProduct = !!selectedProductId;
     // Without a product the server reports the missing product and every unfilled field; those are the start state.
-    const visibleErrors = metadata.readinessErrors
-        .filter((message) => hasProduct || !productDependentMessage.some((pattern) => pattern.test(message)))
-        .map(localizeReadinessMessage);
+    const readinessIssues = (metadata.readinessIssues ?? []).filter((issue) => issue.severity === "error");
+    const visibleErrors = readinessIssues.length > 0
+        ? readinessIssues
+            .filter((issue) => hasProduct || !productDependentCodes.includes(issue.code))
+            .map(localizeReadinessIssue)
+        : metadata.readinessErrors
+            .filter((message) => hasProduct || !productDependentMessage.some((pattern) => pattern.test(message)))
+            .map(localizeReadinessMessage);
     const localizedWarnings = metadata.warnings.map(localizeReadinessMessage);
     const localizedOrientation = metadata.orientation === "landscape" ? text.landscape : text.portrait;
 

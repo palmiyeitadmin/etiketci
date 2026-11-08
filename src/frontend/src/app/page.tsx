@@ -11,6 +11,7 @@ import { DashboardActivity, DashboardSummary } from "@/types/dashboard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ActivityFeed } from "@/components/ui/ActivityFeed";
+import { useTokenColors } from "@/lib/theme/useTokenColor";
 
 const emptyActivity: DashboardActivity = {
     recentTemplates: [],
@@ -20,10 +21,18 @@ const emptyActivity: DashboardActivity = {
 };
 
 // Chart colors mirror the CSS tokens (SVG attributes cannot read CSS variables).
-const CHART = { accent: "#0e7490", bar: "#d4d4d8", grid: "#ececee", label: "#6b6b70" };
+// Recharts needs literal colours; they are read from the design tokens so the chart follows the theme.
+const CHART_TOKENS = {
+    accent: { token: "accent" },
+    bar: { token: "line-strong" },
+    grid: { token: "line" },
+    label: { token: "ink-3" },
+    cursor: { token: "ink", alpha: 0.04 },
+};
 
 export default function HomePage() {
     const { formatDate, formatNumber } = useI18n();
+    const CHART = useTokenColors(CHART_TOKENS);
     const router = useRouter();
     const { data: session, status } = useSession();
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -167,7 +176,7 @@ export default function HomePage() {
                                     tickFormatter={(value: number) => formatNumber(value)}
                                 />
                                 <Tooltip
-                                    cursor={{ fill: "rgba(23,23,23,0.04)" }}
+                                    cursor={{ fill: CHART.cursor }}
                                     content={({ active, payload }) => {
                                         if (!active || !payload?.length) return null;
                                         const day = payload[0].payload as (typeof chartData)[number];

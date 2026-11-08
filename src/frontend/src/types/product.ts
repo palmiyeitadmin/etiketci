@@ -37,6 +37,8 @@ export interface RowValidationError {
     rowNumber: number;
     sku: string;
     errorType: string;
+    /** The offending category or vendor code, for UnknownCategory / UnknownVendor. */
+    value?: string | null;
     message: string;
 }
 
