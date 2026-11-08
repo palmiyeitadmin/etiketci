@@ -23,7 +23,7 @@ namespace Plms.Tests
         public async Task Readiness_ReportsCodesWithParameters()
         {
             using var context = NewContext();
-            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Raf", Code = "RAF-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Koli", Code = "KOL-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             var version = new LabelTemplateVersion
             {
                 Id = Guid.NewGuid(),
@@ -34,7 +34,7 @@ namespace Plms.Tests
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "author",
             };
-            var product = new Product { Sku = "ZYT-0500", Name = "Sızma 500 ml" };
+            var product = new Product { Sku = "SKY-PRS-4000", Name = "Skyroof Prestige lamel" };
             context.AddRange(template, version, product);
             await context.SaveChangesAsync();
 
@@ -55,9 +55,9 @@ namespace Plms.Tests
             snapshot.AddError("variable_missing", "Missing required data for variable: product.name", new() { ["name"] = "product.name" });
             var intent = new PrintIntent
             {
-                Template = new LabelTemplate { Code = "RAF" },
+                Template = new LabelTemplate { Code = "KOL" },
                 Version = new LabelTemplateVersion { Status = TemplateStatus.Published },
-                Product = new Product { Sku = "ZYT" },
+                Product = new Product { Sku = "SKY" },
                 ReadinessSnapshot = JsonSerializer.Serialize(snapshot),
             };
 
@@ -67,6 +67,39 @@ namespace Plms.Tests
             Assert.Equal(new[] { "snapshot_blocked", "variable_missing" }, result.Issues.Select(issue => issue.Code));
             Assert.True(result.Issues[1].FromSnapshot);
             Assert.Equal("product.name", result.Issues[1].Params["name"]);
+        }
+
+        [Fact]
+        public async Task LegacySnapshots_GetCodesOnce()
+        {
+            using var context = NewContext();
+            var old = """{"Status":2,"Errors":["Missing required data for variable: product.name","Something nobody knows"],"Warnings":["Product is not explicitly linked to this template in the catalog."]}""";
+            var intent = new PrintIntent { Id = Guid.NewGuid(), ReadinessSnapshot = old };
+            context.PrintIntents.Add(intent);
+            await context.SaveChangesAsync();
+
+            Assert.Equal(1, await LegacyReadinessIssues.BackfillAsync(context));
+            Assert.Equal(0, await LegacyReadinessIssues.BackfillAsync(context));
+
+            var snapshot = JsonSerializer.Deserialize<PreviewReadinessDto>((await context.PrintIntents.SingleAsync()).ReadinessSnapshot!)!;
+            Assert.Equal(new[] { "variable_missing", "legacy_message", "product_not_linked" }, snapshot.Issues.Select(issue => issue.Code));
+            Assert.Equal("product.name", snapshot.Issues[0].Params["name"]);
+            Assert.Equal("Something nobody knows", snapshot.Issues[1].Params["text"]);
+            Assert.Equal(CheckIssue.Warning, snapshot.Issues[2].Severity);
+        }
+
+        [Theory]
+        [InlineData("EAN_13", "8690000000017", null)]
+        [InlineData("EAN_13", "SKY-PRS-001", "barcode_invalid_content")]
+        [InlineData("CODE_39", "SKY-PRS-001", null)]
+        [InlineData("CODE_39", "sky-prs", "barcode_invalid_content")]
+        [InlineData("CODE_128", "SKY-PRS-001", null)]
+        [InlineData("PDF_417", "x", "barcode_unsupported")]
+        [InlineData("EAN_13", "{{product.sku}}", null)]
+        public void BarcodeChecks_FlagWhatTheRendererCannotDraw(string type, string content, string? expected)
+        {
+            var issues = BarcodeChecks.Check(new[] { new Plms.Api.Models.Canonical.LabelElement { Type = "barcode", BarcodeType = type, Content = content } }).ToList();
+            Assert.Equal(expected, issues.SingleOrDefault()?.Code);
         }
 
         [Fact]
@@ -81,11 +114,11 @@ namespace Plms.Tests
                 },
             };
 
-            Assert.IsAssignableFrom<ObjectResult>(await controller.CreateVendor(new CreateVendorDto { Code = "EGE", Name = "Ege Zeytincilik" }));
+            Assert.IsAssignableFrom<ObjectResult>(await controller.CreateVendor(new CreateVendorDto { Code = "EGE", Name = "Ege Alüminyum" }));
 
             var entry = await context.AuditLogs.SingleAsync(log => log.Action == "VendorCreated");
             using var metadata = JsonDocument.Parse(entry.Metadata);
-            Assert.Equal("Ege Zeytincilik", metadata.RootElement.GetProperty("name").GetString());
+            Assert.Equal("Ege Alüminyum", metadata.RootElement.GetProperty("name").GetString());
             Assert.Equal("EGE", metadata.RootElement.GetProperty("code").GetString());
         }
     }

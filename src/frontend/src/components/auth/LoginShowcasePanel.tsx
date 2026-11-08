@@ -53,9 +53,19 @@ function SampleQr() {
     );
 }
 
-/** Left half of the login: what the product makes, shown as a real label on its liner. */
+/**
+ * Left half of the login: what the product makes, shown as a real label on its liner. The sample is a
+ * package label for a bioclimatic pergola profile, the kind of label Palmiye's factory prints. Sizes use
+ * container units so the label keeps its proportions at any width.
+ */
 export function LoginShowcasePanel() {
     const { t } = useI18n();
+    const facts: [string, string][] = [
+        [t("auth.login.showcaseLength"), "4000 mm"],
+        [t("auth.login.showcaseColor"), "RAL 7016"],
+        [t("auth.login.showcaseQuantity"), "12"],
+        [t("auth.login.showcasePackage"), "2 / 6"],
+    ];
 
     return (
         <section className="flex flex-col justify-center gap-10 px-2 py-10 lg:py-0">
@@ -65,14 +75,32 @@ export function LoginShowcasePanel() {
             </div>
 
             <div className="rounded-2xl bg-mat px-10 py-14 sm:px-16">
-                <LabelProof widthMm={60} heightMm={40} caption={t("auth.login.showcaseCaption")} className="mx-auto max-w-[360px]">
-                    <div className="grid h-full grid-rows-[22%_1fr] font-sans text-[#111111]">
-                        <div className="flex items-center bg-[#1f5d3a] px-[5%] text-[clamp(11px,2.4vw,15px)] font-semibold text-white">PALMİYE</div>
-                        <div className="grid min-h-0 grid-cols-[1fr_auto] grid-rows-[auto_auto_1fr] gap-x-[5%] px-[5%] pb-[5%] pt-[4%]">
-                            <div className="col-span-2 text-[clamp(11px,2.2vw,15px)] font-medium">Sızma zeytinyağı 500 ml</div>
-                            <div className="col-span-2 font-mono text-[clamp(8px,1.5vw,10px)] text-[#444]">ZYT-0500-SZM</div>
-                            <div className="mt-[4%] min-h-0"><SampleBarcode /></div>
-                            <div className="mt-[4%] aspect-square h-full min-h-0"><SampleQr /></div>
+                <LabelProof widthMm={100} heightMm={70} caption={t("auth.login.showcaseCaption")} className="mx-auto max-w-[420px]">
+                    <div className="flex h-full flex-col font-sans text-[#111111] [container-type:inline-size]">
+                        <div className="flex items-center justify-between bg-[#fce300] px-[4.5cqw] py-[2.2cqw]">
+                            <span className="text-[4.6cqw] font-semibold tracking-wide">PALMİYE</span>
+                            <span className="font-mono text-[2.6cqw]">SP-2026-1148</span>
+                        </div>
+                        <div className="flex min-h-0 flex-1 flex-col gap-[2.2cqw] px-[4.5cqw] pb-[4cqw] pt-[3cqw]">
+                            <div>
+                                <div className="text-[5.2cqw] font-semibold leading-tight">Skyroof Prestige</div>
+                                <div className="text-[3.1cqw] text-[#444]">{t("auth.login.showcaseProduct")}</div>
+                            </div>
+                            <dl className="grid grid-cols-4 border-y border-[#111111]/20 py-[1.6cqw]">
+                                {facts.map(([label, value]) => (
+                                    <div key={label} className="flex flex-col">
+                                        <dt className="text-[2.3cqw] text-[#555]">{label}</dt>
+                                        <dd className="text-[3.4cqw] font-medium">{value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                            <div className="grid min-h-0 flex-1 grid-cols-[1fr_auto] gap-x-[4cqw]">
+                                <div className="flex min-h-0 flex-col gap-[0.8cqw]">
+                                    <div className="min-h-0 flex-1"><SampleBarcode /></div>
+                                    <div className="text-center font-mono text-[2.5cqw] tracking-wider">SKY-PRS-LML-4000</div>
+                                </div>
+                                <div className="aspect-square h-full min-h-0"><SampleQr /></div>
+                            </div>
                         </div>
                     </div>
                 </LabelProof>

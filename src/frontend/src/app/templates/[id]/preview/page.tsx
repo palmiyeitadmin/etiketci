@@ -38,6 +38,8 @@ interface TemplatePreviewMetadata {
     publishedAt?: string;
     publishedBy?: string;
     warnings: string[];
+    /** The same warnings as codes (barcode checks and readiness warnings). */
+    warningIssues?: CheckIssue[];
     requiredVariables: string[];
     hasProductContext: boolean;
     productName?: string;
@@ -64,12 +66,6 @@ const templateStatusTone: Record<string, StatusTone> = {
 
 /** Findings the server reports while no product is chosen; that is the normal start state, not an error. */
 const productDependentCodes = ["product_missing", "variable_missing"];
-
-/** Same as productDependentCodes, for responses without codes. */
-const productDependentMessage = [
-    /^Product context is missing\. Print intents require a specific product\.$/i,
-    /^Missing required data for variable: (.+)$/i,
-];
 
 /** Tallest the label preview may get on screen, in px; wide labels use the full column width. */
 const PREVIEW_MAX_HEIGHT = 520;
@@ -108,38 +104,6 @@ export default function TemplatePreviewPage() {
         return checkIssueText(locale, issue);
     }
 
-    /** Fallback for responses without codes, and for the editor's barcode warnings. */
-    function localizeReadinessMessage(message: string) {
-        const statusMatch = message.match(/^Template version is in '([^']+)' state\. Only Approved or Published versions can be used for print intents\.$/i);
-        if (statusMatch) {
-            return text.versionStateBlocked(translateLabel(normalizeTemplateStatus(statusMatch[1])));
-        }
-
-        if (/^Product context is missing\. Print intents require a specific product\.$/i.test(message)) {
-            return text.missingProductContext;
-        }
-
-        const missingVariableMatch = message.match(/^Missing required data for variable: (.+)$/i);
-        if (missingVariableMatch) {
-            return text.missingVariable(missingVariableMatch[1]);
-        }
-
-        const unsupportedVariableMatch = message.match(/^Unsupported variable placeholder: (.+)$/i);
-        if (unsupportedVariableMatch) {
-            return text.unsupportedVariable(unsupportedVariableMatch[1]);
-        }
-
-        if (/^Product is not explicitly linked to this template in the catalog\.$/i.test(message)) {
-            return text.unlinkedProduct;
-        }
-
-        const barcodeWarningMatch = message.match(/^Barcode type '([^']+)' may not render correctly in PDF \(only CODE_128 is fully supported\)\.$/i);
-        if (barcodeWarningMatch) {
-            return text.barcodeWarning(barcodeWarningMatch[1]);
-        }
-
-        return message;
-    }
 
     useEffect(() => {
         setSelectedProductId(initialProductId || "");
@@ -326,14 +290,10 @@ export default function TemplatePreviewPage() {
     const hasProduct = !!selectedProductId;
     // Without a product the server reports the missing product and every unfilled field; those are the start state.
     const readinessIssues = (metadata.readinessIssues ?? []).filter((issue) => issue.severity === "error");
-    const visibleErrors = readinessIssues.length > 0
-        ? readinessIssues
-            .filter((issue) => hasProduct || !productDependentCodes.includes(issue.code))
-            .map(localizeReadinessIssue)
-        : metadata.readinessErrors
-            .filter((message) => hasProduct || !productDependentMessage.some((pattern) => pattern.test(message)))
-            .map(localizeReadinessMessage);
-    const localizedWarnings = metadata.warnings.map(localizeReadinessMessage);
+    const visibleErrors = readinessIssues
+        .filter((issue) => hasProduct || !productDependentCodes.includes(issue.code))
+        .map(localizeReadinessIssue);
+    const localizedWarnings = (metadata.warningIssues ?? []).map(localizeReadinessIssue);
     const localizedOrientation = metadata.orientation === "landscape" ? text.landscape : text.portrait;
 
     const readinessState: { label: string; tone: StatusTone } = visibleErrors.length > 0 || (hasProduct && isBlocked)

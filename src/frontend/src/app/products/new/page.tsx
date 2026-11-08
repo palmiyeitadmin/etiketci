@@ -136,7 +136,7 @@ export default function NewProductPage() {
                                         onChange={(e) => handleChange("sku", e.target.value)}
                                         required
                                         className="plms-input font-mono"
-                                        placeholder="ZYT-0500-SZM"
+                                        placeholder="SKY-PRS-LML-4000"
                                     />
                                 </label>
 

@@ -20,6 +20,7 @@ export default function AuditLogsPage() {
     const actionLabel = (code: string) => auditActionLabel(locale, code);
     const entityLabel = (code: string) => auditEntityLabel(locale, code);
     const [logs, setLogs] = useState<AuditLogDto[]>([]);
+    const [includeSystem, setIncludeSystem] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<AuditLogDto | null>(null);
     const [filters, setFilters] = useState({
@@ -40,6 +41,7 @@ export default function AuditLogsPage() {
             pageSize: String(meta.pageSize),
         });
 
+        if (includeSystem) params.set("includeSystem", "true");
         if (filters.action) params.set("action", filters.action);
         if (filters.entityType) params.set("entityType", filters.entityType);
         if (filters.from) params.set("from", new Date(filters.from).toISOString());
@@ -61,7 +63,8 @@ export default function AuditLogsPage() {
 
     useEffect(() => {
         load(1);
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [includeSystem]);
 
     const entityTypes = useMemo(() => Array.from(new Set(logs.map((log) => log.entityType))).sort(), [logs]);
 
@@ -89,6 +92,10 @@ export default function AuditLogsPage() {
                                     <input className="plms-input w-40 font-mono" type="date" aria-label={text.to} value={filters.to} onChange={(e) => setFilter("to", e.target.value)} />
                                 </div>
                                 <button type="submit" className="plms-button-secondary">{text.apply}</button>
+                                <label className="flex items-center gap-2 text-sm text-ink-2">
+                                    <input type="checkbox" className="h-4 w-4 accent-accent" checked={includeSystem} onChange={(e) => setIncludeSystem(e.target.checked)} />
+                                    {text.includeSystem}
+                                </label>
                             </>
                         }
                         right={!loading ? <span className="tabular text-sm text-ink-3">{text.total(meta.totalCount)}</span> : null}

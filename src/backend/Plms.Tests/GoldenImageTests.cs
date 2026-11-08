@@ -42,7 +42,7 @@ namespace Plms.Tests
         [InlineData(25)]
         public void GeneratePdf_WithCopies_HasOnePagePerCopy(int copies)
         {
-            var pdf = new LabelRenderService().GeneratePdf(GoldenLabels.All["shelf-label-tr"](), copies, null);
+            var pdf = new LabelRenderService().GeneratePdf(GoldenLabels.All["profile-label-tr"](), copies, null);
 
             Assert.Equal(copies, CountPdfPages(pdf));
         }
@@ -51,7 +51,7 @@ namespace Plms.Tests
         public void GeneratePdf_RejectsCopiesOutsideTheAllowedRange()
         {
             var service = new LabelRenderService();
-            var model = GoldenLabels.All["shelf-label-tr"]();
+            var model = GoldenLabels.All["profile-label-tr"]();
 
             Assert.Throws<ArgumentOutOfRangeException>(() => service.GeneratePdf(model, 0, null));
             Assert.Throws<ArgumentOutOfRangeException>(() => service.GeneratePdf(model, LabelRenderService.MaxCopies + 1, null));
@@ -129,13 +129,13 @@ namespace Plms.Tests
     {
         public static readonly IReadOnlyDictionary<string, Func<CanonicalLabelModel>> All = new Dictionary<string, Func<CanonicalLabelModel>>
         {
-            ["shelf-label-tr"] = () => Label(60, 40,
-                new LabelElement { Id = "band", Type = "rect", XMm = 0, YMm = 0, WidthMm = 60, HeightMm = 9, Fill = "#1f5d3a" },
-                new LabelElement { Id = "brand", Type = "text", Content = "PALMİYE", XMm = 3, YMm = 2, WidthMm = 40, HeightMm = 6, FontSizePt = 11, FontWeight = "bold", Fill = "#ffffff" },
-                new LabelElement { Id = "name", Type = "text", Content = "Sızma zeytinyağı 500 ml", XMm = 3, YMm = 11, WidthMm = 54, HeightMm = 6, FontSizePt = 10, Fill = "#111111" },
+            ["profile-label-tr"] = () => Label(60, 40,
+                new LabelElement { Id = "band", Type = "rect", XMm = 0, YMm = 0, WidthMm = 60, HeightMm = 9, Fill = "#fce300" },
+                new LabelElement { Id = "brand", Type = "text", Content = "PALMİYE", XMm = 3, YMm = 2, WidthMm = 40, HeightMm = 6, FontSizePt = 11, FontWeight = "bold", Fill = "#111111" },
+                new LabelElement { Id = "name", Type = "text", Content = "Skyroof Prestige · 4000 mm", XMm = 3, YMm = 11, WidthMm = 54, HeightMm = 6, FontSizePt = 10, Fill = "#111111" },
                 new LabelElement { Id = "chars", Type = "text", Content = "ÇĞİÖŞÜ çğıöşü", XMm = 3, YMm = 17.5f, WidthMm = 54, HeightMm = 4, FontSizePt = 7, Fill = "#444444" },
-                new LabelElement { Id = "bc", Type = "barcode", BarcodeType = "CODE_128", Content = "ZYT-0500-SZM", XMm = 3, YMm = 23, WidthMm = 38, HeightMm = 14 },
-                new LabelElement { Id = "qr", Type = "qr", Content = "ZYT-0500-SZM", XMm = 44, YMm = 23, WidthMm = 13, HeightMm = 13 }),
+                new LabelElement { Id = "bc", Type = "barcode", BarcodeType = "CODE_128", Content = "SKY-PRS-LML-4000", XMm = 3, YMm = 23, WidthMm = 38, HeightMm = 14 },
+                new LabelElement { Id = "qr", Type = "qr", Content = "SKY-PRS-LML-4000", XMm = 44, YMm = 23, WidthMm = 13, HeightMm = 13 }),
 
             ["fonts"] = () => Label(80, 40,
                 new LabelElement { Id = "a", Type = "text", Content = "Arial Şablon 123", Font = "Arial", XMm = 2, YMm = 2, WidthMm = 76, HeightMm = 8, FontSizePt = 12 },

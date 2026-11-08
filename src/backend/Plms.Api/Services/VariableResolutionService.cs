@@ -60,7 +60,7 @@ namespace Plms.Api.Services
                         Key = "product.sku",
                         Label = "Product SKU",
                         Description = "Resolved from the linked product SKU.",
-                        SampleValue = "ZYT-0500-SZM",
+                        SampleValue = "SKY-PRS-LML-4000",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -68,7 +68,7 @@ namespace Plms.Api.Services
                         Key = "product.name",
                         Label = "Product Name",
                         Description = "Resolved from the linked product name.",
-                        SampleValue = "Sızma zeytinyağı 500 ml",
+                        SampleValue = "Skyroof Prestige lamel profili 4000 mm",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -76,7 +76,7 @@ namespace Plms.Api.Services
                         Key = "product.category",
                         Label = "Product Category",
                         Description = "Resolved from the linked product category.",
-                        SampleValue = "Zeytinyağı",
+                        SampleValue = "Biyoklimatik pergolalar",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     },
                     new VariableCatalogItemDto
@@ -84,7 +84,7 @@ namespace Plms.Api.Services
                         Key = "product.vendor",
                         Label = "Product Vendor",
                         Description = "Resolved from the linked product vendor.",
-                        SampleValue = "Palmiye Gıda",
+                        SampleValue = "Ege Alüminyum",
                         SupportedElementTypes = ["text", "barcode", "qr"]
                     }
                 ]

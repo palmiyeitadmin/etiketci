@@ -7,7 +7,7 @@ const template = (overrides: Partial<ProductTemplateDto>): ProductTemplateDto =>
     productId: "p",
     productName: "Ürün",
     templateId: "t",
-    templateName: "Raf etiketi",
+    templateName: "Koli etiketi",
     templateCode: "RAF-001",
     isDefault: false,
     isActive: true,
@@ -20,7 +20,7 @@ const template = (overrides: Partial<ProductTemplateDto>): ProductTemplateDto =>
 
 describe("print station helpers", () => {
     it("cleans scanner input", () => {
-        expect(normalizeScan("  ZYT-0500-SZM\r\n")).toBe("ZYT-0500-SZM");
+        expect(normalizeScan("  SKY-PRS-LML-4000\r\n")).toBe("SKY-PRS-LML-4000");
         expect(normalizeScan("\tABC\u0003")).toBe("ABC");
     });
 

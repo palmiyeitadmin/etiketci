@@ -44,7 +44,7 @@ namespace Plms.Tests
         private static (LabelTemplate Template, LabelTemplateVersion Version) AddTemplate(
             ApplicationDbContext context, TemplateStatus status, string layoutJson, string createdBy = "author")
         {
-            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Raf etiketi", Code = "RAF-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Koli etiketi", Code = "KOL-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             var version = new LabelTemplateVersion
             {
                 Id = Guid.NewGuid(),
@@ -64,9 +64,9 @@ namespace Plms.Tests
         public async Task CreatePrintIntent_TemplateUsingCategoryAndVendor_IsNotBlocked()
         {
             using var context = NewContext();
-            var category = new ProductCategory { Code = "ZYT", Name = "Zeytinyağı" };
-            var vendor = new Vendor { Code = "EGE", Name = "Ege Zeytincilik" };
-            var product = new Product { Sku = "ZYT-0500", Name = "Sızma 500 ml", Category = category, Vendor = vendor };
+            var category = new ProductCategory { Code = "BIO", Name = "Biyoklimatik pergolalar" };
+            var vendor = new Vendor { Code = "EGE", Name = "Ege Alüminyum" };
+            var product = new Product { Sku = "SKY-PRS-4000", Name = "Skyroof Prestige lamel", Category = category, Vendor = vendor };
             context.Products.Add(product);
             var layout = """{"dimensions":{"widthMm":60,"heightMm":40},"elements":[{"id":"t","type":"text","content":"{{product.category}} / {{product.vendor}}","xMm":1,"yMm":1,"widthMm":50,"heightMm":8}]}""";
             var (template, version) = AddTemplate(context, TemplateStatus.Published, layout);
@@ -139,7 +139,7 @@ namespace Plms.Tests
         public async Task DeleteProduct_WithPrintHistory_DeactivatesInsteadOfDeleting()
         {
             using var context = NewContext();
-            var product = new Product { Sku = "BHR-0100", Name = "Pul biber" };
+            var product = new Product { Sku = "CRP-PLS-DKM", Name = "Carport Plus dikme" };
             context.Products.Add(product);
             var (template, version) = AddTemplate(context, TemplateStatus.Published, "{}");
             context.PrintIntents.Add(new PrintIntent
@@ -182,7 +182,7 @@ namespace Plms.Tests
             var model = new CanonicalLabelModel
             {
                 Dimensions = new LabelDimensions { WidthMm = 60, HeightMm = 40 },
-                Elements = { new LabelElement { Id = "t", Type = "text", Content = "Raf etiketi", XMm = 2, YMm = 2, WidthMm = 50, HeightMm = 8, FontSizePt = 10 } },
+                Elements = { new LabelElement { Id = "t", Type = "text", Content = "Koli etiketi", XMm = 2, YMm = 2, WidthMm = 50, HeightMm = 8, FontSizePt = 10 } },
             };
             var service = new LabelRenderService();
 

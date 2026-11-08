@@ -49,8 +49,8 @@ namespace Plms.Tests
         private static Fixture Setup()
         {
             var context = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
-            var product = new Product { Sku = "ZYT-0500-SZM", Name = "Sızma zeytinyağı 500 ml", IsActive = true };
-            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Raf etiketi", Code = "RAF-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var product = new Product { Sku = "SKY-PRS-LML-4000", Name = "Skyroof Prestige lamel profili 4000 mm", IsActive = true };
+            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Koli etiketi", Code = "KOL-001", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             var version = new LabelTemplateVersion { Id = Guid.NewGuid(), TemplateId = template.Id, VersionNumber = 1, Status = TemplateStatus.Published, LayoutJson = Layout, CreatedAt = DateTime.UtcNow };
             template.CurrentActiveVersionId = version.Id;
             context.AddRange(product, template, version, new ProductTemplate { ProductId = product.Id, TemplateId = template.Id, IsDefault = true });
@@ -92,7 +92,7 @@ namespace Plms.Tests
             Assert.Equal("station", intent.Channel);
 
             var stored = await f.Context.PrintIntents.SingleAsync();
-            Assert.Contains("Sızma zeytinyağı 500 ml", stored.PrintedPayload);
+            Assert.Contains("Skyroof Prestige lamel profili 4000 mm", stored.PrintedPayload);
             Assert.DoesNotContain("{{", stored.PrintedPayload);
             Assert.Equal(64, stored.PayloadSha256!.Length);
 
@@ -101,7 +101,7 @@ namespace Plms.Tests
             var dispatched = await f.Context.AuditLogs.SingleAsync(log => log.Action == "PrintIntentPdfDispatched");
             using var metadata = JsonDocument.Parse(dispatched.Metadata);
             Assert.Equal(3, metadata.RootElement.GetProperty("quantity").GetInt32());
-            Assert.Equal("ZYT-0500-SZM", metadata.RootElement.GetProperty("sku").GetString());
+            Assert.Equal("SKY-PRS-LML-4000", metadata.RootElement.GetProperty("sku").GetString());
         }
 
         [Fact]

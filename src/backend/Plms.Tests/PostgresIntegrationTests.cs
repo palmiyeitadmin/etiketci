@@ -51,10 +51,10 @@ namespace Plms.Tests
 
         private async Task<(Product Product, PrintIntent Intent)> SeedPrintIntentAsync(string status)
         {
-            var category = new TemplateCategory { Id = Guid.NewGuid(), Code = "RAF", Name = "Raf etiketi", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Raf etiketi 60x40", Code = "RAF-001", TemplateCategoryId = category.Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var category = new TemplateCategory { Id = Guid.NewGuid(), Code = "KOL", Name = "Koli etiketi", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var template = new LabelTemplate { Id = Guid.NewGuid(), Name = "Koli etiketi 100x70", Code = "KOL-001", TemplateCategoryId = category.Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             var version = new LabelTemplateVersion { Id = Guid.NewGuid(), TemplateId = template.Id, VersionNumber = 1, Status = TemplateStatus.Published, LayoutJson = "{}", CreatedAt = DateTime.UtcNow };
-            var product = new Product { Sku = "ZYT-0500-" + Guid.NewGuid().ToString("N")[..6], Name = "Sızma zeytinyağı 500 ml" };
+            var product = new Product { Sku = "SKY-PRS-" + Guid.NewGuid().ToString("N")[..6], Name = "Skyroof Prestige lamel profili 4000 mm" };
             var intent = new PrintIntent
             {
                 Id = Guid.NewGuid(), ProductId = product.Id, TemplateId = template.Id, VersionId = version.Id,
